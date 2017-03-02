@@ -1,6 +1,6 @@
 from pywb.warclib.bufferedreaders import DecompressingBufferedReader
 
-from pywb.warclib.recordloader import ArcWarcRecordLoader
+from pywb.warclib.recordloader import ArcWarcRecordLoader, ArchiveLoadFailed
 
 from pywb.warclib.utils import BUFF_SIZE
 
@@ -125,7 +125,7 @@ class ArchiveIterator(six.Iterator):
         frmt_up = frmt.upper()
 
         msg = self.GZIP_ERR_MSG.format(frmt, frmt_up)
-        raise Exception(msg)
+        raise ArchiveLoadFailed(msg)
 
     def _consume_blanklines(self):
         """ Consume blank lines that are between records
@@ -228,5 +228,20 @@ class ArchiveIterator(six.Iterator):
             self.known_format = record.format
 
         return record
+
+
+# ============================================================================
+class WARCIterator(ArchiveIterator):
+    def __init__(self, *args, **kwargs):
+        super(WARCIterator, self).__init__(*args, **kwargs)
+        self.known_format = 'warc'
+
+
+# ============================================================================
+class ARCIterator(ArchiveIterator):
+    def __init__(self, *args, **kwargs):
+        super(ARCIterator, self).__init__(*args, **kwargs)
+        self.known_format = 'arc'
+
 
 

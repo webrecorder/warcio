@@ -131,12 +131,11 @@ class ArcWarcRecordLoader(object):
 
         # if empty record (error or otherwise) set status to 204
         elif length == 0:
-            if is_err:
-                msg = '204 Possible Error'
-            else:
-                msg = '204 No Content'
-
-            status_headers = StatusAndHeaders(msg, [])
+            #if is_err:
+            #    msg = '204 Possible Error'
+            #else:
+            #    msg = '204 No Content'
+            status_headers = StatusAndHeaders('', [])
 
         # response record or non-empty revisit: parse HTTP status and headers!
         elif (rec_type in ('response', 'revisit')
@@ -282,19 +281,27 @@ class ARC2WARCHeadersParser(ARCHeadersParser):
     def _get_protocol_and_headers(self, headerline, parts):
         headers = []
 
-        for name, value in zip(self.headernames, parts):
-            if name == 'WARC-Date':
-                value = timestamp_to_iso_date(value)
-
-            headers.append((name, value))
-
         if headerline.startswith('filedesc://'):
-            rec_type = 'arc_header'
+            rec_type = 'warcinfo'
         else:
             rec_type = 'response'
 
         headers.append(('WARC-Type', rec_type))
         headers.append(('WARC-Record-ID', StatusAndHeadersParser.make_warc_id()))
+
+        if rec_type == 'warcinfo':
+            parts[3] = 'application/warc-fields'
+            parts[4] = '0'
+
+        for name, value in zip(self.headernames, parts):
+            if name == 'WARC-Date':
+                value = timestamp_to_iso_date(value)
+
+            if rec_type == 'warcinfo' and name == 'WARC-Target-URI':
+                name = 'WARC-Filename'
+                value = value[len('filedesc://'):]
+
+            headers.append((name, value))
 
         return ('WARC/1.0', headers)
 

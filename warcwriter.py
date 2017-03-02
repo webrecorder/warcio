@@ -27,13 +27,12 @@ class BaseWARCWriter(object):
          'metadata': 'application/warc-fields',
         }
 
-    REVISIT_PROFILE = 'http://netpreserve.org/warc/1.0/revisit/uri-agnostic-identical-payload-digest'
+    REVISIT_PROFILE = 'http://netpreserve.org/warc/1.0/revisit/identical-payload-digest'
 
     WARC_VERSION = 'WARC/1.0'
 
-    def __init__(self, gzip=True, header_filter=None, *args, **kwargs):
+    def __init__(self, gzip=True, *args, **kwargs):
         self.gzip = gzip
-        self.header_filter = header_filter
         self.hostname = gethostname()
 
         self.parser = StatusAndHeadersParser([], verify=False)
@@ -59,7 +58,7 @@ class BaseWARCWriter(object):
 
         pos = record.stream.tell()
 
-        if record.status_headers and hasattr(record.status_headers, 'headers_buff'):
+        if record.status_headers and record.status_headers.headers_buff:
             block_digester.update(record.status_headers.headers_buff)
 
         for buf in self._iter_stream(record.stream):
@@ -73,12 +72,24 @@ class BaseWARCWriter(object):
     def _create_digester(self):
         return Digester('sha1')
 
-    def _set_header_buff(self, record):
-        exclude_list = None
-        if self.header_filter:
-            exclude_list = self.header_filter(record)
-        buff = record.status_headers.to_bytes(exclude_list)
-        record.status_headers.headers_buff = buff
+    def write_request_response_pair(self, req, resp, params=None):
+        url = resp.rec_headers.get_header('WARC-Target-URI')
+        dt = resp.rec_headers.get_header('WARC-Date')
+
+        req.rec_headers.replace_header('WARC-Target-URI', url)
+        req.rec_headers.replace_header('WARC-Date', dt)
+
+        resp_id = resp.rec_headers.get_header('WARC-Record-ID')
+        if resp_id:
+            req.rec_headers.add_header('WARC-Concurrent-To', resp_id)
+
+        self._do_write_req_resp(req, resp, params)
+
+    def write_record(self, record, params=None):  #pragma: no cover
+        raise NotImplemented()
+
+    def _do_write_req_resp(self, req, resp, params):  #pragma: no cover
+        raise NotImplemented()
 
     def create_warcinfo_record(self, filename, info):
         warc_headers = StatusAndHeaders(self.warc_version, [])
@@ -99,17 +110,23 @@ class BaseWARCWriter(object):
 
         return record
 
-    def copy_warc_record(self, payload):
-        len_ = payload.tell()
-        payload.seek(0)
+    def create_revisit_record(self, record, refers_to_uri, refers_to_date,
+                              uri=None, status_headers=None):
+        if record:
+            record.rec_headers.replace_header('WARC-Type', 'revisit')
+        else:
+            uri = uri or refers_to_uri
+            record = self.create_warc_record(uri, 'revisit', status_headers=status_headers)
 
-        warc_headers = self.parser.parse(payload)
+        record.rec_headers.add_header('WARC-Profile', self.REVISIT_PROFILE)
 
-        record_type = warc_headers.get_header('WARC-Type', 'response')
+        record.rec_headers.add_header('WARC-Refers-To-Target-URI', refers_to_uri)
+        record.rec_headers.add_header('WARC-Refers-To-Date', refers_to_date)
 
-        return self._fill_record(record_type, warc_headers, None, payload, '', len_)
+        return record
 
-    def create_warc_record(self, uri, record_type, payload,
+    def create_warc_record(self, uri, record_type,
+                           payload=BytesIO(),
                            length=None,
                            warc_content_type='',
                            warc_headers_dict={},
@@ -144,10 +161,13 @@ class BaseWARCWriter(object):
 
         self.ensure_digest(record)
 
-        if has_http_headers:
-            self._set_header_buff(record)
+        #if has_http_headers:
+        #    self._set_header_buff(record)
 
         return record
+
+    def _set_header_buff(self, record):
+        record.status_headers.headers_buff = record.status_headers.to_bytes()
 
     def _write_warc_record(self, out, record, adjust_cl=True):
         if self.gzip:
@@ -172,42 +192,40 @@ class BaseWARCWriter(object):
             http_headers_only = False
 
         # compute Content-Length
+        actual_len = 0
+
         if record.length or record.status_headers:
-            actual_len = 0
             if record.status_headers:
+                self._set_header_buff(record)
                 actual_len = len(record.status_headers.headers_buff)
 
             if not http_headers_only:
-                if adjust_cl:
+                if adjust_cl and hasattr(record.stream, 'tell'):
                     diff = record.stream.tell() - actual_len
                 else:
                     diff = 0
 
                 actual_len = record.length - diff
 
-            record.rec_headers.replace_header('Content-Length', str(actual_len))
-            #self._header(out, 'Content-Length', str(actual_len))
+        record.rec_headers.replace_header('Content-Length', str(actual_len))
 
-            # add empty line
-            #self._line(out, b'')
+        # write record headers
+        out.write(record.rec_headers.to_bytes())
 
-            # write record headers
-            out.write(record.rec_headers.to_bytes())
+        # write headers buffer, if any
+        if record.status_headers:
+            out.write(record.status_headers.headers_buff)
 
-            # write headers buffer, if any
-            if record.status_headers:
-                out.write(record.status_headers.headers_buff)
+        if not http_headers_only:
+            for buf in self._iter_stream(record.stream):
+                out.write(buf)
+            #out.write(record.stream.read())
 
-            if not http_headers_only:
-                for buf in self._iter_stream(record.stream):
-                    out.write(buf)
-                #out.write(record.stream.read())
+        # add two lines
+        self._line(out, b'\r\n')
 
-            # add two lines
-            self._line(out, b'\r\n')
-        else:
-            # add three lines (1 for end of header, 2 for end of record)
-            self._line(out, b'Content-Length: 0\r\n\r\n')
+        # add three lines (1 for end of header, 2 for end of record)
+        #self._line(out, b'Content-Length: 0\r\n\r\n')
 
         out.flush()
 
@@ -263,16 +281,27 @@ class Digester(object):
 
 
 # ============================================================================
-class BufferWARCWriter(BaseWARCWriter):
+class WARCWriter(BaseWARCWriter):
+    def __init__(self, filebuf, *args, **kwargs):
+        super(WARCWriter, self).__init__(*args, **kwargs)
+        self.out = filebuf
+
+    def write_record(self, record, params=None):
+        self._write_warc_record(self.out, record)
+
+    def _do_write_req_resp(self, req, resp, params):
+        self._write_warc_record(self.out, resp)
+        self._write_warc_record(self.out, req)
+
+
+# ============================================================================
+class BufferWARCWriter(WARCWriter):
     def __init__(self, *args, **kwargs):
-        super(BufferWARCWriter, self).__init__(*args, **kwargs)
-        self.out = self._create_buffer()
+        out = self._create_buffer()
+        super(BufferWARCWriter, self).__init__(out, *args, **kwargs)
 
     def _create_buffer(self):
         return tempfile.SpooledTemporaryFile(max_size=512*1024)
-
-    def write_record(self, record):
-        self._write_warc_record(self.out, record)
 
     def get_contents(self):
         pos = self.out.tell()
@@ -280,3 +309,9 @@ class BufferWARCWriter(BaseWARCWriter):
         buff = self.out.read()
         self.out.seek(pos)
         return buff
+
+    def get_stream(self):
+        self.out.seek(0)
+        return self.out
+
+

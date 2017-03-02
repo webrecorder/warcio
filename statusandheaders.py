@@ -25,6 +25,7 @@ class StatusAndHeaders(object):
         self.headers = headers
         self.protocol = protocol
         self.total_len = total_len
+        self.headers_buff = None
 
     def get_header(self, name, default_value=None):
         """
@@ -55,23 +56,6 @@ class StatusAndHeaders(object):
 
         self.headers.append((name, value))
         return None
-
-    def replace_headers(self, header_dict):
-        """
-        replace all headers in header_dict that already exist
-        add any remaining headers
-        """
-        header_dict = copy(header_dict)
-
-        for index in range(len(self.headers) - 1, -1, -1):
-            curr_name, curr_value = self.headers[index]
-            name_lower = curr_name.lower()
-            if name_lower in header_dict:
-                self.headers[index] = (curr_name, header_dict[name_lower])
-                del header_dict[name_lower]
-
-        for name, value in iteritems(header_dict):
-            self.headers.append((name, value))
 
     def remove_header(self, name):
         """

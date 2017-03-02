@@ -170,6 +170,7 @@ Content-Length: 0\r\n"
 
     assert(str(res) == exp)
 
+
 def test_status_empty():
     with pytest.raises(EOFError):
         StatusAndHeadersParser([], verify=False).parse(StringIO(''))
@@ -178,5 +179,9 @@ def test_status_empty():
 def test_status_one_word():
     res = StatusAndHeadersParser(['GET'], verify=False).parse(StringIO('A'))
     assert(str(res) == 'A\r\n')
+
+def test_validate_status():
+    assert StatusAndHeaders('200 OK', []).validate_statusline('204 No Content')
+    assert not StatusAndHeaders('Bad OK', []).validate_statusline('204 No Content')
 
 
