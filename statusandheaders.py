@@ -3,7 +3,6 @@ Representation and parsing of HTTP-style status + headers
 """
 
 from pprint import pformat
-from copy import copy
 from six.moves import range
 from six import iteritems
 from pywb.warclib.utils import to_native_str

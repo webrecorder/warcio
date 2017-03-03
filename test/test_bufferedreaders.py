@@ -2,14 +2,6 @@ r"""
 # DecompressingBufferedReader Tests
 #=================================================================
 
-# DecompressingBufferedReader readline()
->>> print_str(DecompressingBufferedReader(open(test_cdx_dir + 'iana.cdx', 'rb')).readline())
-' CDX N b a m s k r M S V g\n'
-
-# detect not compressed
->>> print_str(DecompressingBufferedReader(open(test_cdx_dir + 'iana.cdx', 'rb'), decomp_type = 'gzip').readline())
-' CDX N b a m s k r M S V g\n'
-
 # decompress with on the fly compression, default gzip compression
 >>> print_str(DecompressingBufferedReader(BytesIO(compress('ABC\n1234\n'))).read())
 'ABC\n1234\n'
@@ -27,10 +19,6 @@ Exception: Decompression type not supported: bzip2
 >>> DecompressingBufferedReader(BytesIO(compress('ABC')), decomp_type = None).read() != b'ABC'
 True
 
-
-# DecompressingBufferedReader readline() with decompression (zipnum file, no header)
->>> print_str(DecompressingBufferedReader(open(test_zip_dir + 'zipnum-sample.cdx.gz', 'rb'), decomp_type = 'gzip').readline())
-'com,example)/ 20140127171200 http://example.com text/html 200 B2LTWWPUOYAH7UIPQ7ZUPQ4VMBSVC36A - - 1046 334 dupes.warc.gz\n'
 
 # test very small block size
 >>> dbr = DecompressingBufferedReader(BytesIO(b'ABCDEFG\nHIJKLMN\nOPQR\nXYZ'), block_size = 3)
@@ -54,7 +42,7 @@ True
 
 Properly formatted chunked data:
 >>> c = ChunkedDataReader(BytesIO(b"4\r\n1234\r\n0\r\n\r\n"));
->>> print_str(c.read() + c.read() + c.read())
+>>> print_str(c.read() + c.read(1) + c.read() + c.read())
 '1234'
 
 Non-chunked data:
@@ -103,15 +91,16 @@ from pywb.warclib.bufferedreaders import ChunkedDataReader, ChunkedDataException
 from pywb.warclib.bufferedreaders import DecompressingBufferedReader
 from pywb.warclib.limitreader import LimitReader
 
-from pywb import get_test_dir
+#from pywb import get_test_dir
+from contextlib import closing
 
 import six
 
 import zlib
 import pytest
 
-test_cdx_dir = get_test_dir() + 'cdx/'
-test_zip_dir = get_test_dir() + 'zipcdx/'
+#test_cdx_dir = get_test_dir() + 'cdx/'
+#test_zip_dir = get_test_dir() + 'zipcdx/'
 
 
 def compress(buff):
@@ -136,24 +125,34 @@ def compress_alt(buff):
 # Brotli
 
 def test_brotli():
-    with open(get_test_dir() + 'text_content/quickfox_repeated.compressed', 'rb') as fh:
-        x = DecompressingBufferedReader(fh, decomp_type='br')
+    brotli_buff = b'[\xff\xaf\x02\xc0"y\\\xfbZ\x8cB;\xf4%U\x19Z\x92\x99\xb15\xc8\x19\x9e\x9e\n{K\x90\xb9<\x98\xc8\t@\xf3\xe6\xd9M\xe4me\x1b\'\x87\x13_\xa6\xe90\x96{<\x15\xd8S\x1c'
+
+    with closing(DecompressingBufferedReader(BytesIO(brotli_buff), decomp_type='br')) as x:
         x.read() == b'The quick brown fox jumps over the lazy dog' * 4096
 
 
 # Compression
 def test_compress_mix():
-    # error: compressed member, followed by not compressed -- now allowed!
     x = DecompressingBufferedReader(BytesIO(compress('ABC') + b'123'), decomp_type = 'gzip')
     b = x.read()
     assert b == b'ABC'
     x.read_next_member()
     assert x.read() == b'123'
-    #with pytest.raises(zlib.error):
-    #    x.read()
-    #error: Error -3 while decompressing: incorrect header check
+
 
 # Errors
+def test_compress_invalid():
+    result = compress('ABCDEFG' * 1)
+    # cut-off part of the block
+    result = result[:-2] + b'xyz'
+
+    x = DecompressingBufferedReader(BytesIO(result), block_size=16)
+    b = x.read(3)
+    assert b == b'ABC'
+
+    assert b'DE' == x.read()
+
+
 
 def test_err_chunk_cut_off():
     # Chunked data cut off with exceptions

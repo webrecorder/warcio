@@ -50,9 +50,6 @@ class ArchiveIterator(six.Iterator):
 
         self.loader = ArcWarcRecordLoader(verify_http=verify_http,
                                           arc2warc=arc2warc)
-        self.reader = None
-
-        self.offset = 0
         self.known_format = None
 
         self.mixed_arc_warc = arc2warc
@@ -63,56 +60,47 @@ class ArchiveIterator(six.Iterator):
         self.reader = DecompressingBufferedReader(self.fh,
                                                   block_size=block_size)
         self.offset = self.fh.tell()
-
         self.next_line = None
 
-        self._raise_invalid_gzip = False
-        self._is_empty = False
-        self._is_first = True
-        self.last_record = None
-
     def __iter__(self):
-        return self
+        """ iterate over each record
+        """
+        raise_invalid_gzip = False
+        empty_record = False
+        record = None
 
-    def __next__(self):
         while True:
-            if not self._is_first:
-                self._finish_record()
-
-            self._is_first = False
-
             try:
-                self.last_record = self._next_record(self.next_line)
-                if self._raise_invalid_gzip:
+                record = self._next_record(self.next_line)
+                if raise_invalid_gzip:
                     self._raise_invalid_gzip_err()
 
-                return self.last_record
+                yield record
 
             except EOFError:
-                self._is_empty = True
+                empty_record = True
 
-    def _finish_record(self):
-        if self.last_record:
-            self.read_to_end(self.last_record)
+            if record:
+                self.read_to_end(record)
 
-        if self.reader.decompressor:
-            # if another gzip member, continue
-            if self.reader.read_next_member():
-                return
+            if self.reader.decompressor:
+                # if another gzip member, continue
+                if self.reader.read_next_member():
+                    continue
 
-            # if empty record, then we're done
-            elif self._is_empty:
-                raise StopIteration()
+                # if empty record, then we're done
+                elif empty_record:
+                    break
 
-            # otherwise, probably a gzip
-            # containing multiple non-chunked records
-            # raise this as an error
-            else:
-                self._raise_invalid_gzip = True
+                # otherwise, probably a gzip
+                # containing multiple non-chunked records
+                # raise this as an error
+                else:
+                    raise_invalid_gzip = True
 
-        # non-gzip, so we're done
-        elif self._is_empty:
-            raise StopIteration()
+            # non-gzip, so we're done
+            elif empty_record:
+                break
 
     def _raise_invalid_gzip_err(self):
         """ A gzip file with multiple ARC/WARC records, non-chunked
@@ -176,16 +164,14 @@ class ArchiveIterator(six.Iterator):
         if self.member_info:
             return None
 
-        num = 0
         curr_offset = self.offset
 
         while True:
             b = record.stream.read(BUFF_SIZE)
-            if not b:
-                break
-            num += len(b)
             if payload_callback:
                 payload_callback(b)
+            if not b:
+                break
 
         """
         - For compressed files, blank lines are consumed

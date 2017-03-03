@@ -28,17 +28,9 @@ class ArcWarcRecord(object):
 
 #=================================================================
 class ArchiveLoadFailed(Exception):
-    def __init__(self, reason, filename=''):
-        if filename:
-            msg = filename + ': ' + str(reason)
-        else:
-            msg = str(reason)
-
-        self.msg = msg
-        super(ArchiveLoadFailed, self).__init__(msg)
-
-    def status(self):
-        return '503 Service Unavailable'
+    def __init__(self, reason):
+        self.msg = str(reason)
+        super(ArchiveLoadFailed, self).__init__(self.msg)
 
 
 #=================================================================

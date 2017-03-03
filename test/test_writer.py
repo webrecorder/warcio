@@ -116,6 +116,7 @@ class TestWarcWriter(object):
         simplewriter = FixedTestWARCWriter(gzip=False)
         params = OrderedDict([('software', 'recorder test'),
                               ('format', 'WARC File Format 1.0'),
+                              ('invalid', ''),
                               ('json-metadata', json.dumps({'foo': 'bar'}))])
 
         record = simplewriter.create_warcinfo_record('testfile.warc.gz', params)
