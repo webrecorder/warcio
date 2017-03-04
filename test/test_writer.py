@@ -45,8 +45,8 @@ WARC-Type: response\r\n\
 WARC-Record-ID: <urn:uuid:12345678-feb0-11e6-8f83-68a86d1772ce>\r\n\
 WARC-Target-URI: http://example.com/\r\n\
 WARC-Date: 2000-01-01T00:00:00Z\r\n\
-WARC-Block-Digest: sha1:B6QJ6BNJ3R4B23XXMRKZKHLPGJY2VE4O\r\n\
 WARC-Payload-Digest: sha1:B6QJ6BNJ3R4B23XXMRKZKHLPGJY2VE4O\r\n\
+WARC-Block-Digest: sha1:OS3OKGCWQIJOAOC3PKXQOQFD52NECQ74\r\n\
 Content-Type: application/http; msgtype=response\r\n\
 Content-Length: 97\r\n\
 \r\n\
@@ -67,8 +67,8 @@ WARC-Type: request\r\n\
 WARC-Record-ID: <urn:uuid:12345678-feb0-11e6-8f83-68a86d1772ce>\r\n\
 WARC-Target-URI: http://example.com/\r\n\
 WARC-Date: 2000-01-01T00:00:00Z\r\n\
-WARC-Block-Digest: sha1:3I42H3S6NNFQ2MSVX7XZKYAYSCX5QBYJ\r\n\
 WARC-Payload-Digest: sha1:3I42H3S6NNFQ2MSVX7XZKYAYSCX5QBYJ\r\n\
+WARC-Block-Digest: sha1:ONEHF6PTXPTTHE3333XHTD2X45TZ3DTO\r\n\
 Content-Type: application/http; msgtype=request\r\n\
 Content-Length: 54\r\n\
 \r\n\
@@ -81,17 +81,36 @@ Host: example.com\r\n\
 '
 
 
-REVISIT_RECORD = '\
+REVISIT_RECORD_1 = '\
 WARC/1.0\r\n\
 WARC-Type: revisit\r\n\
 WARC-Record-ID: <urn:uuid:12345678-feb0-11e6-8f83-68a86d1772ce>\r\n\
 WARC-Target-URI: http://example.com/\r\n\
 WARC-Date: 2000-01-01T00:00:00Z\r\n\
-WARC-Block-Digest: sha1:B6QJ6BNJ3R4B23XXMRKZKHLPGJY2VE4O\r\n\
-WARC-Payload-Digest: sha1:B6QJ6BNJ3R4B23XXMRKZKHLPGJY2VE4O\r\n\
 WARC-Profile: http://netpreserve.org/warc/1.0/revisit/identical-payload-digest\r\n\
 WARC-Refers-To-Target-URI: http://example.com/foo\r\n\
 WARC-Refers-To-Date: 1999-01-01T00:00:00Z\r\n\
+WARC-Payload-Digest: sha1:B6QJ6BNJ3R4B23XXMRKZKHLPGJY2VE4O\r\n\
+WARC-Block-Digest: sha1:3I42H3S6NNFQ2MSVX7XZKYAYSCX5QBYJ\r\n\
+Content-Type: application/http; msgtype=response\r\n\
+Content-Length: 0\r\n\
+\r\n\
+\r\n\
+\r\n\
+'
+
+
+REVISIT_RECORD_2 = '\
+WARC/1.0\r\n\
+WARC-Type: revisit\r\n\
+WARC-Record-ID: <urn:uuid:12345678-feb0-11e6-8f83-68a86d1772ce>\r\n\
+WARC-Target-URI: http://example.com/\r\n\
+WARC-Date: 2000-01-01T00:00:00Z\r\n\
+WARC-Profile: http://netpreserve.org/warc/1.0/revisit/identical-payload-digest\r\n\
+WARC-Refers-To-Target-URI: http://example.com/foo\r\n\
+WARC-Refers-To-Date: 1999-01-01T00:00:00Z\r\n\
+WARC-Payload-Digest: sha1:B6QJ6BNJ3R4B23XXMRKZKHLPGJY2VE4O\r\n\
+WARC-Block-Digest: sha1:A6J5UTI2QHHCZFCFNHQHCDD3JJFKP53V\r\n\
 Content-Type: application/http; msgtype=response\r\n\
 Content-Length: 88\r\n\
 \r\n\
@@ -102,6 +121,8 @@ Custom-Header: somevalue\r\n\
 \r\n\
 \r\n\
 '
+
+
 
 
 class TestWarcWriter(object):
@@ -231,18 +252,55 @@ class TestWarcWriter(object):
         assert resp_id != req_id
         assert resp_id == req.rec_headers.get_header('WARC-Concurrent-To')
 
-    def test_conv_to_revisit(self):
+    def test_generate_revisit(self):
         writer = FixedTestWARCWriter(gzip=False)
 
-        record = self._sample_response(writer)
-
-        writer.create_revisit_record(record, 'http://example.com/foo', '1999-01-01T00:00:00Z')
+        record = writer.create_revisit_record('http://example.com/',
+                                              digest='sha1:B6QJ6BNJ3R4B23XXMRKZKHLPGJY2VE4O',
+                                              refers_to_uri='http://example.com/foo',
+                                              refers_to_date='1999-01-01T00:00:00Z')
 
         writer.write_record(record)
 
         buff = writer.get_contents()
 
-        assert buff.decode('utf-8') == REVISIT_RECORD
+        assert buff.decode('utf-8') == REVISIT_RECORD_1
+
+    def test_generate_revisit_with_http_headers(self):
+        writer = FixedTestWARCWriter(gzip=False)
+
+        resp = self._sample_response(writer)
+
+        record = writer.create_revisit_record('http://example.com/',
+                                              digest='sha1:B6QJ6BNJ3R4B23XXMRKZKHLPGJY2VE4O',
+                                              refers_to_uri='http://example.com/foo',
+                                              refers_to_date='1999-01-01T00:00:00Z',
+                                              status_headers=resp.status_headers)
+
+        writer.write_record(record)
+
+        buff = writer.get_contents()
+
+        assert buff.decode('utf-8') == REVISIT_RECORD_2
+
+    def test_copy_from_stream(self):
+        writer = FixedTestWARCWriter(gzip=False)
+
+        stream = BytesIO()
+
+        # strip-off the two empty \r\n\r\n added at the end of uncompressed record
+        stream.write(RESPONSE_RECORD[:-4].encode('utf-8'))
+
+        length = stream.tell()
+        stream.seek(0)
+
+        record = writer.create_record_from_stream(stream, length)
+
+        writer.write_record(record)
+
+        buff = writer.get_contents()
+
+        assert buff.decode('utf-8') == RESPONSE_RECORD
 
     def test_arc2warc(self):
         from pywb import get_test_dir

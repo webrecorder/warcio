@@ -24,6 +24,7 @@ class ArcWarcRecord(object):
     def __init__(self, *args):
         (self.format, self.rec_type, self.rec_headers, self.stream,
          self.status_headers, self.content_type, self.length) = args
+        self.payload_length = -1
 
 
 #=================================================================

@@ -4,12 +4,11 @@ from pywb.warclib.recordloader import ArcWarcRecordLoader, ArchiveLoadFailed
 
 from pywb.warclib.utils import BUFF_SIZE
 
-import six
 import sys
 
 
 # ============================================================================
-class ArchiveIterator(six.Iterator):
+class ArchiveIterator(object):
     """ Iterate over records in WARC and ARC files, both gzip chunk
     compressed and uncompressed
 
