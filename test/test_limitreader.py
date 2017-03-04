@@ -1,4 +1,4 @@
-from pywb.warclib.limitreader import LimitReader
+from warcio.limitreader import LimitReader
 from contextlib import closing
 import requests
 

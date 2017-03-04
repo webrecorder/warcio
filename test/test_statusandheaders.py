@@ -70,7 +70,7 @@ StatusAndHeaders(protocol = 'HTTP/1.0', statusline = '204 empty', headers = [('C
 """
 
 
-from pywb.warclib.statusandheaders import StatusAndHeadersParser, StatusAndHeaders
+from warcio.statusandheaders import StatusAndHeadersParser, StatusAndHeaders
 from six import StringIO
 import pytest
 

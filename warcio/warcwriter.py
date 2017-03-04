@@ -9,12 +9,12 @@ import six
 from socket import gethostname
 from io import BytesIO
 
-from pywb.warclib.utils import to_native_str, BUFF_SIZE
-from pywb.warclib.timeutils import datetime_to_iso_date
+from warcio.utils import to_native_str, BUFF_SIZE
+from warcio.timeutils import datetime_to_iso_date
 
-from pywb.warclib.statusandheaders import StatusAndHeadersParser, StatusAndHeaders
+from warcio.statusandheaders import StatusAndHeadersParser, StatusAndHeaders
 
-from pywb.warclib.recordloader import ArcWarcRecord
+from warcio.recordloader import ArcWarcRecord
 
 
 # ============================================================================

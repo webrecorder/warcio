@@ -325,6 +325,6 @@ def timestamp_to_http_date(string):
     return datetime_to_http_date(timestamp_to_datetime(string))
 
 
-if __name__ == "__main__":
+if __name__ == "__main__":  #pragma: no cover
     import doctest
     doctest.testmod()

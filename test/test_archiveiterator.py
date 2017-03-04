@@ -1,18 +1,17 @@
-from pywb.warclib.archiveiterator import ArchiveIterator, WARCIterator, ARCIterator
-from pywb.warclib.recordloader import ArchiveLoadFailed
+from warcio.archiveiterator import ArchiveIterator, WARCIterator, ARCIterator
+from warcio.recordloader import ArchiveLoadFailed
 
-from pywb.warclib.warcwriter import BufferWARCWriter
+from warcio.warcwriter import BufferWARCWriter
 
 import pytest
 
-from pywb import get_test_dir
-test_warc_dir = get_test_dir() + 'warcs/'
+from . import get_test_file
 
 
 #==============================================================================
 class TestArchiveIterator(object):
     def _load_archive(self, filename, offset=0, cls=ArchiveIterator, **kwargs):
-        with open(test_warc_dir + filename, 'rb') as fh:
+        with open(get_test_file(filename), 'rb') as fh:
             fh.seek(offset)
             iter_ = cls(fh, **kwargs)
             rec_types = [record.rec_type for record in iter_]

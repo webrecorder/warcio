@@ -87,20 +87,16 @@ Zero-Length chunk:
 """
 
 from io import BytesIO
-from pywb.warclib.bufferedreaders import ChunkedDataReader, ChunkedDataException
-from pywb.warclib.bufferedreaders import DecompressingBufferedReader
-from pywb.warclib.limitreader import LimitReader
+from warcio.bufferedreaders import ChunkedDataReader, ChunkedDataException
+from warcio.bufferedreaders import DecompressingBufferedReader
+from warcio.limitreader import LimitReader
 
-#from pywb import get_test_dir
 from contextlib import closing
 
 import six
 
 import zlib
 import pytest
-
-#test_cdx_dir = get_test_dir() + 'cdx/'
-#test_zip_dir = get_test_dir() + 'zipcdx/'
 
 
 def compress(buff):

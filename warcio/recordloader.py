@@ -1,14 +1,14 @@
 #import collections
 
-from pywb.warclib.statusandheaders import StatusAndHeaders
-from pywb.warclib.statusandheaders import StatusAndHeadersParser
-from pywb.warclib.statusandheaders import StatusAndHeadersParserException
+from warcio.statusandheaders import StatusAndHeaders
+from warcio.statusandheaders import StatusAndHeadersParser
+from warcio.statusandheaders import StatusAndHeadersParserException
 
-from pywb.warclib.limitreader import LimitReader
-from pywb.warclib.utils import to_native_str
+from warcio.limitreader import LimitReader
+from warcio.utils import to_native_str
 
-#from pywb.warclib.wbexception import WbException
-from pywb.warclib.timeutils import timestamp_to_iso_date
+#from warcio.wbexception import WbException
+from warcio.timeutils import timestamp_to_iso_date
 
 from six.moves import zip
 

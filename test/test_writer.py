@@ -1,8 +1,10 @@
-from pywb.warclib.statusandheaders import StatusAndHeaders
-from pywb.warclib.warcwriter import BufferWARCWriter
-from pywb.warclib.recordloader import ArcWarcRecordLoader
-from pywb.warclib.archiveiterator import ArchiveIterator
-from pywb.warclib.bufferedreaders import DecompressingBufferedReader
+from warcio.statusandheaders import StatusAndHeaders
+from warcio.warcwriter import BufferWARCWriter
+from warcio.recordloader import ArcWarcRecordLoader
+from warcio.archiveiterator import ArchiveIterator
+from warcio.bufferedreaders import DecompressingBufferedReader
+
+from . import get_test_file
 
 from io import BytesIO
 from collections import OrderedDict
@@ -303,12 +305,9 @@ class TestWarcWriter(object):
         assert buff.decode('utf-8') == RESPONSE_RECORD
 
     def test_arc2warc(self):
-        from pywb import get_test_dir
-        test_warc_dir = get_test_dir() + 'warcs/'
-
         writer = FixedTestWARCWriter(gzip=False)
 
-        with open(test_warc_dir + 'example.arc.gz', 'rb') as fh:
+        with open(get_test_file('example.arc.gz'), 'rb') as fh:
             for record in ArchiveIterator(fh, arc2warc=True):
                 writer.write_record(record)
 

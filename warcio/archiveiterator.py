@@ -1,8 +1,8 @@
-from pywb.warclib.bufferedreaders import DecompressingBufferedReader
+from warcio.bufferedreaders import DecompressingBufferedReader
 
-from pywb.warclib.recordloader import ArcWarcRecordLoader, ArchiveLoadFailed
+from warcio.recordloader import ArcWarcRecordLoader, ArchiveLoadFailed
 
-from pywb.warclib.utils import BUFF_SIZE
+from warcio.utils import BUFF_SIZE
 
 import sys
 
