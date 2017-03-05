@@ -318,7 +318,7 @@ class TestWarcWriter(object):
         buff = buff.decode('utf-8')
 
         assert 'WARC-Filename: live-web-example.arc.gz' in buff
-        assert 'Content-Type: application/warc-fields' in buff
+        assert 'Content-Type: text/plain' in buff
 
         assert 'WARC-Target-URI: http://example.com/' in buff
 

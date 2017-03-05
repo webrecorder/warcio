@@ -278,13 +278,10 @@ class ARC2WARCHeadersParser(ARCHeadersParser):
             rec_type = 'warcinfo'
         else:
             rec_type = 'response'
+            parts[3] = 'application/http;msgtype=response'
 
         headers.append(('WARC-Type', rec_type))
         headers.append(('WARC-Record-ID', StatusAndHeadersParser.make_warc_id()))
-
-        if rec_type == 'warcinfo':
-            parts[3] = 'application/warc-fields'
-            parts[4] = '0'
 
         for name, value in zip(self.headernames, parts):
             if name == 'WARC-Date':
