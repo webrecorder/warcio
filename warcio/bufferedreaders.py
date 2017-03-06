@@ -1,6 +1,5 @@
 from io import BytesIO
 import zlib
-import brotli
 
 
 #=================================================================
@@ -18,10 +17,20 @@ def deflate_decompressor():
 def deflate_decompressor_alt():
     return zlib.decompressobj(-zlib.MAX_WBITS)
 
-def brotli_decompressor():
-    decomp = brotli.Decompressor()
-    decomp.unused_data = None
-    return decomp
+
+#=================================================================
+def try_brotli_init():
+    try:
+        import brotli
+
+        def brotli_decompressor():
+            decomp = brotli.Decompressor()
+            decomp.unused_data = None
+            return decomp
+
+        BufferedReader.DECOMPRESSORS['br'] = brotli_decompressor
+    except ImportError:  #pragma: no cover
+        pass
 
 
 #=================================================================
@@ -46,8 +55,7 @@ class BufferedReader(object):
 
     DECOMPRESSORS = {'gzip': gzip_decompressor,
                      'deflate': deflate_decompressor,
-                     'deflate_alt': deflate_decompressor_alt,
-                     'br': brotli_decompressor
+                     'deflate_alt': deflate_decompressor_alt
                     }
 
     def __init__(self, stream, block_size=1024,
@@ -314,3 +322,8 @@ class ChunkedDataReader(BufferedReader):
 
         # hand to base class for further processing
         self._process_read(data)
+
+
+#=================================================================
+try_brotli_init()
+

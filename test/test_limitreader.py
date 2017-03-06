@@ -1,6 +1,5 @@
 from warcio.limitreader import LimitReader
 from contextlib import closing
-import requests
 
 from io import BytesIO
 
@@ -38,14 +37,3 @@ class TestLimitReader(object):
         with closing(reader):
             assert b'abc' == reader.read(10)
             assert reader.tell() == 3
-
-    def _test_limit_post(self):
-        reader = LimitReader(BytesIO(b'abcdefg'), 3)
-        r = requests.request(method='POST',
-                             url='http://httpbin.org/post',
-                             data=reader,
-                             headers={'Content-Length': '3'})
-
-        assert '"abc"' in r.text
-
-
