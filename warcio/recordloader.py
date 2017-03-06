@@ -7,6 +7,8 @@ from warcio.statusandheaders import StatusAndHeadersParserException
 from warcio.limitreader import LimitReader
 from warcio.utils import to_native_str
 
+from warcio.bufferedreaders import BufferedReader, ChunkedDataReader
+
 #from warcio.wbexception import WbException
 from warcio.timeutils import timestamp_to_iso_date
 
@@ -25,6 +27,25 @@ class ArcWarcRecord(object):
         (self.format, self.rec_type, self.rec_headers, self.stream,
          self.status_headers, self.content_type, self.length) = args
         self.payload_length = -1
+
+    def content_stream(self):
+        if not self.status_headers:
+            return self.stream
+
+        encoding = self.status_headers.get_header('content-encoding')
+
+        if encoding:
+            encoding = encoding.lower()
+
+            if encoding not in BufferedReader.get_supported_decompressors():
+                encoding = None
+
+        if self.status_headers.get_header('transfer-encoding') == 'chunked':
+            return ChunkedDataReader(self.stream, decomp_type=encoding)
+        elif encoding:
+            return BufferedReader(self.stream, decomp_type=encoding)
+        else:
+            return self.stream
 
 
 #=================================================================
