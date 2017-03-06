@@ -168,7 +168,7 @@ Please refer to `warcwriter.py <warcio/warcwriter.py>`__ and
 WARCIO CLI: Indexing and Recompression
 --------------------------------------
 
-The library currnetly ships with two simple command line operations.
+The library currently ships with two simple command line operations.
 
 Index
 ~~~~~
