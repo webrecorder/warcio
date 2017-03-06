@@ -13,6 +13,8 @@ os:
 sudo: false
 
 install:
+  # add brotli for tests
+  - pip install brotlipy
   - python setup.py install
   - pip install coverage pytest-cov coveralls
 
