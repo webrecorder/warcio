@@ -1,5 +1,4 @@
 import tempfile
-import uuid
 import base64
 import hashlib
 import datetime
@@ -124,8 +123,12 @@ class BaseWARCWriter(object):
         warc_headers.add_header('WARC-Date', self._make_warc_date())
 
         warcinfo = BytesIO()
-        for n, v in six.iteritems(info):
-            self._header(warcinfo, n, v)
+        for name, value in six.iteritems(info):
+            if not value:
+                continue
+
+            line = name + ': ' + str(value) + '\r\n'
+            warcinfo.write(line.encode('latin-1'))
 
         length = warcinfo.tell()
         warcinfo.seek(0)
@@ -176,6 +179,13 @@ class BaseWARCWriter(object):
         if not warc_headers:
             warc_headers = self._init_warc_headers(uri, record_type, warc_headers_dict)
 
+        # compute Content-Type
+        if not warc_content_type:
+            warc_content_type = warc_headers.get_header('Content-Type')
+
+            if not warc_content_type:
+                warc_content_type = self.WARC_RECORDS.get(record_type)
+
         record = ArcWarcRecord('warc', record_type, warc_headers, payload,
                                status_headers, warc_content_type, length)
 
@@ -214,18 +224,8 @@ class BaseWARCWriter(object):
         if record.rec_type != 'warcinfo':
             self.ensure_digest(record, block=True, payload=False)
 
-        # compute Content-Type
-        content_type = record.rec_headers.get_header('Content-Type')
-
-        if not content_type:
-            content_type = record.content_type
-
-            if not content_type:
-                content_type = self.WARC_RECORDS.get(record.rec_headers.get_header('WARC-Type'))
-
-            if content_type:
-                record.rec_headers.replace_header('Content-Type', content_type)
-                #self._header(out, 'Content-Type', content_type)
+        # ensure proper content type
+        record.rec_headers.replace_header('Content-Type', record.content_type)
 
         if record.rec_type == 'revisit':
             http_headers_only = True
@@ -263,27 +263,13 @@ class BaseWARCWriter(object):
                     record.stream = record._orig_stream
 
         # add two lines
-        self._line(out, b'\r\n')
-
-        # add three lines (1 for end of header, 2 for end of record)
-        #self._line(out, b'Content-Length: 0\r\n\r\n')
+        out.write(b'\r\n\r\n')
 
         out.flush()
 
-    def _header(self, out, name, value):
-        if not value:
-            return
-
-        self._line(out, (name + ': ' + str(value)).encode('latin-1'))
-
-    def _line(self, out, line):
-        out.write(line + b'\r\n')
-
     @classmethod
-    def _make_warc_id(cls, id_=None):
-        if not id_:
-            id_ = uuid.uuid1()
-        return '<urn:uuid:{0}>'.format(id_)
+    def _make_warc_id(cls):
+        return StatusAndHeadersParser.make_warc_id()
 
     @classmethod
     def _make_warc_date(cls):
