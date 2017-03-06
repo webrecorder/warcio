@@ -19,11 +19,11 @@ class TestArchiveIterator(object):
         return rec_types
 
     def test_example_warc_gz(self):
-        expected = ['warcinfo', 'response', 'request', 'revisit', 'request', 'response']
+        expected = ['warcinfo', 'warcinfo', 'response', 'request', 'revisit', 'request']
         assert self._load_archive('example.warc.gz') == expected
 
     def test_example_warc(self):
-        expected = ['warcinfo', 'response', 'request', 'revisit', 'request', 'response']
+        expected = ['warcinfo', 'warcinfo', 'response', 'request', 'revisit', 'request']
         assert self._load_archive('example.warc') == expected
 
     def test_example_arc_gz(self):

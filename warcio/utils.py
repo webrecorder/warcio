@@ -1,5 +1,5 @@
 import six
-
+from contextlib import contextmanager
 
 BUFF_SIZE = 16384
 
@@ -15,3 +15,12 @@ def to_native_str(value, encoding='iso-8859-1', func=lambda x: x):
         return func(value.encode(encoding))
 
 
+# #===========================================================================
+@contextmanager
+def open_or_default(filename, mod, default_fh):  #pragma: no cover
+    if filename:
+        res = open(filename, mod)
+        yield res
+        res.close()
+    else:
+        yield default_fh
