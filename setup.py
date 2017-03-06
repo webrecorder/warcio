@@ -33,6 +33,7 @@ setup(
         'warcio',
         ],
     install_requires=[
+        'six',
         ],
     data_files=[
         ('test/data', glob.glob('test/data/*')),
