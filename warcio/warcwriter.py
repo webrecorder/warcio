@@ -58,12 +58,13 @@ class BaseWARCWriter(object):
         if not block_digester and not payload_digester:
             return
 
-        if hasattr(record.raw_stream, 'seek'):
-            temp_file = None
+        temp_file = None
+        try:
             pos = record.raw_stream.tell()
-        else:
-            temp_file = self._create_temp_file()
+            record.raw_stream.seek(pos)
+        except:
             pos = 0
+            temp_file = self._create_temp_file()
 
         if block_digester and record.http_headers and record.http_headers.headers_buff:
             block_digester.update(record.http_headers.headers_buff)
