@@ -2,8 +2,11 @@
 
 ### Background
 
-This library provides a fast way to read and write [WARC Format](https://en.wikipedia.org/wiki/Web_ARChive) commonly used in web archives.
-This library is a spin-off from the [pywb](https://github.com/ikreymer/pywb) high-fidelity replay library, a key component of [Webrecorder](https://github.com/webrecorder/webrecorder)
+This library provides a fast, standalone way to read and write [WARC Format](https://en.wikipedia.org/wiki/Web_ARChive) commonly used in web archives. Supports Python 2.7+ and Python 3.3+ (using [six](https://pythonhosted.org/six/), the only external dependency)
+
+Install with: `pip install warcio`
+
+This library is a spin-off of the WARC reading and writing component of the [pywb](https://github.com/ikreymer/pywb) high-fidelity replay library, a key component of [Webrecorder](https://github.com/webrecorder/webrecorder)
 
 The library is designed for fast, low-level access to web archival content, oriented around a stream of WARC records rather than files.
 
