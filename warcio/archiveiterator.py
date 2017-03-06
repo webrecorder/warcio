@@ -18,7 +18,7 @@ class ArchiveIterator(object):
     """
 
     GZIP_ERR_MSG = """
-    ERROR: Non-chunked gzip file detected, gzip block continues
+    ERROR: non-chunked gzip file detected, gzip block continues
     beyond single record.
 
     This file is probably not a multi-chunk gzip but a single gzip file.
@@ -26,14 +26,10 @@ class ArchiveIterator(object):
     To allow seek, a gzipped {1} must have each record compressed into
     a single gzip chunk and concatenated together.
 
-    This file is likely still valid and you can use it by decompressing it:
+    This file is likely still valid and can be fixed by running:
 
-    gunzip myfile.{0}.gz
+    warcio recompress <path/to/file> <path/to/new_file>
 
-    You can then also use the 'warc2warc' tool from the 'warc-tools'
-    package which will create a properly chunked gzip file:
-
-    warc2warc -Z myfile.{0} > myfile.{0}.gz
 """
 
     INC_RECORD = """\
@@ -60,6 +56,8 @@ class ArchiveIterator(object):
                                                   block_size=block_size)
         self.offset = self.fh.tell()
         self.next_line = None
+
+        self.err_count = 0
 
     def __iter__(self):
         """ iterate over each record
@@ -147,6 +145,7 @@ class ArchiveIterator(object):
                     # likely content-length was invalid, display warning
                     err_offset = self.fh.tell() - self.reader.rem_length() - empty_size
                     sys.stderr.write(self.INC_RECORD.format(err_offset, line))
+                    self.err_count += 1
 
                 first_line = False
                 continue

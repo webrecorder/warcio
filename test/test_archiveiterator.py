@@ -10,11 +10,15 @@ from . import get_test_file
 
 #==============================================================================
 class TestArchiveIterator(object):
-    def _load_archive(self, filename, offset=0, cls=ArchiveIterator, **kwargs):
+    def _load_archive(self, filename, offset=0, cls=ArchiveIterator,
+                     errs_expected=0, **kwargs):
+
         with open(get_test_file(filename), 'rb') as fh:
             fh.seek(offset)
             iter_ = cls(fh, **kwargs)
             rec_types = [record.rec_type for record in iter_]
+
+        assert iter_.err_count == errs_expected
 
         return rec_types
 
@@ -25,6 +29,13 @@ class TestArchiveIterator(object):
     def test_example_warc(self):
         expected = ['warcinfo', 'warcinfo', 'response', 'request', 'revisit', 'request']
         assert self._load_archive('example.warc') == expected
+
+    def test_example_warc_trunc(self):
+        """ WARC file with content-length truncated on a response record
+        Error output printed, but still read
+        """
+        expected = ['warcinfo', 'warcinfo', 'response', 'request']
+        assert self._load_archive('example-trunc.warc', errs_expected=1) == expected
 
     def test_example_arc_gz(self):
         expected = ['arc_header', 'response']
@@ -49,6 +60,10 @@ class TestArchiveIterator(object):
     def test_bad_arc_invalid_lengths(self):
         expected = ['arc_header', 'response', 'response', 'response']
         assert self._load_archive('bad.arc') == expected
+
+    def test_err_non_chunked_gzip(self):
+        with pytest.raises(ArchiveLoadFailed):
+            self._load_archive('example-bad-non-chunked.warc.gz')
 
     def test_err_warc_iterator_on_arc(self):
         expected = ['arc_header', 'response']

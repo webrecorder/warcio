@@ -4,8 +4,12 @@ from . import get_test_file
 
 from contextlib import contextmanager
 from io import BytesIO
-import sys
 
+from warcio.recordloader import ArchiveLoadFailed
+
+import pytest
+import sys
+import tempfile
 
 
 def test_index():
@@ -37,6 +41,32 @@ def test_index():
     with patch_stdout() as buff:
         res = main(args=args)
         assert buff.getvalue().decode('utf-8') == expected
+
+
+def test_recompress():
+    with tempfile.NamedTemporaryFile() as temp:
+        test_file = get_test_file('example-bad-non-chunked.warc.gz')
+
+        with patch_stdout() as buff:
+            with pytest.raises(ArchiveLoadFailed):
+                main(args=['index', test_file, '-f', 'warc-type'])
+
+        # recompress!
+        main(args=['recompress', test_file, temp.name])
+
+        expected = """\
+{"warc-type": "warcinfo"}
+{"warc-type": "warcinfo"}
+{"warc-type": "response"}
+{"warc-type": "request"}
+{"warc-type": "revisit"}
+{"warc-type": "request"}
+"""
+
+        with patch_stdout() as buff:
+            main(args=['index', temp.name, '-f', 'warc-type'])
+            assert buff.getvalue().decode('utf-8') == expected
+
 
 
 
