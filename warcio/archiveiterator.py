@@ -165,7 +165,7 @@ class ArchiveIterator(object):
         curr_offset = self.offset
 
         while True:
-            b = record.stream.read(BUFF_SIZE)
+            b = record.raw_stream.read(BUFF_SIZE)
             if payload_callback:
                 payload_callback(b)
             if not b:

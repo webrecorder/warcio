@@ -58,17 +58,17 @@ class BaseWARCWriter(object):
         if not block_digester and not payload_digester:
             return
 
-        if hasattr(record.stream, 'seek'):
+        if hasattr(record.raw_stream, 'seek'):
             temp_file = None
-            pos = record.stream.tell()
+            pos = record.raw_stream.tell()
         else:
             temp_file = self._create_temp_file()
             pos = 0
 
-        if block_digester and record.status_headers and record.status_headers.headers_buff:
-            block_digester.update(record.status_headers.headers_buff)
+        if block_digester and record.http_headers and record.http_headers.headers_buff:
+            block_digester.update(record.http_headers.headers_buff)
 
-        for buf in self._iter_stream(record.stream):
+        for buf in self._iter_stream(record.raw_stream):
             if block_digester:
                 block_digester.update(buf)
 
@@ -81,10 +81,10 @@ class BaseWARCWriter(object):
         if temp_file:
             record.payload_length = temp_file.tell()
             temp_file.seek(0)
-            record._orig_stream = record.stream
-            record.stream = temp_file
+            record._orig_stream = record.raw_stream
+            record.raw_stream = temp_file
         else:
-            record.stream.seek(pos)
+            record.raw_stream.seek(pos)
 
         if block_digester:
             record.rec_headers.add_header('WARC-Block-Digest', str(block_digester))
@@ -139,9 +139,9 @@ class BaseWARCWriter(object):
                                        length=length)
 
     def create_revisit_record(self, uri, digest, refers_to_uri, refers_to_date,
-                              status_headers=None):
+                              http_headers=None):
 
-        record = self.create_warc_record(uri, 'revisit', status_headers=status_headers)
+        record = self.create_warc_record(uri, 'revisit', http_headers=http_headers)
 
         record.rec_headers.add_header('WARC-Profile', self.REVISIT_PROFILE)
 
@@ -166,10 +166,10 @@ class BaseWARCWriter(object):
                            warc_content_type='',
                            warc_headers_dict={},
                            warc_headers=None,
-                           status_headers=None):
+                           http_headers=None):
 
-        if payload and not status_headers and record_type in ('response', 'request', 'revisit'):
-            status_headers = self.parser.parse(payload)
+        if payload and not http_headers and record_type in ('response', 'request', 'revisit'):
+            http_headers = self.parser.parse(payload)
             length -= payload.tell()
 
         if not payload:
@@ -187,7 +187,7 @@ class BaseWARCWriter(object):
                 warc_content_type = self.WARC_RECORDS.get(record_type)
 
         record = ArcWarcRecord('warc', record_type, warc_headers, payload,
-                               status_headers, warc_content_type, length)
+                               http_headers, warc_content_type, length)
 
         record.payload_length = length
 
@@ -211,13 +211,13 @@ class BaseWARCWriter(object):
         return warc_headers
 
     def _set_header_buff(self, record):
-        record.status_headers.headers_buff = record.status_headers.to_bytes()
+        record.http_headers.headers_buff = record.http_headers.to_bytes()
 
     def _write_warc_record(self, out, record, adjust_cl=True):
         if self.gzip:
             out = GzippingWrapper(out)
 
-        if record.status_headers:
+        if record.http_headers:
             self._set_header_buff(record)
 
         # ensure digests are set
@@ -233,11 +233,11 @@ class BaseWARCWriter(object):
             http_headers_only = False
 
         # compute Content-Length
-        if record.status_headers and record.payload_length >= 0:
+        if record.http_headers and record.payload_length >= 0:
             actual_len = 0
 
-            if record.status_headers:
-                actual_len = len(record.status_headers.headers_buff)
+            if record.http_headers:
+                actual_len = len(record.http_headers.headers_buff)
 
             if not http_headers_only:
                 actual_len += record.payload_length
@@ -250,17 +250,17 @@ class BaseWARCWriter(object):
         out.write(record.rec_headers.to_bytes())
 
         # write headers buffer, if any
-        if record.status_headers:
-            out.write(record.status_headers.headers_buff)
+        if record.http_headers:
+            out.write(record.http_headers.headers_buff)
 
         if not http_headers_only:
             try:
-                for buf in self._iter_stream(record.stream):
+                for buf in self._iter_stream(record.raw_stream):
                     out.write(buf)
             finally:
                 if hasattr(record, '_orig_stream'):
-                    record.stream.close()
-                    record.stream = record._orig_stream
+                    record.raw_stream.close()
+                    record.raw_stream = record._orig_stream
 
         # add two lines
         out.write(b'\r\n\r\n')

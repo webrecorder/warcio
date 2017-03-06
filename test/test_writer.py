@@ -130,9 +130,9 @@ Custom-Header: somevalue\r\n\
 class TestWarcWriter(object):
     def _validate_record_content_len(self, stream):
         for record in ArchiveIterator(stream, no_record_parse=True):
-            assert record.status_headers == None
+            assert record.http_headers == None
             assert int(record.rec_headers.get_header('Content-Length')) == record.length
-            assert record.length == len(record.stream.read())
+            assert record.length == len(record.raw_stream.read())
 
 
     def test_warcinfo_record(self):
@@ -154,7 +154,7 @@ class TestWarcWriter(object):
         assert parsed_record.rec_headers.get_header('Content-Type') == 'application/warc-fields'
         assert parsed_record.rec_headers.get_header('WARC-Filename') == 'testfile.warc.gz'
 
-        buff = parsed_record.stream.read().decode('utf-8')
+        buff = parsed_record.raw_stream.read().decode('utf-8')
 
         length = parsed_record.rec_headers.get_header('Content-Length')
 
@@ -172,12 +172,12 @@ class TestWarcWriter(object):
 
         payload = b'some\ntext'
 
-        status_headers = StatusAndHeaders('200 OK', headers_list, protocol='HTTP/1.0')
+        http_headers = StatusAndHeaders('200 OK', headers_list, protocol='HTTP/1.0')
 
         record = writer.create_warc_record('http://example.com/', 'response',
                                            payload=BytesIO(payload),
                                            length=len(payload),
-                                           status_headers=status_headers)
+                                           http_headers=http_headers)
 
         return record
 
@@ -185,10 +185,10 @@ class TestWarcWriter(object):
         headers_list = [('User-Agent', 'foo'),
                         ('Host', 'example.com')]
 
-        status_headers = StatusAndHeaders('GET / HTTP/1.0', headers_list)
+        http_headers = StatusAndHeaders('GET / HTTP/1.0', headers_list)
 
         record = writer.create_warc_record('http://example.com/', 'request',
-                                           status_headers=status_headers)
+                                           http_headers=http_headers)
         return record
 
     def test_generate_response(self):
@@ -277,7 +277,7 @@ class TestWarcWriter(object):
                                               digest='sha1:B6QJ6BNJ3R4B23XXMRKZKHLPGJY2VE4O',
                                               refers_to_uri='http://example.com/foo',
                                               refers_to_date='1999-01-01T00:00:00Z',
-                                              status_headers=resp.status_headers)
+                                              http_headers=resp.http_headers)
 
         writer.write_record(record)
 

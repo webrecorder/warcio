@@ -18,21 +18,21 @@ from six.moves import zip
 #=================================================================
 #ArcWarcRecord = collections.namedtuple('ArcWarcRecord',
 #                                       'format, rec_type, rec_headers, ' +
-#                                       'stream, status_headers, ' +
+#                                       'stream, http_headers, ' +
 #                                       'content_type, length')
 
 #=================================================================
 class ArcWarcRecord(object):
     def __init__(self, *args):
-        (self.format, self.rec_type, self.rec_headers, self.stream,
-         self.status_headers, self.content_type, self.length) = args
+        (self.format, self.rec_type, self.rec_headers, self.raw_stream,
+         self.http_headers, self.content_type, self.length) = args
         self.payload_length = -1
 
     def content_stream(self):
-        if not self.status_headers:
-            return self.stream
+        if not self.http_headers:
+            return self.raw_stream
 
-        encoding = self.status_headers.get_header('content-encoding')
+        encoding = self.http_headers.get_header('content-encoding')
 
         if encoding:
             encoding = encoding.lower()
@@ -40,12 +40,12 @@ class ArcWarcRecord(object):
             if encoding not in BufferedReader.get_supported_decompressors():
                 encoding = None
 
-        if self.status_headers.get_header('transfer-encoding') == 'chunked':
-            return ChunkedDataReader(self.stream, decomp_type=encoding)
+        if self.http_headers.get_header('transfer-encoding') == 'chunked':
+            return ChunkedDataReader(self.raw_stream, decomp_type=encoding)
         elif encoding:
-            return BufferedReader(self.stream, decomp_type=encoding)
+            return BufferedReader(self.raw_stream, decomp_type=encoding)
         else:
-            return self.stream
+            return self.raw_stream
 
 
 #=================================================================
@@ -141,7 +141,7 @@ class ArcWarcRecordLoader(object):
 
         # don't parse the http record at all
         if no_record_parse:
-            status_headers = None#StatusAndHeaders('', [])
+            http_headers = None#StatusAndHeaders('', [])
 
         # if empty record (error or otherwise) set status to 204
         elif length == 0:
@@ -149,17 +149,17 @@ class ArcWarcRecordLoader(object):
             #    msg = '204 Possible Error'
             #else:
             #    msg = '204 No Content'
-            status_headers = StatusAndHeaders('', [])
+            http_headers = StatusAndHeaders('', [])
 
         # response record or non-empty revisit: parse HTTP status and headers!
         elif (rec_type in ('response', 'revisit')
               and uri.startswith(self.HTTP_SCHEMES)):
-            status_headers = self.http_parser.parse(stream)
+            http_headers = self.http_parser.parse(stream)
 
         # request record: parse request
         elif ((rec_type == 'request')
               and uri.startswith(self.HTTP_SCHEMES)):
-            status_headers = self.http_req_parser.parse(stream)
+            http_headers = self.http_req_parser.parse(stream)
 
         # everything else: create a no-status entry, set content-type
         else:
@@ -168,10 +168,10 @@ class ArcWarcRecordLoader(object):
             if length is not None and length >= 0:
                 content_type_header.append(('Content-Length', str(length)))
 
-            status_headers = StatusAndHeaders('200 OK', content_type_header)
+            http_headers = StatusAndHeaders('200 OK', content_type_header)
 
         return ArcWarcRecord(the_format, rec_type,
-                             rec_headers, stream, status_headers,
+                             rec_headers, stream, http_headers,
                              content_type, length)
 
     def _detect_type_load_headers(self, stream,
