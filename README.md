@@ -9,7 +9,13 @@ The library is designed for fast, low-level access to web archival content, orie
 
 ## Reading WARC Records
 
-A key feature of the library is to be able to iteratoe over a stream of WARC records using the `ArchiveIterator`
+A key feature of the library is to be able to iterate over a stream of WARC records using the `ArchiveIterator`
+
+It includes the following features:
+- Reading a WARC/ARC stream
+- On the fly ARC to WARC record conversion
+- Decompressing and de-chunking HTTP payload content stored in WARC/ARC files.
+
 For example, the following prints the the url for each WARC `response` record:
 
 ```python
@@ -43,6 +49,8 @@ The library provides support for reading (but not writing ARC) files. The ARC fo
 
 For example, here is a snippet for reading an ARC and a WARC using the same API.
 
+### WARC and ARC Streaming
+
 The snippet streams the file over HTTP using [requests](http://docs.python-requests.org/en/master/), printing the `warcinfo` record (or ARC header) and any response records (all ARC records) that contain HTML:
 
 ```python
@@ -69,5 +77,91 @@ print_records('https://archive.org/download/ExampleArcAndWarcFiles/IAH-200804302
 # ARC with arc2warc
 print_records('https://archive.org/download/ExampleArcAndWarcFiles/IAH-20080430204825-00000-blackbook.arc.gz')
 ```
+
+## Writing WARC Records
+
+The library provides a simple and extensible interface for writing WARC records conformant to WARC 1.0 standard [draft](bibnum.bnf.fr/WARC/WARC_ISO_28500_version1_latestdraft.pdf)
+
+The library comes with a basic `WARCWriter` class for writing to a single WARC file and `BufferWARCWriter` for writing to an in-memory buffer. The `BaseWARCWriter` can be extended to support more complex operations.
+
+(There is support for writing legacy ARC files)
+
+The following example loads `http://example.com/`, creates a WARC response record, and writes it, gzip compressed, to `example.warc.gz`
+The block and payload digests are computed automatically.
+
+
+```python
+from warcio.warcwriter import WARCWriter
+from warcio.statusandheaders import StatusAndHeaders
+
+import requests
+
+with open('example.warc.gz', 'wb') as output:
+    writer = WARCWriter(output, gzip=True)
+
+    resp = requests.get('http://example.com/',
+                        headers={'Accept-Encoding': 'identity'},
+                        stream=True)
+
+    # get raw headers from urllib3
+    headers_list = resp.raw.headers.items()
+
+    http_headers = StatusAndHeaders('200 OK', headers_list, protocol='HTTP/1.0')
+
+    record = writer.create_warc_record('http://example.com/', 'response',
+                                        payload=resp.raw,
+                                        http_headers=http_headers)
+
+    writer.write_record(record)
+```
+
+The library also includes additional semantics for:
+- Creating `warcinfo` and `revisit` records
+- Writing `response` and `request` records together
+- Writing custom WARC records
+- Reading a full WARC record from a stream
+
+Please refer to [warcwriter.py](warcio/warcwriter.py) and [test/test_writer.py](test/test_writer.py) for additional examples.
+
+## WARCIO CLI: Indexing and Recompression
+
+The library currnetly ships with two simple command line operations.
+
+### Index
+
+The `warcio index` cmd will print a simple index of the records in the warc file as newline delimited JSON lines (NDJSON).
+
+WARC header fields to include in the index can be specified via the `-f` flag, and are included in the JSON block (in order, for convenience)
+
+```
+warcio index ./test/data/example-iana.org-chunked.warc -f warc-type,warc-target-uri,content-length
+{"warc-type": "warcinfo", "content-length": "137"}
+{"warc-type": "response", "warc-target-uri": "http://www.iana.org/", "content-length": "7566"}
+{"warc-type": "request", "warc-target-uri": "http://www.iana.org/", "content-length": "76"}
+```
+
+(Note: this library does not produce CDX or CDXJ format indexes often associated with web archives. To create these indexes, please see the [pywb](https://github.com/ikreymer/pywb) library)
+
+### Recompress
+
+The `recompress` command allows for re-compressing or normalizing WARC (or ARC) files to a record-compressed, gzipped WARC file.
+
+Each WARC record is compressed individually and concatenated. This is the 'canonical' WARC storage format used by [Webrecorder](https://github.com/webrecorder/webrecorder) and other web archiving institutions, and usually stored with a `.warc.gz` extension.
+
+It can be used to:
+  - Compress an uncompressed WARC
+  - Convert any ARC file to a compressed WARC
+  - Fix an improperly compressed WARC file (eg. a WARC compressed entirely instead of by record)
+  
+```
+warcio recompress ./input.arc.gz ./output.warc.gz
+```
+
+### License
+
+`warcio` is licensed under the Apache 2.0 License and is part of the Webrecorder project.
+
+See [NOTICE](NOTICE) and [LICENSE](LICENSE) for details.
+
 
 
