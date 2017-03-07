@@ -118,15 +118,15 @@ Writing WARC Records
 --------------------
 
 The library provides a simple and extensible interface for writing WARC
-records conformant to WARC 1.0 standard
-`draft <http://bibnum.bnf.fr/WARC/WARC_ISO_28500_version1_latestdraft.pdf>`__
+records conformant to WARC 1.0 ISO standard
+`(see draft) <http://bibnum.bnf.fr/WARC/WARC_ISO_28500_version1_latestdraft.pdf>`__
 
 The library comes with a basic ``WARCWriter`` class for writing to a
 single WARC file and ``BufferWARCWriter`` for writing to an in-memory
 buffer. The ``BaseWARCWriter`` can be extended to support more complex
 operations.
 
-(There is support for writing legacy ARC files)
+(There is no support for writing legacy ARC files)
 
 The following example loads ``http://example.com/``, creates a WARC
 response record, and writes it, gzip compressed, to ``example.warc.gz``
