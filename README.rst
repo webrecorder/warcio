@@ -119,7 +119,7 @@ Writing WARC Records
 
 The library provides a simple and extensible interface for writing WARC
 records conformant to WARC 1.0 standard
-`draft <bibnum.bnf.fr/WARC/WARC_ISO_28500_version1_latestdraft.pdf>`__
+`draft <http://bibnum.bnf.fr/WARC/WARC_ISO_28500_version1_latestdraft.pdf>`__
 
 The library comes with a basic ``WARCWriter`` class for writing to a
 single WARC file and ``BufferWARCWriter`` for writing to an in-memory
