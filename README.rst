@@ -63,8 +63,8 @@ Reading WARC Content
 ~~~~~~~~~~~~~~~~~~~~
 
 The ``raw_stream`` can be used to read the rest of the payload directly.
-A special ``content_stream()`` function provides a stream that
-automatically decompress and de-chunks the HTTP payload, if it is
+A special ``ArcWarcRecord.content_stream()`` function provides a stream that
+automatically decompresses and de-chunks the HTTP payload, if it is
 compressed and/or transfer-encoding chunked.
 
 ARC Files
@@ -72,20 +72,22 @@ ARC Files
 
 The library provides support for reading (but not writing ARC) files.
 The ARC format is legacy but is important to support in a consistent
-matter. The ``ArchiveIterator`` can equally iterate over ARC files and
-produce ArcWarcRecord objects. The special ``arc2warc`` option further
+matter. The ``ArchiveIterator`` can equally iterate over ARC and WARC
+files to emit ``ArcWarcRecord`` objects. The special ``arc2warc`` option
 converts ARC records to WARCs on the fly, allowing for them to be
 accessed using the same API.
 
-For example, here is a snippet for reading an ARC and a WARC using the
-same API.
+(Special ``WARCIterator`` and ``ARCIterator`` subclasses of ``ArchiveIterator``
+are also available to read only WARC or only ARC files).
 
 WARC and ARC Streaming
 ~~~~~~~~~~~~~~~~~~~~~~
+For example, here is a snippet for reading an ARC and a WARC using the
+same API.
 
-The snippet streams the file over HTTP using
+The example streams a WARC and ARC file over HTTP using
 `requests <http://docs.python-requests.org/en/master/>`__, printing the
-``warcinfo`` record (or ARC header) and any response records (all ARC
+``warcinfo`` record (or ARC header) and any response records (or all ARC
 records) that contain HTML:
 
 .. code:: python
@@ -168,7 +170,7 @@ Please refer to `warcwriter.py <warcio/warcwriter.py>`__ and
 WARCIO CLI: Indexing and Recompression
 --------------------------------------
 
-The library currently ships with two simple command line operations.
+The library currently ships with two simple command line tools.
 
 Index
 ~~~~~
