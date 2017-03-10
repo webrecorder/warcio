@@ -5,6 +5,8 @@ from setuptools import setup, find_packages
 from setuptools.command.test import test as TestCommand
 import glob
 
+__version__ = '1.1'
+
 
 class PyTest(TestCommand):
     def finalize_options(self):
@@ -21,7 +23,7 @@ class PyTest(TestCommand):
 
 setup(
     name='warcio',
-    version='1.0',
+    version=__version__,
     author='Ilya Kreymer',
     author_email='ikreymer@gmail.com',
     license='Apache 2.0',
