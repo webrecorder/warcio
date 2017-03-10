@@ -131,9 +131,6 @@ class ArcWarcRecordLoader(object):
         # err condition
         if is_err:
             length = 0
-        # or status and headers are completely empty (blank lines found)
-        elif not rec_headers:
-            length = 0
 
         # limit stream to the length for all valid records
         if length is not None and length >= 0:
