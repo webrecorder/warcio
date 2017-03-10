@@ -68,6 +68,13 @@ def test_recompress():
             assert buff.getvalue().decode('utf-8') == expected
 
 
+def test_recompress_bad_file():
+    with tempfile.NamedTemporaryFile() as temp:
+        temp.write(b'abcdefg-not-a-warc\n')
+        temp.seek(0)
+        with tempfile.NamedTemporaryFile() as temp2:
+            with pytest.raises(ArchiveLoadFailed):
+                main(args=['recompress', temp.name, temp2.name])
 
 
 @contextmanager
