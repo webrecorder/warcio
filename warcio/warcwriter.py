@@ -34,7 +34,9 @@ class BaseWARCWriter(object):
         self.hostname = gethostname()
 
         self.parser = StatusAndHeadersParser([], verify=False)
+
         self.warc_version = kwargs.get('warc_version', self.WARC_VERSION)
+        self.header_filter = kwargs.get('header_filter')
 
     @classmethod
     def _iter_stream(cls, stream):
@@ -212,7 +214,8 @@ class BaseWARCWriter(object):
         return warc_headers
 
     def _set_header_buff(self, record):
-        record.http_headers.headers_buff = record.http_headers.to_bytes()
+        headers_buff = record.http_headers.to_bytes(self.header_filter)
+        record.http_headers.headers_buff = headers_buff
 
     def _write_warc_record(self, out, record, adjust_cl=True):
         if self.gzip:

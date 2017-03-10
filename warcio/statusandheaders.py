@@ -122,7 +122,7 @@ headers = {2})".format(self.protocol, self.statusline, headers_str)
 
     __nonzero__ = __bool__
 
-    def to_str(self, exclude_list):
+    def to_str(self, filter_func=None):
         string = self.protocol
 
         if string and self.statusline:
@@ -135,15 +135,17 @@ headers = {2})".format(self.protocol, self.statusline, headers_str)
             string += '\r\n'
 
         for h in self.headers:
-            if exclude_list and h[0].lower() in exclude_list:
-                continue
+            if filter_func:
+                h = filter_func(h)
+                if not h:
+                    continue
 
             string += ': '.join(h) + '\r\n'
 
         return string
 
-    def to_bytes(self, exclude_list=None):
-        return self.to_str(exclude_list).encode('iso-8859-1') + b'\r\n'
+    def to_bytes(self, filter_func=None):
+        return self.to_str(filter_func).encode('iso-8859-1') + b'\r\n'
 
 
 #=================================================================

@@ -137,8 +137,14 @@ Multi-Line: Value1    Also This\r\n\
 
 
 def test_to_str_exclude():
+    def exclude(h):
+        if h[0].lower() == 'multi-line':
+            return None
+
+        return h
+
     sah = StatusAndHeadersParser(['HTTP/1.0']).parse(StringIO(status_headers_1))
-    res = sah.to_str(['multi-line'])
+    res = sah.to_str(exclude)
 
     exp = "\
 HTTP/1.0 200 OK\r\n\
@@ -147,7 +153,7 @@ Some: Value\r\n\
 "
     assert(res == exp)
 
-    assert(sah.to_bytes(['multi-line']) == (exp.encode('latin-1') + b'\r\n'))
+    assert(sah.to_bytes(exclude) == (exp.encode('latin-1') + b'\r\n'))
 
 
 def test_to_str_2():
