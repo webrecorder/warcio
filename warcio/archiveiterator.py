@@ -152,7 +152,7 @@ class ArchiveIterator(object):
 
             return line, empty_size
 
-    def read_to_end(self, record, payload_callback=None):
+    def read_to_end(self, record):
         """ Read remainder of the stream
         If a digester is included, update it
         with the data read
@@ -166,8 +166,6 @@ class ArchiveIterator(object):
 
         while True:
             b = record.raw_stream.read(BUFF_SIZE)
-            if payload_callback:
-                payload_callback(b)
             if not b:
                 break
 
