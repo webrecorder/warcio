@@ -5,10 +5,11 @@ from warcio.recordloader import ArcWarcRecordLoader, ArchiveLoadFailed
 from warcio.utils import BUFF_SIZE
 
 import sys
+import six
 
 
 # ============================================================================
-class ArchiveIterator(object):
+class ArchiveIterator(six.Iterator):
     """ Iterate over records in WARC and ARC files, both gzip chunk
     compressed and uncompressed
 
@@ -59,7 +60,15 @@ class ArchiveIterator(object):
 
         self.err_count = 0
 
+        self.the_iter = self._iterate_records()
+
     def __iter__(self):
+        return self.the_iter
+
+    def __next__(self):
+        return six.next(self.the_iter)
+
+    def _iterate_records(self):
         """ iterate over each record
         """
         raise_invalid_gzip = False

@@ -42,6 +42,25 @@ class TestArchiveIterator(object):
         expected = ['warcinfo', 'response', 'request']
         assert self._load_archive('example-iana.org-chunked.warc') == expected
 
+    def test_iterator(self):
+        """ Test iterator semantics on 3 record WARC
+        """
+        with open(get_test_file('example-iana.org-chunked.warc'), 'rb') as fh:
+            a = ArchiveIterator(fh)
+            for record in a:
+                assert record.rec_type == 'warcinfo'
+                break
+
+            record = next(a)
+            assert record.rec_type == 'response'
+
+            for record in a:
+                assert record.rec_type == 'request'
+                break
+
+            with pytest.raises(StopIteration):
+                record = next(a)
+
     def test_example_warc_trunc(self):
         """ WARC file with content-length truncated on a response record
         Error output printed, but still read
