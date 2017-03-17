@@ -19,28 +19,28 @@ def test_index():
     args = ['index', '-f', 'warc-type,warc-target-uri,warc-filename']
     args.extend(files)
 
-    expected = """\
-{"warc-type": "warcinfo", "warc-filename": "temp-20170306040353.warc.gz"}
-{"warc-type": "warcinfo", "warc-filename": "temp-20170306040353.warc.gz"}
-{"warc-type": "response", "warc-target-uri": "http://example.com/"}
-{"warc-type": "request", "warc-target-uri": "http://example.com/"}
-{"warc-type": "revisit", "warc-target-uri": "http://example.com/"}
-{"warc-type": "request", "warc-target-uri": "http://example.com/"}
-{"warc-type": "warcinfo", "warc-filename": "temp-20170306040353.warc.gz"}
-{"warc-type": "warcinfo", "warc-filename": "temp-20170306040353.warc.gz"}
-{"warc-type": "response", "warc-target-uri": "http://example.com/"}
-{"warc-type": "request", "warc-target-uri": "http://example.com/"}
-{"warc-type": "revisit", "warc-target-uri": "http://example.com/"}
-{"warc-type": "request", "warc-target-uri": "http://example.com/"}
-{"warc-type": "warcinfo", "warc-filename": "live-web-example.arc.gz"}
-{"warc-type": "response", "warc-target-uri": "http://example.com/"}
-{"warc-type": "warcinfo", "warc-filename": "live-web-example.arc.gz"}
-{"warc-type": "response", "warc-target-uri": "http://example.com/"}
+    expected = b"""\
+{"offset": 0, "warc-type": "warcinfo", "warc-filename": "temp-20170306040353.warc.gz"}
+{"offset": 353, "warc-type": "warcinfo", "warc-filename": "temp-20170306040353.warc.gz"}
+{"offset": 784, "warc-type": "response", "warc-target-uri": "http://example.com/"}
+{"offset": 2012, "warc-type": "request", "warc-target-uri": "http://example.com/"}
+{"offset": 2538, "warc-type": "revisit", "warc-target-uri": "http://example.com/"}
+{"offset": 3123, "warc-type": "request", "warc-target-uri": "http://example.com/"}
+{"offset": 0, "warc-type": "warcinfo", "warc-filename": "temp-20170306040353.warc.gz"}
+{"offset": 488, "warc-type": "warcinfo", "warc-filename": "temp-20170306040353.warc.gz"}
+{"offset": 1197, "warc-type": "response", "warc-target-uri": "http://example.com/"}
+{"offset": 2566, "warc-type": "request", "warc-target-uri": "http://example.com/"}
+{"offset": 3370, "warc-type": "revisit", "warc-target-uri": "http://example.com/"}
+{"offset": 4316, "warc-type": "request", "warc-target-uri": "http://example.com/"}
+{"offset": 0, "warc-type": "warcinfo", "warc-filename": "live-web-example.arc.gz"}
+{"offset": 171, "warc-type": "response", "warc-target-uri": "http://example.com/"}
+{"offset": 0, "warc-type": "warcinfo", "warc-filename": "live-web-example.arc.gz"}
+{"offset": 151, "warc-type": "response", "warc-target-uri": "http://example.com/"}
 """
 
     with patch_stdout() as buff:
         res = main(args=args)
-        assert buff.getvalue().decode('utf-8') == expected
+        assert buff.getvalue() == expected
 
 
 def test_recompress():
@@ -55,12 +55,12 @@ def test_recompress():
         main(args=['recompress', test_file, temp.name])
 
         expected = """\
-{"warc-type": "warcinfo"}
-{"warc-type": "warcinfo"}
-{"warc-type": "response"}
-{"warc-type": "request"}
-{"warc-type": "revisit"}
-{"warc-type": "request"}
+{"offset": 0, "warc-type": "warcinfo"}
+{"offset": 353, "warc-type": "warcinfo"}
+{"offset": 784, "warc-type": "response"}
+{"offset": 2012, "warc-type": "request"}
+{"offset": 2583, "warc-type": "revisit"}
+{"offset": 2965, "warc-type": "request"}
 """
 
         with patch_stdout() as buff:
