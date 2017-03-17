@@ -24,7 +24,7 @@ def main(args=None):
 
     index = subparsers.add_parser('index', help='WARC/ARC Indexer')
     index.add_argument('inputs', nargs='+')
-    index.add_argument('-f', '--fields', default='warc-type,warc-target-uri')
+    index.add_argument('-f', '--fields', default='offset,warc-type,warc-target-uri')
     index.add_argument('-o', '--output')
     index.set_defaults(func=indexer)
 
@@ -44,14 +44,15 @@ def indexer(cmd):
     with open_or_default(cmd.output, 'wt', sys.stdout) as out:
         for filename in cmd.inputs:
             with open(filename, 'rb') as fh:
-                for record in ArchiveIterator(fh,
-                                              no_record_parse=True,
-                                              arc2warc=True):
-
+                it = ArchiveIterator(fh, no_record_parse=True, arc2warc=True)
+                for record in it:
                     index = OrderedDict()
                     for field in fields:
-                        value = record.rec_headers.get_header(field)
-                        if value:
+                        if field == 'offset':
+                            value = it.offset
+                        else:
+                            value = record.rec_headers.get_header(field)
+                        if value is not None:
                             index[field] = value
 
                     out.write(json.dumps(index) + '\n')
