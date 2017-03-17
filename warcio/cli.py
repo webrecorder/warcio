@@ -44,11 +44,10 @@ def indexer(cmd):
     with open_or_default(cmd.output, 'wt', sys.stdout) as out:
         for filename in cmd.inputs:
             with open(filename, 'rb') as fh:
-                for record in ArchiveIterator(fh,
-                                              no_record_parse=True,
-                                              arc2warc=True):
-
+                it = ArchiveIterator(fh, no_record_parse=True, arc2warc=True)
+                for record in it:
                     index = OrderedDict()
+                    index['offset'] = it.offset
                     for field in fields:
                         value = record.rec_headers.get_header(field)
                         if value:
