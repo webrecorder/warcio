@@ -22,10 +22,10 @@ class ArchiveIterator(six.Iterator):
     ERROR: non-chunked gzip file detected, gzip block continues
     beyond single record.
 
-    This file is probably not a multi-chunk gzip but a single gzip file.
+    This file is probably not a multi-member gzip but a single gzip file.
 
     To allow seek, a gzipped {1} must have each record compressed into
-    a single gzip chunk and concatenated together.
+    a single gzip member and concatenated together.
 
     This file is likely still valid and can be fixed by running:
 
