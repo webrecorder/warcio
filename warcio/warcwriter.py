@@ -131,7 +131,7 @@ class BaseWARCWriter(object):
                 continue
 
             line = name + ': ' + str(value) + '\r\n'
-            warcinfo.write(line.encode('latin-1'))
+            warcinfo.write(line.encode('utf-8'))
 
         length = warcinfo.tell()
         warcinfo.seek(0)
