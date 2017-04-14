@@ -144,8 +144,8 @@ headers = {2})".format(self.protocol, self.statusline, headers_str)
 
         return string
 
-    def to_bytes(self, filter_func=None):
-        return self.to_str(filter_func).encode('iso-8859-1') + b'\r\n'
+    def to_bytes(self, filter_func=None, encoding='utf-8'):
+        return self.to_str(filter_func).encode(encoding) + b'\r\n'
 
 
 #=================================================================
@@ -172,14 +172,8 @@ class StatusAndHeadersParser(object):
         support continuation headers starting with space or tab
         """
 
-        def readline():
-            return to_native_str(stream.readline())
-
         # status line w newlines intact
-        if full_statusline is None:
-            full_statusline = readline()
-        else:
-            full_statusline = to_native_str(full_statusline)
+        full_statusline = self.read_decoded_line(stream, full_statusline)
 
         statusline, total_read = _strip_count(full_statusline, 0)
 
@@ -205,7 +199,7 @@ class StatusAndHeadersParser(object):
         else:
             protocol_status = statusline.split(' ', 1)
 
-        line, total_read = _strip_count(readline(), total_read)
+        line, total_read = _strip_count(self.read_decoded_line(stream), total_read)
         while line:
             result = line.split(':', 1)
             if len(result) == 2:
@@ -215,14 +209,14 @@ class StatusAndHeadersParser(object):
                 name = result[0]
                 value = None
 
-            next_line, total_read = _strip_count(readline(),
+            next_line, total_read = _strip_count(self.read_decoded_line(stream),
                                                  total_read)
 
             # append continuation lines, if any
             while next_line and next_line.startswith((' ', '\t')):
                 if value is not None:
                     value += next_line
-                next_line, total_read = _strip_count(readline(),
+                next_line, total_read = _strip_count(self.read_decoded_line(stream),
                                                      total_read)
 
             if value is not None:
@@ -258,6 +252,19 @@ class StatusAndHeadersParser(object):
         if not id_:
             id_ = uuid.uuid1()
         return '<urn:uuid:{0}>'.format(id_)
+
+
+    @staticmethod
+    def read_decoded_line(stream, line=None):
+        if line is None:
+            line = stream.readline()
+
+        try:
+            # attempt to decode as utf-8 first
+            return to_native_str(line, 'utf-8')
+        except:
+            # if fails, default to ISO-8859-1
+            return to_native_str(line, 'iso-8859-1')
 
 
 #=================================================================

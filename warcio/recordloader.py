@@ -5,7 +5,6 @@ from warcio.statusandheaders import StatusAndHeadersParser
 from warcio.statusandheaders import StatusAndHeadersParserException
 
 from warcio.limitreader import LimitReader
-from warcio.utils import to_native_str
 
 from warcio.bufferedreaders import BufferedReader, ChunkedDataReader
 
@@ -220,14 +219,7 @@ class ARCHeadersParser(object):
     def parse(self, stream, headerline=None):
         total_read = 0
 
-        def readline():
-            return to_native_str(stream.readline())
-
-        # if headerline passed in, use that
-        if headerline is None:
-            headerline = readline()
-        else:
-            headerline = to_native_str(headerline)
+        headerline = StatusAndHeadersParser.read_decoded_line(stream, headerline)
 
         header_len = len(headerline)
 
@@ -240,8 +232,8 @@ class ARCHeadersParser(object):
 
         # if arc header, consume next two lines
         if headerline.startswith('filedesc://'):
-            version = readline()  # skip version
-            spec = readline()  # skip header spec, use preset one
+            version = StatusAndHeadersParser.read_decoded_line(stream)  # skip version
+            spec = StatusAndHeadersParser.read_decoded_line(stream)  # skip header spec, use preset one
             total_read += len(version)
             total_read += len(spec)
 

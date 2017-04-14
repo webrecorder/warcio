@@ -5,7 +5,7 @@ BUFF_SIZE = 16384
 
 
 # #===========================================================================
-def to_native_str(value, encoding='iso-8859-1', func=lambda x: x):
+def to_native_str(value, encoding='utf-8', func=lambda x: x):
     if isinstance(value, str):
         return value
 

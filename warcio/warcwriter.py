@@ -214,7 +214,7 @@ class BaseWARCWriter(object):
         return warc_headers
 
     def _set_header_buff(self, record):
-        headers_buff = record.http_headers.to_bytes(self.header_filter)
+        headers_buff = record.http_headers.to_bytes(self.header_filter, 'iso-8859-1')
         record.http_headers.headers_buff = headers_buff
 
     def _write_warc_record(self, out, record, adjust_cl=True):
