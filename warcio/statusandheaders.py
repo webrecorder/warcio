@@ -173,7 +173,10 @@ class StatusAndHeadersParser(object):
         """
 
         # status line w newlines intact
-        full_statusline = self.read_decoded_line(stream, full_statusline)
+        if full_statusline is None:
+            full_statusline = stream.readline()
+
+        full_statusline = self.decode_header(full_statusline)
 
         statusline, total_read = _strip_count(full_statusline, 0)
 
@@ -199,7 +202,7 @@ class StatusAndHeadersParser(object):
         else:
             protocol_status = statusline.split(' ', 1)
 
-        line, total_read = _strip_count(self.read_decoded_line(stream), total_read)
+        line, total_read = _strip_count(self.decode_header(stream.readline()), total_read)
         while line:
             result = line.split(':', 1)
             if len(result) == 2:
@@ -209,14 +212,14 @@ class StatusAndHeadersParser(object):
                 name = result[0]
                 value = None
 
-            next_line, total_read = _strip_count(self.read_decoded_line(stream),
+            next_line, total_read = _strip_count(self.decode_header(stream.readline()),
                                                  total_read)
 
             # append continuation lines, if any
             while next_line and next_line.startswith((' ', '\t')):
                 if value is not None:
                     value += next_line
-                next_line, total_read = _strip_count(self.read_decoded_line(stream),
+                next_line, total_read = _strip_count(self.decode_header(stream.readline()),
                                                      total_read)
 
             if value is not None:
@@ -255,10 +258,7 @@ class StatusAndHeadersParser(object):
 
 
     @staticmethod
-    def read_decoded_line(stream, line=None):
-        if line is None:
-            line = stream.readline()
-
+    def decode_header(line):
         try:
             # attempt to decode as utf-8 first
             return to_native_str(line, 'utf-8')

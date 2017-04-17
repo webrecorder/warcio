@@ -219,7 +219,10 @@ class ARCHeadersParser(object):
     def parse(self, stream, headerline=None):
         total_read = 0
 
-        headerline = StatusAndHeadersParser.read_decoded_line(stream, headerline)
+        if headerline is None:
+            headerline = stream.readline()
+
+        headerline = StatusAndHeadersParser.decode_header(headerline)
 
         header_len = len(headerline)
 
@@ -232,8 +235,8 @@ class ARCHeadersParser(object):
 
         # if arc header, consume next two lines
         if headerline.startswith('filedesc://'):
-            version = StatusAndHeadersParser.read_decoded_line(stream)  # skip version
-            spec = StatusAndHeadersParser.read_decoded_line(stream)  # skip header spec, use preset one
+            version = StatusAndHeadersParser.decode_header(stream.readline())  # skip version
+            spec = StatusAndHeadersParser.decode_header(stream.readline())  # skip header spec, use preset one
             total_read += len(version)
             total_read += len(spec)
 
