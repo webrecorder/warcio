@@ -158,6 +158,10 @@ class ArcWarcRecordLoader(object):
               and uri.startswith(self.HTTP_SCHEMES)):
             http_headers = self.http_req_parser.parse(stream)
 
+        # non-HTTP records: parse without HTTP status and headers
+        elif rec_type in self.NON_HTTP_RECORDS:
+            http_headers = None
+
         # everything else: create a no-status entry, set content-type
         else:
             content_type_header = [('Content-Type', content_type)]
