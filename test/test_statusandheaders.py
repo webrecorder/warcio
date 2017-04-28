@@ -46,6 +46,13 @@ StatusAndHeaders(protocol = 'HTTP/1.0', statusline = '200 OK', headers = [ ('Con
   ('Multi-Line', 'Value1    Also This')])
 
 
+# replace header with dict-like api, print new headers
+>>> st1['some'] = 'Yet-Another-Value'; st1
+StatusAndHeaders(protocol = 'HTTP/1.0', statusline = '200 OK', headers = [ ('Content-Type', 'ABC'),
+  ('Some', 'Yet-Another-Value'),
+  ('Multi-Line', 'Value1    Also This')])
+
+
 # remove header
 >>> st1.remove_header('some')
 True
@@ -53,6 +60,26 @@ True
 # already removed
 >>> st1.remove_header('Some')
 False
+
+# add header with dict-like api, print new headers
+>>> st1['foo'] = 'bar'; st1
+StatusAndHeaders(protocol = 'HTTP/1.0', statusline = '200 OK', headers = [('Content-Type', 'ABC'), ('Multi-Line', 'Value1    Also This'), ('foo', 'bar')])
+
+# dict-like api existence and get value
+>>> 'bar' in st1
+False
+>>> 'foo' in st1
+True
+>>> st1['bar']
+>>> st1.get('bar')
+>>> st1['foo']
+'bar'
+>>> st1.get('foo')
+'bar'
+
+# remove header with dict-like api, print new headers
+>>> del st1['foo']; st1
+StatusAndHeaders(protocol = 'HTTP/1.0', statusline = '200 OK', headers = [('Content-Type', 'ABC'), ('Multi-Line', 'Value1    Also This')])
 
 # empty
 >>> st2 = StatusAndHeadersParser(['HTTP/1.0']).parse(StringIO(status_headers_2)); x = st2.validate_statusline('204 No Content'); st2
