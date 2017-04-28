@@ -1,15 +1,11 @@
 """
 >>> st1 = StatusAndHeadersParser(['HTTP/1.0']).parse(StringIO(status_headers_1))
 >>> st1
-StatusAndHeaders(protocol = 'HTTP/1.0', statusline = '200 OK', headers = [ ('Content-Type', 'ABC'),
-  ('Some', 'Value'),
-  ('Multi-Line', 'Value1    Also This')])
+StatusAndHeaders(protocol = 'HTTP/1.0', statusline = '200 OK', headers = [('Content-Type', 'ABC'), ('Some', 'Value'), ('Multi-Line', 'Value1    Also This')])
 
 # add range
 >>> StatusAndHeaders(statusline = '200 OK', headers=[('Content-Type', 'text/plain')]).add_range(10, 4, 100)
-StatusAndHeaders(protocol = '', statusline = '206 Partial Content', headers = [ ('Content-Type', 'text/plain'),
-  ('Content-Range', 'bytes 10-13/100'),
-  ('Accept-Ranges', 'bytes')])
+StatusAndHeaders(protocol = '', statusline = '206 Partial Content', headers = [('Content-Type', 'text/plain'), ('Content-Range', 'bytes 10-13/100'), ('Accept-Ranges', 'bytes')])
 
 # other protocol expected
 >>> StatusAndHeadersParser(['Other']).parse(StringIO(status_headers_1))  # doctest: +IGNORE_EXCEPTION_DETAIL
@@ -17,9 +13,7 @@ Traceback (most recent call last):
 StatusAndHeadersParserException: Expected Status Line starting with ['Other'] - Found: HTTP/1.0 200 OK
 
 >>> StatusAndHeadersParser(['Other'], verify=False).parse(StringIO(status_headers_1))
-StatusAndHeaders(protocol = 'HTTP/1.0', statusline = '200 OK', headers = [ ('Content-Type', 'ABC'),
-  ('Some', 'Value'),
-  ('Multi-Line', 'Value1    Also This')])
+StatusAndHeaders(protocol = 'HTTP/1.0', statusline = '200 OK', headers = [('Content-Type', 'ABC'), ('Some', 'Value'), ('Multi-Line', 'Value1    Also This')])
 
 
 # verify protocol line
@@ -41,9 +35,12 @@ True
 # replace header, print new headers
 >>> st1.replace_header('some', 'Another-Value'); st1
 'Value'
-StatusAndHeaders(protocol = 'HTTP/1.0', statusline = '200 OK', headers = [ ('Content-Type', 'ABC'),
-  ('Some', 'Another-Value'),
-  ('Multi-Line', 'Value1    Also This')])
+StatusAndHeaders(protocol = 'HTTP/1.0', statusline = '200 OK', headers = [('Content-Type', 'ABC'), ('Some', 'Another-Value'), ('Multi-Line', 'Value1    Also This')])
+
+
+# replace header with dict-like api, print new headers
+>>> st1['some'] = 'Yet-Another-Value'; st1
+StatusAndHeaders(protocol = 'HTTP/1.0', statusline = '200 OK', headers = [('Content-Type', 'ABC'), ('Some', 'Yet-Another-Value'), ('Multi-Line', 'Value1    Also This')])
 
 
 # remove header
@@ -53,6 +50,26 @@ True
 # already removed
 >>> st1.remove_header('Some')
 False
+
+# add header with dict-like api, print new headers
+>>> st1['foo'] = 'bar'; st1
+StatusAndHeaders(protocol = 'HTTP/1.0', statusline = '200 OK', headers = [('Content-Type', 'ABC'), ('Multi-Line', 'Value1    Also This'), ('foo', 'bar')])
+
+# dict-like api existence and get value
+>>> 'bar' in st1
+False
+>>> 'foo' in st1
+True
+>>> st1['bar']
+>>> st1.get('bar')
+>>> st1['foo']
+'bar'
+>>> st1.get('foo')
+'bar'
+
+# remove header with dict-like api, print new headers
+>>> del st1['foo']; st1
+StatusAndHeaders(protocol = 'HTTP/1.0', statusline = '200 OK', headers = [('Content-Type', 'ABC'), ('Multi-Line', 'Value1    Also This')])
 
 # empty
 >>> st2 = StatusAndHeadersParser(['HTTP/1.0']).parse(StringIO(status_headers_2)); x = st2.validate_statusline('204 No Content'); st2

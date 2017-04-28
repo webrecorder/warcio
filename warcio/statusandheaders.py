@@ -2,14 +2,11 @@
 Representation and parsing of HTTP-style status + headers
 """
 
-from pprint import pformat
 from six.moves import range
 from six import iteritems
 from warcio.utils import to_native_str
 import uuid
 
-
-WRAP_WIDTH = 80
 
 #=================================================================
 class StatusAndHeaders(object):
@@ -105,9 +102,8 @@ class StatusAndHeaders(object):
         return self
 
     def __repr__(self):
-        headers_str = pformat(self.headers, indent=2, width=WRAP_WIDTH)
         return "StatusAndHeaders(protocol = '{0}', statusline = '{1}', \
-headers = {2})".format(self.protocol, self.statusline, headers_str)
+headers = {2})".format(self.protocol, self.statusline, self.headers)
 
     def __eq__(self, other):
         return (self.statusline == other.statusline and
@@ -147,6 +143,15 @@ headers = {2})".format(self.protocol, self.statusline, headers_str)
     def to_bytes(self, filter_func=None, encoding='utf-8'):
         return self.to_str(filter_func).encode(encoding) + b'\r\n'
 
+    # act like a (case-insensitive) dictionary of headers, much like other
+    # python http headers apis including http.client.HTTPMessage
+    # and requests.structures.CaseInsensitiveDict
+    get = get_header
+    __getitem__ = get_header
+    __setitem__ = replace_header
+    __delitem__ = remove_header
+    def __contains__(self, key):
+        return bool(self[key])
 
 #=================================================================
 def _strip_count(string, total_read):
