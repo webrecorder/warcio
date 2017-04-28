@@ -8,8 +8,6 @@ from warcio.utils import to_native_str
 import uuid
 
 
-WRAP_WIDTH = 80
-
 #=================================================================
 class StatusAndHeaders(object):
     """
