@@ -2,7 +2,6 @@
 Representation and parsing of HTTP-style status + headers
 """
 
-from pprint import pformat
 from six.moves import range
 from six import iteritems
 from warcio.utils import to_native_str
@@ -105,9 +104,8 @@ class StatusAndHeaders(object):
         return self
 
     def __repr__(self):
-        headers_str = pformat(self.headers, indent=2, width=WRAP_WIDTH)
         return "StatusAndHeaders(protocol = '{0}', statusline = '{1}', \
-headers = {2})".format(self.protocol, self.statusline, headers_str)
+headers = {2})".format(self.protocol, self.statusline, self.headers)
 
     def __eq__(self, other):
         return (self.statusline == other.statusline and
