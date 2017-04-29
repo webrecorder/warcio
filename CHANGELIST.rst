@@ -1,14 +1,14 @@
 1.2
 ~~~
-- Support for special field ``offset`` to include WARC record offset when indexing (by @nlevitt, #4)
+- Support for special field ``offset`` to include WARC record offset when indexing (by @nlevitt, `#4 <https://github.com/webrecorder/warcio/issues/4>`_)
 - ``ArchiveIterator`` supports full iterator semantics
-- WARC headers encoded as UTF-8, decoded as UTF-8 first, then ISO-8859-1 (see #6, #7)
-- ``ArchiveIterator``, ``StatusAndHeaders`` and ``WARCWriter`` now available from package (by @nlevitt, #10)
-- ``StatusAndHeaders`` supports dict-link API (by @nlevitt, #11)
-- When reading, http headers never added by default, unless ``ensure_http_headers=True`` is set (see #12, #13)
-- CI on Windows using Appveyor
-- Additional tests for resource, metadata records
-- ``warcio -V`` outputs current version.
+- WARC headers encoded/decoded as UTF-8, with fallback to ISO-8859-1 (see `#6 <https://github.com/webrecorder/warcio/issues/6>`_, `#7 <https://github.com/webrecorder/warcio/issues/7>`_)
+- ``ArchiveIterator``, ``StatusAndHeaders`` and ``WARCWriter`` now available from package root (by @nlevitt, `#10 <https://github.com/webrecorder/warcio/issues/10>`_)
+- ``StatusAndHeaders`` supports dict-like API (by @nlevitt, `#11 <https://github.com/webrecorder/warcio/issues/11>`_)
+- When reading, http headers never added by default, unless ``ensure_http_headers=True`` is set (see `#12 <https://github.com/webrecorder/warcio/issues/12>`_, `#13 <https://github.com/webrecorder/warcio/issues/13>`_)
+- All tests run on Windows, CI using Appveyor
+- Additional tests for writing/reading resource, metadata records
+- ``warcio -V`` now outputs current version.
 
 1.1
 ~~~
