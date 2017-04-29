@@ -10,6 +10,7 @@ from warcio.recordloader import ArchiveLoadFailed
 import pytest
 import sys
 import tempfile
+import os
 
 
 def test_index():
@@ -44,7 +45,7 @@ def test_index():
 
 
 def test_recompress():
-    with tempfile.NamedTemporaryFile() as temp:
+    with named_temp() as temp:
         test_file = get_test_file('example-bad-non-chunked.warc.gz')
 
         with patch_stdout() as buff:
@@ -69,10 +70,10 @@ def test_recompress():
 
 
 def test_recompress_bad_file():
-    with tempfile.NamedTemporaryFile() as temp:
+    with named_temp() as temp:
         temp.write(b'abcdefg-not-a-warc\n')
         temp.seek(0)
-        with tempfile.NamedTemporaryFile() as temp2:
+        with named_temp() as temp2:
             with pytest.raises(ArchiveLoadFailed):
                 main(args=['recompress', temp.name, temp2.name])
 
@@ -91,4 +92,18 @@ def patch_stdout():
         yield buff
         sys.stdout = orig
 
+
+# due to NamedTemporaryFile issue on Windows
+# see: https://bugs.python.org/issue14243#msg157925
+@contextmanager
+def named_temp():
+    f = tempfile.NamedTemporaryFile(delete=False)
+    try:
+        yield f
+
+    finally:
+        try:
+            os.unlink(f.name)
+        except OSError:
+            pass
 
