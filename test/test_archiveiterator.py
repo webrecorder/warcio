@@ -23,12 +23,15 @@ class TestArchiveIterator(object):
         return rec_types
 
     def _read_first_response(self, filename):
+        record = self._find_first_by_type(filename, 'response')
+        if record:
+            return record.content_stream().read()
+
+    def _find_first_by_type(self, filename, match_type, **params):
         with open(get_test_file(filename), 'rb') as fh:
-            for record in ArchiveIterator(fh):
-                if record.rec_type == 'response':
-                    return record.content_stream().read()
-                else:
-                    record.content_stream().read()
+            for record in ArchiveIterator(fh, **params):
+                if record.rec_type == match_type:
+                    return record
 
     def test_example_warc_gz(self):
         expected = ['warcinfo', 'warcinfo', 'response', 'request', 'revisit', 'request']
@@ -79,6 +82,31 @@ class TestArchiveIterator(object):
     def test_example_arc2warc(self):
         expected = ['warcinfo', 'response']
         assert self._load_archive('example.arc.gz', arc2warc=True) == expected
+
+    def test_example_warc_resource(self):
+        expected = ['warcinfo', 'warcinfo', 'resource']
+        assert self._load_archive('example-resource.warc.gz') == expected
+
+    def test_resource_no_http_headers(self):
+        record = self._find_first_by_type('example-resource.warc.gz', 'resource')
+        assert record.http_headers == None
+        assert len(record.content_stream().read()) == int(record.rec_headers.get('Content-Length'))
+
+    def test_resource_with_http_headers(self):
+        record = self._find_first_by_type('example-resource.warc.gz', 'resource',
+                                          ensure_http_headers=True)
+
+        assert record.http_headers != None
+
+        assert (record.http_headers.get_header('Content-Length') ==
+                record.rec_headers.get_header('Content-Length'))
+
+        expected = 'HTTP/1.0 200 OK\r\n\
+Content-Type: text/html; charset=utf-8\r\n\
+Content-Length: 1303\r\n'
+
+        assert str(record.http_headers) == expected
+        assert len(record.content_stream().read()) == int(record.rec_headers.get('Content-Length'))
 
     def test_read_content(self):
         assert 'Example Domain' in self._read_first_response('example.warc.gz').decode('utf-8')

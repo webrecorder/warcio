@@ -187,7 +187,8 @@ class BaseWARCWriter(object):
             warc_content_type = warc_headers.get_header('Content-Type')
 
             if not warc_content_type:
-                warc_content_type = self.WARC_RECORDS.get(record_type)
+                warc_content_type = self.WARC_RECORDS.get(record_type,
+                                                'application/warc-record')
 
         record = ArcWarcRecord('warc', record_type, warc_headers, payload,
                                http_headers, warc_content_type, length)

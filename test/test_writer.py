@@ -11,6 +11,8 @@ from collections import OrderedDict
 import json
 from six import next
 
+import pytest
+
 
 # ============================================================================
 class FixedTestWARCWriter(BufferWARCWriter):
@@ -124,48 +126,46 @@ Custom-Header: somevalue\r\n\
 \r\n\
 '
 
+RESOURCE_RECORD = '\
+WARC/1.0\r\n\
+WARC-Type: resource\r\n\
+WARC-Record-ID: <urn:uuid:12345678-feb0-11e6-8f83-68a86d1772ce>\r\n\
+WARC-Target-URI: ftp://example.com/\r\n\
+WARC-Date: 2000-01-01T00:00:00Z\r\n\
+WARC-Payload-Digest: sha1:B6QJ6BNJ3R4B23XXMRKZKHLPGJY2VE4O\r\n\
+WARC-Block-Digest: sha1:B6QJ6BNJ3R4B23XXMRKZKHLPGJY2VE4O\r\n\
+Content-Type: text/plain\r\n\
+Content-Length: 9\r\n\
+\r\n\
+some\n\
+text\
+\r\n\
+\r\n\
+'
 
 
 
+# ============================================================================
 class TestWarcWriter(object):
-    def _validate_record_content_len(self, stream):
+    @classmethod
+    def setup_class(cls):
+        cls.samples = {'response': (cls._sample_response, RESPONSE_RECORD),
+                       'request': (cls._sample_request, REQUEST_RECORD),
+                       'resource': (cls._sample_resource, RESOURCE_RECORD),
+                       'revisit_1': (cls._sample_revisit_1, REVISIT_RECORD_1),
+                       'revisit_2': (cls._sample_revisit_2, REVISIT_RECORD_2),
+                      }
+
+    @classmethod
+    def _validate_record_content_len(cls, stream):
         for record in ArchiveIterator(stream, no_record_parse=True):
             assert record.http_headers == None
             assert int(record.rec_headers.get_header('Content-Length')) == record.length
             assert record.length == len(record.raw_stream.read())
 
 
-    def test_warcinfo_record(self):
-        simplewriter = FixedTestWARCWriter(gzip=False)
-        params = OrderedDict([('software', 'recorder test'),
-                              ('format', 'WARC File Format 1.0'),
-                              ('invalid', ''),
-                              ('json-metadata', json.dumps({'foo': 'bar'}))])
-
-        record = simplewriter.create_warcinfo_record('testfile.warc.gz', params)
-        simplewriter.write_record(record)
-        buff = simplewriter.get_contents()
-        assert isinstance(buff, bytes)
-
-        buff = BytesIO(buff)
-        parsed_record = ArcWarcRecordLoader().parse_record_stream(buff)
-
-        assert parsed_record.rec_headers.get_header('WARC-Type') == 'warcinfo'
-        assert parsed_record.rec_headers.get_header('Content-Type') == 'application/warc-fields'
-        assert parsed_record.rec_headers.get_header('WARC-Filename') == 'testfile.warc.gz'
-
-        buff = parsed_record.raw_stream.read().decode('utf-8')
-
-        length = parsed_record.rec_headers.get_header('Content-Length')
-
-        assert len(buff) == int(length)
-
-        assert 'json-metadata: {"foo": "bar"}\r\n' in buff
-        assert 'format: WARC File Format 1.0\r\n' in buff
-
-        assert simplewriter.get_contents().decode('utf-8') == WARCINFO_RECORD
-
-    def _sample_response(self, writer):
+    @classmethod
+    def _sample_response(cls, writer):
         headers_list = [('Content-Type', 'text/plain; charset="UTF-8"'),
                         ('Custom-Header', 'somevalue')
                        ]
@@ -181,7 +181,8 @@ class TestWarcWriter(object):
 
         return record
 
-    def _sample_request(self, writer):
+    @classmethod
+    def _sample_request(cls, writer):
         headers_list = [('User-Agent', 'foo'),
                         ('Host', 'example.com')]
 
@@ -191,10 +192,74 @@ class TestWarcWriter(object):
                                            http_headers=http_headers)
         return record
 
-    def test_generate_response(self):
+    @classmethod
+    def _sample_resource(cls, writer):
+        payload = b'some\ntext'
+
+        record = writer.create_warc_record('ftp://example.com/', 'resource',
+                                           payload=BytesIO(payload),
+                                           length=len(payload),
+                                           warc_content_type='text/plain')
+
+        return record
+
+    @classmethod
+    def _sample_revisit_1(cls, writer):
+        record = writer.create_revisit_record('http://example.com/',
+                                              digest='sha1:B6QJ6BNJ3R4B23XXMRKZKHLPGJY2VE4O',
+                                              refers_to_uri='http://example.com/foo',
+                                              refers_to_date='1999-01-01T00:00:00Z')
+
+        return record
+
+    @classmethod
+    def _sample_revisit_2(cls, writer):
+        resp = cls._sample_response(writer)
+
+        record = writer.create_revisit_record('http://example.com/',
+                                              digest='sha1:B6QJ6BNJ3R4B23XXMRKZKHLPGJY2VE4O',
+                                              refers_to_uri='http://example.com/foo',
+                                              refers_to_date='1999-01-01T00:00:00Z',
+                                              http_headers=resp.http_headers)
+        return record
+
+
+    @pytest.mark.parametrize("gzip", ['gzip', 'plain'])
+    def test_warcinfo_record(self, gzip):
+        writer = FixedTestWARCWriter(gzip=(gzip=='gzip'))
+        params = OrderedDict([('software', 'recorder test'),
+                              ('format', 'WARC File Format 1.0'),
+                              ('invalid', ''),
+                              ('json-metadata', json.dumps({'foo': 'bar'}))])
+
+        record = writer.create_warcinfo_record('testfile.warc.gz', params)
+        writer.write_record(record)
+        reader = DecompressingBufferedReader(writer.get_stream())
+
+        parsed_record = ArcWarcRecordLoader().parse_record_stream(reader)
+
+        assert parsed_record.rec_headers.get_header('WARC-Type') == 'warcinfo'
+        assert parsed_record.rec_headers.get_header('Content-Type') == 'application/warc-fields'
+        assert parsed_record.rec_headers.get_header('WARC-Filename') == 'testfile.warc.gz'
+
+        buff = parsed_record.raw_stream.read().decode('utf-8')
+
+        length = parsed_record.rec_headers.get_header('Content-Length')
+
+        assert len(buff) == int(length)
+
+        assert 'json-metadata: {"foo": "bar"}\r\n' in buff
+        assert 'format: WARC File Format 1.0\r\n' in buff
+
+        reader = DecompressingBufferedReader(writer.get_stream())
+        assert reader.read().decode('utf-8') == WARCINFO_RECORD
+
+    @pytest.mark.parametrize("rec_type", ['response', 'request', 'resource', 'revisit_1', 'revisit_2'])
+    def test_generate_record(self, rec_type):
         writer = FixedTestWARCWriter(gzip=False)
 
-        record = self._sample_response(writer)
+        func, record_string = self.samples[rec_type]
+        record = func(writer)
 
         writer.write_record(record)
 
@@ -202,12 +267,20 @@ class TestWarcWriter(object):
 
         self._validate_record_content_len(BytesIO(buff))
 
-        assert buff.decode('utf-8') == RESPONSE_RECORD
+        assert buff.decode('utf-8') == record_string
 
-    def test_generate_response_gzip(self):
+        # assert parsing record matches as well
+        parsed_record = ArcWarcRecordLoader().parse_record_stream(writer.get_stream())
+        writer2 = FixedTestWARCWriter(gzip=False)
+        writer2.write_record(parsed_record)
+        assert writer2.get_contents().decode('utf-8') == record_string
+
+    @pytest.mark.parametrize("rec_type", ['response', 'request', 'resource', 'revisit_1', 'revisit_2'])
+    def test_generate_record_gzip(self, rec_type):
         writer = FixedTestWARCWriter(gzip=True)
 
-        record = self._sample_response(writer)
+        func, record_string = self.samples[rec_type]
+        record = func(writer)
 
         writer.write_record(record)
 
@@ -215,27 +288,24 @@ class TestWarcWriter(object):
 
         self._validate_record_content_len(BytesIO(gzip_buff))
 
-        stream = writer.get_stream()
-        stream = DecompressingBufferedReader(stream)
+        stream = DecompressingBufferedReader(writer.get_stream())
 
         buff = stream.read()
         assert len(buff) > len(gzip_buff)
 
-        assert buff.decode('utf-8') == RESPONSE_RECORD
+        assert buff.decode('utf-8') == record_string
 
-    def test_generate_request(self):
-        writer = FixedTestWARCWriter(gzip=False)
+        # assert parsing record matches as well
+        stream = DecompressingBufferedReader(writer.get_stream())
 
-        record = self._sample_request(writer)
+        parsed_record = ArcWarcRecordLoader().parse_record_stream(stream)
+        writer2 = FixedTestWARCWriter(gzip=False)
+        writer2.write_record(parsed_record)
+        assert writer2.get_contents().decode('utf-8') == record_string
 
-        writer.write_record(record)
-
-        buff = writer.get_contents()
-
-        assert buff.decode('utf-8') == REQUEST_RECORD
-
-    def test_request_response_concur(self):
-        writer = BufferWARCWriter(gzip=False)
+    @pytest.mark.parametrize("gzip", ['gzip', 'plain'])
+    def test_request_response_concur(self, gzip):
+        writer = BufferWARCWriter(gzip=(gzip=='gzip'))
 
         resp = self._sample_response(writer)
 
@@ -253,37 +323,6 @@ class TestWarcWriter(object):
 
         assert resp_id != req_id
         assert resp_id == req.rec_headers.get_header('WARC-Concurrent-To')
-
-    def test_generate_revisit(self):
-        writer = FixedTestWARCWriter(gzip=False)
-
-        record = writer.create_revisit_record('http://example.com/',
-                                              digest='sha1:B6QJ6BNJ3R4B23XXMRKZKHLPGJY2VE4O',
-                                              refers_to_uri='http://example.com/foo',
-                                              refers_to_date='1999-01-01T00:00:00Z')
-
-        writer.write_record(record)
-
-        buff = writer.get_contents()
-
-        assert buff.decode('utf-8') == REVISIT_RECORD_1
-
-    def test_generate_revisit_with_http_headers(self):
-        writer = FixedTestWARCWriter(gzip=False)
-
-        resp = self._sample_response(writer)
-
-        record = writer.create_revisit_record('http://example.com/',
-                                              digest='sha1:B6QJ6BNJ3R4B23XXMRKZKHLPGJY2VE4O',
-                                              refers_to_uri='http://example.com/foo',
-                                              refers_to_date='1999-01-01T00:00:00Z',
-                                              http_headers=resp.http_headers)
-
-        writer.write_record(record)
-
-        buff = writer.get_contents()
-
-        assert buff.decode('utf-8') == REVISIT_RECORD_2
 
     def test_copy_from_stream(self):
         writer = FixedTestWARCWriter(gzip=False)

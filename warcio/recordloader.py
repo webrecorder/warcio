@@ -15,12 +15,6 @@ from six.moves import zip
 
 
 #=================================================================
-#ArcWarcRecord = collections.namedtuple('ArcWarcRecord',
-#                                       'format, rec_type, rec_headers, ' +
-#                                       'stream, http_headers, ' +
-#                                       'content_type, length')
-
-#=================================================================
 class ArcWarcRecord(object):
     def __init__(self, *args):
         (self.format, self.rec_type, self.rec_headers, self.raw_stream,
@@ -63,7 +57,7 @@ class ArcWarcRecordLoader(object):
     HTTP_VERBS = ['GET', 'HEAD', 'POST', 'PUT', 'DELETE', 'TRACE',
                   'OPTIONS', 'CONNECT', 'PATCH']
 
-    NON_HTTP_RECORDS = ('warcinfo', 'arc_header', 'metadata', 'resource')
+    HTTP_RECORDS = ('response', 'request', 'revisit')
 
     NON_HTTP_SCHEMES = ('dns:', 'whois:', 'ntp:')
     HTTP_SCHEMES = ('http:', 'https:')
@@ -82,7 +76,8 @@ class ArcWarcRecordLoader(object):
     def parse_record_stream(self, stream,
                             statusline=None,
                             known_format=None,
-                            no_record_parse=False):
+                            no_record_parse=False,
+                            ensure_http_headers=False):
         """ Parse file-like stream and return an ArcWarcRecord
         encapsulating the record headers, http headers (if any),
         and a stream limited to the remainder of the record.
@@ -135,36 +130,29 @@ class ArcWarcRecordLoader(object):
         if length is not None and length >= 0:
             stream = LimitReader.wrap_stream(stream, length)
 
-        # don't parse the http record at all
-        if no_record_parse:
-            http_headers = None#StatusAndHeaders('', [])
 
-        # if empty record (error or otherwise) set status to 204
-        elif length == 0:
-            #if is_err:
-            #    msg = '204 Possible Error'
-            #else:
-            #    msg = '204 No Content'
-            http_headers = StatusAndHeaders('', [])
+        http_headers = None
 
-        # response record or non-empty revisit: parse HTTP status and headers!
-        elif (rec_type in ('response', 'revisit')
-              and uri.startswith(self.HTTP_SCHEMES)):
-            http_headers = self.http_parser.parse(stream)
+        # record has http headers
+        if (not no_record_parse and length > 0 and
+            (rec_type in self.HTTP_RECORDS
+              and uri.startswith(self.HTTP_SCHEMES))):
 
-        # request record: parse request
-        elif ((rec_type == 'request')
-              and uri.startswith(self.HTTP_SCHEMES)):
-            http_headers = self.http_req_parser.parse(stream)
+            # request record: parse request
+            if rec_type == 'request':
+                http_headers = self.http_req_parser.parse(stream)
+            # response record or non-empty revisit: parse HTTP status and headers!
+            else:
+                http_headers = self.http_parser.parse(stream)
 
-        # everything else: create a no-status entry, set content-type
-        else:
+        # generate validate http headers (eg. for replay)
+        if not http_headers and ensure_http_headers:
             content_type_header = [('Content-Type', content_type)]
 
             if length is not None and length >= 0:
                 content_type_header.append(('Content-Length', str(length)))
 
-            http_headers = StatusAndHeaders('200 OK', content_type_header)
+            http_headers = StatusAndHeaders('200 OK', content_type_header, protocol='HTTP/1.0')
 
         return ArcWarcRecord(the_format, rec_type,
                              rec_headers, stream, http_headers,

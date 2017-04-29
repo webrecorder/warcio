@@ -40,7 +40,8 @@ class ArchiveIterator(six.Iterator):
 """
 
     def __init__(self, fileobj, no_record_parse=False,
-                 verify_http=False, arc2warc=False, block_size=BUFF_SIZE):
+                 verify_http=False, arc2warc=False,
+                 ensure_http_headers=False, block_size=BUFF_SIZE):
 
         self.fh = fileobj
 
@@ -52,6 +53,7 @@ class ArchiveIterator(six.Iterator):
 
         self.member_info = None
         self.no_record_parse = no_record_parse
+        self.ensure_http_headers = ensure_http_headers
 
         self.reader = DecompressingBufferedReader(self.fh,
                                                   block_size=block_size)
@@ -210,7 +212,8 @@ class ArchiveIterator(six.Iterator):
         record = self.loader.parse_record_stream(self.reader,
                                                  next_line,
                                                  self.known_format,
-                                                 self.no_record_parse)
+                                                 self.no_record_parse,
+                                                 self.ensure_http_headers)
 
         self.member_info = None
 
