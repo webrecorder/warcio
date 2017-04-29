@@ -19,6 +19,8 @@ def main(args=None):
     parser = ArgumentParser(description='warcio utils',
                             formatter_class=RawTextHelpFormatter)
 
+    parser.add_argument('-V', '--version', action='version', version=get_version())
+
     subparsers = parser.add_subparsers(dest='cmd')
     subparsers.required = True
 
@@ -35,6 +37,12 @@ def main(args=None):
 
     cmd = parser.parse_args(args=args)
     cmd.func(cmd)
+
+
+# ============================================================================
+def get_version():
+    import pkg_resources
+    return '%(prog)s ' + pkg_resources.get_distribution('warcio').version
 
 
 # ============================================================================
