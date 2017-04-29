@@ -58,8 +58,30 @@ Content-Type: text/plain; charset="UTF-8"\r\n\
 Custom-Header: somevalue\r\n\
 \r\n\
 some\n\
-text\
+text\r\n\
 \r\n\
+'
+
+
+RESPONSE_RECORD_2 = '\
+WARC/1.0\r\n\
+WARC-Type: response\r\n\
+WARC-Record-ID: <urn:uuid:12345678-feb0-11e6-8f83-68a86d1772ce>\r\n\
+WARC-Target-URI: http://example.com/\r\n\
+WARC-Date: 2000-01-01T00:00:00Z\r\n\
+WARC-Payload-Digest: sha1:B6QJ6BNJ3R4B23XXMRKZKHLPGJY2VE4O\r\n\
+WARC-Block-Digest: sha1:U6KNJY5MVNU3IMKED7FSO2JKW6MZ3QUX\r\n\
+Content-Type: application/http; msgtype=response\r\n\
+Content-Length: 145\r\n\
+\r\n\
+HTTP/1.0 200 OK\r\n\
+Content-Type: text/plain; charset="UTF-8"\r\n\
+Content-Length: 9\r\n\
+Custom-Header: somevalue\r\n\
+Content-Encoding: x-unknown\r\n\
+\r\n\
+some\n\
+text\r\n\
 \r\n\
 '
 
@@ -125,6 +147,7 @@ Custom-Header: somevalue\r\n\
 \r\n\
 '
 
+
 RESOURCE_RECORD = '\
 WARC/1.0\r\n\
 WARC-Type: resource\r\n\
@@ -137,10 +160,26 @@ Content-Type: text/plain\r\n\
 Content-Length: 9\r\n\
 \r\n\
 some\n\
-text\
-\r\n\
+text\r\n\
 \r\n\
 '
+
+
+METADATA_RECORD = '\
+WARC/1.0\r\n\
+WARC-Type: metadata\r\n\
+WARC-Record-ID: <urn:uuid:12345678-feb0-11e6-8f83-68a86d1772ce>\r\n\
+WARC-Target-URI: http://example.com/\r\n\
+WARC-Date: 2000-01-01T00:00:00Z\r\n\
+WARC-Payload-Digest: sha1:ZOLBLKAQVZE5DXH56XE6EH6AI6ZUGDPT\r\n\
+WARC-Block-Digest: sha1:ZOLBLKAQVZE5DXH56XE6EH6AI6ZUGDPT\r\n\
+Content-Type: application/json\r\n\
+Content-Length: 67\r\n\
+\r\n\
+{"metadata": {"nested": "obj", "list": [1, 2, 3], "length": "123"}}\r\n\
+\r\n\
+'
+
 
 # ============================================================================
 # Decorator Setup
@@ -186,6 +225,25 @@ def sample_response(writer):
 
 
 # ============================================================================
+@sample_record('response', RESPONSE_RECORD_2)
+def sample_response_2(writer):
+    payload = b'some\ntext'
+
+    headers_list = [('Content-Type', 'text/plain; charset="UTF-8"'),
+                    ('Content-Length', str(len(payload))),
+                    ('Custom-Header', 'somevalue'),
+                    ('Content-Encoding', 'x-unknown'),
+                   ]
+
+    http_headers = StatusAndHeaders('200 OK', headers_list, protocol='HTTP/1.0')
+
+    return writer.create_warc_record('http://example.com/', 'response',
+                                     payload=BytesIO(payload),
+                                     length=len(payload),
+                                     http_headers=http_headers)
+
+
+# ============================================================================
 @sample_record('request', REQUEST_RECORD)
 def sample_request(writer):
     headers_list = [('User-Agent', 'foo'),
@@ -206,6 +264,22 @@ def sample_resource(writer):
                                       payload=BytesIO(payload),
                                       length=len(payload),
                                       warc_content_type='text/plain')
+
+
+# ============================================================================
+@sample_record('metadata', METADATA_RECORD)
+def sample_metadata(writer):
+
+    payload_dict = {"metadata": OrderedDict([("nested", "obj"),
+                                             ("list", [1, 2, 3]),
+                                             ("length", "123")])}
+
+    payload = json.dumps(payload_dict).encode('utf-8')
+
+    return writer.create_warc_record('http://example.com/', 'metadata',
+                                      payload=BytesIO(payload),
+                                      length=len(payload),
+                                      warc_content_type='application/json')
 
 
 # ============================================================================
@@ -280,6 +354,24 @@ class TestWarcWriter(object):
         writer2 = FixedTestWARCWriter(gzip=False)
         writer2.write_record(parsed_record)
         assert writer2.get_contents().decode('utf-8') == record_string
+
+        # verify parts of record
+        stream = DecompressingBufferedReader(writer.get_stream())
+        parsed_record = ArcWarcRecordLoader().parse_record_stream(stream)
+
+        content_buff = parsed_record.content_stream().read().decode('utf-8')
+        assert content_buff in record_string
+
+        rec_type = parsed_record.rec_type
+        # verify http_headers
+        if parsed_record.http_headers:
+            assert rec_type in ('response', 'request', 'revisit')
+        else:
+            # empty revisit
+            if rec_type == 'revisit':
+                assert len(content_buff) == 0
+            else:
+                assert len(content_buff) == parsed_record.length
 
     def test_warcinfo_record(self, is_gzip):
         writer = FixedTestWARCWriter(gzip=is_gzip)

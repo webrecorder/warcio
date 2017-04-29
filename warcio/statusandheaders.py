@@ -105,6 +105,9 @@ class StatusAndHeaders(object):
         return "StatusAndHeaders(protocol = '{0}', statusline = '{1}', \
 headers = {2})".format(self.protocol, self.statusline, self.headers)
 
+    def __ne__(self, other):
+        return not (self == other)
+
     def __eq__(self, other):
         if not other:
             return False
