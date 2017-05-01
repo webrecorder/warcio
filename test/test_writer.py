@@ -249,7 +249,7 @@ def sample_request(writer):
     headers_list = [('User-Agent', 'foo'),
                     ('Host', 'example.com')]
 
-    http_headers = StatusAndHeaders('GET / HTTP/1.0', headers_list)
+    http_headers = StatusAndHeaders('GET / HTTP/1.0', headers_list, is_http_request=True)
 
     return writer.create_warc_record('http://example.com/', 'request',
                                      http_headers=http_headers)
@@ -363,7 +363,12 @@ class TestWarcWriter(object):
         assert content_buff in record_string
 
         rec_type = parsed_record.rec_type
+
         # verify http_headers
+
+        # match original
+        assert record.http_headers == parsed_record.http_headers
+
         if parsed_record.http_headers:
             assert rec_type in ('response', 'request', 'revisit')
         else:

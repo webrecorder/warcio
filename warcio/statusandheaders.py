@@ -15,8 +15,12 @@ class StatusAndHeaders(object):
     Status Line if first line of request/response
     Headers is a list of (name, value) tuples
     An optional protocol which appears on first line may be specified
+    If is_http_request is true, split http verb (instead of protocol) from start of statusline
     """
-    def __init__(self, statusline, headers, protocol='', total_len=0):
+    def __init__(self, statusline, headers, protocol='', total_len=0, is_http_request=False):
+        if is_http_request:
+            protocol, statusline = statusline.split(' ', 1)
+
         self.statusline = statusline
         self.headers = headers
         self.protocol = protocol
