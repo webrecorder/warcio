@@ -62,6 +62,26 @@ text\r\n\
 \r\n\
 '
 
+# Note: This is not a strictly valid WARC record since Content-Length is missing!
+# However, it can be read by recordloader
+# When writing, it will be turned into a valid record
+RESPONSE_RECORD_NO_CL = '\
+WARC/1.0\r\n\
+WARC-Type: response\r\n\
+WARC-Record-ID: <urn:uuid:12345678-feb0-11e6-8f83-68a86d1772ce>\r\n\
+WARC-Target-URI: http://example.com/\r\n\
+WARC-Date: 2000-01-01T00:00:00Z\r\n\
+WARC-Block-Digest: sha1:x-invalid\r\n\
+Content-Type: application/http; msgtype=response\r\n\
+\r\n\
+HTTP/1.0 200 OK\r\n\
+Content-Type: text/plain; charset="UTF-8"\r\n\
+Custom-Header: somevalue\r\n\
+\r\n\
+some\n\
+text\
+'
+
 
 RESPONSE_RECORD_2 = '\
 WARC/1.0\r\n\
@@ -434,6 +454,35 @@ class TestWarcWriter(object):
 
         buff = writer.get_contents()
 
+        assert buff.decode('utf-8') == RESPONSE_RECORD
+
+    def test_read_from_stream_no_content_length(self):
+        writer = FixedTestWARCWriter(gzip=False)
+
+        stream = BytesIO()
+        stream.write(RESPONSE_RECORD_NO_CL.encode('utf-8'))
+
+        # parse to verify http headers + payload matches sample record
+        # but not rec headers (missing content-length)
+        stream.seek(0)
+        parsed_record = ArcWarcRecordLoader().parse_record_stream(stream)
+
+        full_record = sample_response(writer)
+
+        assert full_record.http_headers == parsed_record.http_headers
+        assert full_record.raw_stream.read() == parsed_record.raw_stream.read()
+        assert full_record.rec_headers != parsed_record.rec_headers
+
+        # parse and write
+        stream.seek(0)
+        parsed_record = ArcWarcRecordLoader().parse_record_stream(stream)
+
+        writer.write_record(parsed_record)
+
+        buff = writer.get_contents()
+
+        # assert written record matches expected response record
+        # with content-length, digests computed
         assert buff.decode('utf-8') == RESPONSE_RECORD
 
     def test_arc2warc(self):

@@ -29,6 +29,9 @@ class BaseWARCWriter(object):
 
     WARC_VERSION = 'WARC/1.0'
 
+    NO_PAYLOAD_DIGEST_TYPES = ('warcinfo', 'revisit')
+    NO_BLOCK_DIGEST_TYPES = ('warcinfo')
+
     def __init__(self, gzip=True, *args, **kwargs):
         self.gzip = gzip
         self.hostname = gethostname()
@@ -62,6 +65,8 @@ class BaseWARCWriter(object):
 
         temp_file = None
         try:
+            # force buffering if no length is set
+            assert(record.length is not None)
             pos = record.raw_stream.tell()
             record.raw_stream.seek(pos)
         except:
@@ -89,11 +94,11 @@ class BaseWARCWriter(object):
         else:
             record.raw_stream.seek(pos)
 
-        if block_digester:
-            record.rec_headers.add_header('WARC-Block-Digest', str(block_digester))
-
         if payload_digester:
             record.rec_headers.add_header('WARC-Payload-Digest', str(payload_digester))
+
+        if block_digester:
+            record.rec_headers.add_header('WARC-Block-Digest', str(block_digester))
 
     def _create_digester(self):
         return Digester('sha1')
@@ -195,7 +200,7 @@ class BaseWARCWriter(object):
 
         record.payload_length = length
 
-        if record_type not in ('warcinfo', 'revisit'):
+        if record_type not in self.NO_PAYLOAD_DIGEST_TYPES:
             self.ensure_digest(record, block=False, payload=True)
 
         return record
@@ -218,15 +223,29 @@ class BaseWARCWriter(object):
         headers_buff = record.http_headers.to_bytes(self.header_filter, 'iso-8859-1')
         record.http_headers.headers_buff = headers_buff
 
-    def _write_warc_record(self, out, record, adjust_cl=True):
+    def _write_warc_record(self, out, record):
         if self.gzip:
             out = GzippingWrapper(out)
 
         if record.http_headers:
             self._set_header_buff(record)
 
+        # Content-Length is None/unknown
+        # Fix record by: buffering and recomputing all digests and length
+        # (since no length, can't trust existing digests)
+        # Also remove content-type for consistent header ordering
+        if record.length is None:
+            record.rec_headers.remove_header('WARC-Block-Digest')
+            record.rec_headers.remove_header('WARC-Payload-Digest')
+            record.rec_headers.remove_header('Content-Type')
+
+            block = (record.rec_type not in self.NO_BLOCK_DIGEST_TYPES)
+            payload = (record.rec_type not in self.NO_PAYLOAD_DIGEST_TYPES)
+
+            self.ensure_digest(record, block=block, payload=payload)
+
         # ensure digests are set
-        if record.rec_type != 'warcinfo':
+        elif record.rec_type not in self.NO_BLOCK_DIGEST_TYPES:
             self.ensure_digest(record, block=True, payload=False)
 
         # ensure proper content type

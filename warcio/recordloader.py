@@ -1,5 +1,3 @@
-#import collections
-
 from warcio.statusandheaders import StatusAndHeaders
 from warcio.statusandheaders import StatusAndHeadersParser
 from warcio.statusandheaders import StatusAndHeadersParserException
@@ -8,7 +6,6 @@ from warcio.limitreader import LimitReader
 
 from warcio.bufferedreaders import BufferedReader, ChunkedDataReader
 
-#from warcio.wbexception import WbException
 from warcio.timeutils import timestamp_to_iso_date
 
 from six.moves import zip
@@ -134,7 +131,9 @@ class ArcWarcRecordLoader(object):
         http_headers = None
 
         # record has http headers
-        if (not no_record_parse and length > 0 and
+        # checking if length != 0 instead of length > 0
+        # since length == None is also accepted
+        if (not no_record_parse and length != 0 and
             (rec_type in self.HTTP_RECORDS
               and uri.startswith(self.HTTP_SCHEMES))):
 
