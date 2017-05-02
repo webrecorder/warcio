@@ -69,6 +69,23 @@ def test_recompress():
             assert buff.getvalue().decode('utf-8') == expected
 
 
+def test_recompress_arc2warc():
+    with named_temp() as temp:
+        test_file = get_test_file('example.arc.gz')
+
+        # recompress!
+        main(args=['recompress', test_file, temp.name])
+
+        expected = """\
+{"warc-type": "warcinfo"}
+{"warc-type": "response", "warc-block-digest": "sha1:PEWDX5GTH66WU74WBPGFECIYBMPMP3FP", "warc-payload-digest": "sha1:B2LTWWPUOYAH7UIPQ7ZUPQ4VMBSVC36A"}
+"""
+
+        with patch_stdout() as buff:
+            main(args=['index', temp.name, '-f', 'warc-type,warc-block-digest,warc-payload-digest'])
+            assert buff.getvalue().decode('utf-8') == expected
+
+
 def test_recompress_bad_file():
     with named_temp() as temp:
         temp.write(b'abcdefg-not-a-warc\n')

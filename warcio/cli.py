@@ -84,7 +84,7 @@ class Recompressor(object):
             writer = WARCWriter(filebuf=out, gzip=True)
 
             for record in ArchiveIterator(stream,
-                                          no_record_parse=True,
+                                          no_record_parse=False,
                                           arc2warc=True,
                                           verify_http=False):
 
