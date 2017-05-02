@@ -1,3 +1,15 @@
+1.3
+~~~
+- Support for reading "streaming" WARC records, with no ``Content-Length`` set. ``Content-Length`` and digests computed as expected when the record is written.
+
+- Additional tests for streaming WARC records, loading HTTP headers+payload from buffer, POST request record, arc2warc conversion.
+
+- ``recompress`` command now parses records fully and generates correct block and payload digests.
+
+- ``WARCWriter.writer.create_record_from_stream()`` removed, redundant with ``ArcWarcRecordLoader()``
+
+
+
 1.2
 ~~~
 - Support for special field ``offset`` to include WARC record offset when indexing (by @nlevitt, `#4 <https://github.com/webrecorder/warcio/issues/4>`_)
