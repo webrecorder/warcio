@@ -51,22 +51,28 @@ class BaseWARCWriter(object):
             yield buf
 
     def ensure_digest(self, record, block=True, payload=True):
-        if block and record.rec_headers.get_header('WARC-Block-Digest'):
-            block = False
+        if block:
+            if (record.rec_headers.get_header('WARC-Block-Digest') or
+                (record.rec_type in self.NO_BLOCK_DIGEST_TYPES)):
+                block = False
 
-        if payload and record.rec_headers.get_header('WARC-Payload-Digest'):
-            payload = False
+        if payload:
+            if (record.rec_headers.get_header('WARC-Payload-Digest') or
+                (record.rec_type in self.NO_PAYLOAD_DIGEST_TYPES)):
+                payload = False
 
         block_digester = self._create_digester() if block else None
         payload_digester = self._create_digester() if payload else None
 
-        if not block_digester and not payload_digester:
+        has_length = (record.length is not None)
+
+        if not block_digester and not payload_digester and has_length:
             return
 
         temp_file = None
         try:
             # force buffering if no length is set
-            assert(record.length is not None)
+            assert(has_length)
             pos = record.raw_stream.tell()
             record.raw_stream.seek(pos)
         except:
@@ -149,6 +155,8 @@ class BaseWARCWriter(object):
     def create_revisit_record(self, uri, digest, refers_to_uri, refers_to_date,
                               http_headers=None):
 
+        assert digest, 'Digest can not be empty'
+
         record = self.create_warc_record(uri, 'revisit', http_headers=http_headers)
 
         record.rec_headers.add_header('WARC-Profile', self.REVISIT_PROFILE)
@@ -160,14 +168,6 @@ class BaseWARCWriter(object):
 
         return record
 
-    def create_record_from_stream(self, record_stream, length):
-        warc_headers = self.parser.parse(record_stream)
-
-        return self.create_warc_record('', warc_headers.get_header('WARC-Type'),
-                                       payload=record_stream,
-                                       length=length,
-                                       warc_headers=warc_headers)
-
     def create_warc_record(self, uri, record_type,
                            payload=None,
                            length=0,
@@ -176,7 +176,7 @@ class BaseWARCWriter(object):
                            warc_headers=None,
                            http_headers=None):
 
-        if payload and not http_headers and record_type in ('response', 'request', 'revisit'):
+        if payload and not http_headers and record_type in ('response', 'request'):
             http_headers = self.parser.parse(payload)
             length -= payload.tell()
 
@@ -200,8 +200,7 @@ class BaseWARCWriter(object):
 
         record.payload_length = length
 
-        if record_type not in self.NO_PAYLOAD_DIGEST_TYPES:
-            self.ensure_digest(record, block=False, payload=True)
+        self.ensure_digest(record, block=False, payload=True)
 
         return record
 
@@ -236,17 +235,17 @@ class BaseWARCWriter(object):
         # Also remove content-type for consistent header ordering
         if record.length is None:
             record.rec_headers.remove_header('WARC-Block-Digest')
-            record.rec_headers.remove_header('WARC-Payload-Digest')
+            if record.rec_type != 'revisit':
+                record.rec_headers.remove_header('WARC-Payload-Digest')
             record.rec_headers.remove_header('Content-Type')
 
-            block = (record.rec_type not in self.NO_BLOCK_DIGEST_TYPES)
-            payload = (record.rec_type not in self.NO_PAYLOAD_DIGEST_TYPES)
+            self.ensure_digest(record, block=True, payload=True)
 
-            self.ensure_digest(record, block=block, payload=payload)
+            record.length = record.payload_length
 
         # ensure digests are set
-        elif record.rec_type not in self.NO_BLOCK_DIGEST_TYPES:
-            self.ensure_digest(record, block=True, payload=False)
+        else:
+            self.ensure_digest(record, block=True, payload=True)
 
         # ensure proper content type
         record.rec_headers.replace_header('Content-Type', record.content_type)

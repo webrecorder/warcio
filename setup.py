@@ -5,7 +5,7 @@ from setuptools import setup, find_packages
 from setuptools.command.test import test as TestCommand
 import glob
 
-__version__ = '1.2.1'
+__version__ = '1.3'
 
 
 class PyTest(TestCommand):

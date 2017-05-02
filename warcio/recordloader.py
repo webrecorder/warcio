@@ -133,29 +133,46 @@ class ArcWarcRecordLoader(object):
         # record has http headers
         # checking if length != 0 instead of length > 0
         # since length == None is also accepted
-        if (not no_record_parse and length != 0 and
-            (rec_type in self.HTTP_RECORDS
-              and uri.startswith(self.HTTP_SCHEMES))):
+        if (not no_record_parse and
+             length != 0 and
+             (rec_type in self.HTTP_RECORDS) and
+             uri.startswith(self.HTTP_SCHEMES)):
 
-            # request record: parse request
-            if rec_type == 'request':
-                http_headers = self.http_req_parser.parse(stream)
-            # response record or non-empty revisit: parse HTTP status and headers!
-            else:
-                http_headers = self.http_parser.parse(stream)
+            http_headers = self._load_http_headers(rec_type, stream)
 
         # generate validate http headers (eg. for replay)
         if not http_headers and ensure_http_headers:
-            content_type_header = [('Content-Type', content_type)]
-
-            if length is not None and length >= 0:
-                content_type_header.append(('Content-Length', str(length)))
-
-            http_headers = StatusAndHeaders('200 OK', content_type_header, protocol='HTTP/1.0')
+            http_headers = self.default_http_headers(length, content_type)
 
         return ArcWarcRecord(the_format, rec_type,
                              rec_headers, stream, http_headers,
                              content_type, length)
+
+    def _load_http_headers(self, rec_type, stream):
+        # request record: parse request
+        if rec_type == 'request':
+            return self.http_req_parser.parse(stream)
+
+        elif rec_type == 'revisit':
+            try:
+                return self.http_parser.parse(stream)
+            except EOFError:
+                # empty revisit with no http headers, is ok!
+                return None
+
+        # response record or non-empty revisit: parse HTTP status and headers!
+        else:
+            return self.http_parser.parse(stream)
+
+    def default_http_headers(self, length, content_type=None):
+        headers = []
+        if content_type:
+            headers.append(('Content-Type', content_type))
+
+        if length is not None and length >= 0:
+            headers.append(('Content-Length', str(length)))
+
+        return StatusAndHeaders('200 OK', headers=headers, protocol='HTTP/1.0')
 
     def _detect_type_load_headers(self, stream,
                                   statusline=None, known_format=None):
