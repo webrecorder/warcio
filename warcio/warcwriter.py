@@ -13,7 +13,7 @@ from warcio.timeutils import datetime_to_iso_date
 
 from warcio.statusandheaders import StatusAndHeadersParser, StatusAndHeaders
 
-from warcio.recordloader import ArcWarcRecord
+from warcio.recordloader import ArcWarcRecord, ArcWarcRecordLoader
 
 
 # ============================================================================
@@ -170,15 +170,17 @@ class BaseWARCWriter(object):
 
     def create_warc_record(self, uri, record_type,
                            payload=None,
-                           length=0,
+                           length=None,
                            warc_content_type='',
                            warc_headers_dict={},
                            warc_headers=None,
                            http_headers=None):
 
-        if payload and not http_headers and record_type in ('response', 'request'):
-            http_headers = self.parser.parse(payload)
-            length -= payload.tell()
+        if payload and not http_headers:
+            loader = ArcWarcRecordLoader()
+            http_headers = loader.load_http_headers(record_type, uri, payload, length)
+            if http_headers and length is not None:
+                length -= payload.tell()
 
         if not payload:
             payload = BytesIO()

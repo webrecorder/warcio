@@ -130,15 +130,9 @@ class ArcWarcRecordLoader(object):
 
         http_headers = None
 
-        # record has http headers
-        # checking if length != 0 instead of length > 0
-        # since length == None is also accepted
-        if (not no_record_parse and
-             length != 0 and
-             (rec_type in self.HTTP_RECORDS) and
-             uri.startswith(self.HTTP_SCHEMES)):
-
-            http_headers = self._load_http_headers(rec_type, stream)
+        # load http headers if parsing
+        if not no_record_parse:
+            http_headers = self.load_http_headers(rec_type, uri, stream, length)
 
         # generate validate http headers (eg. for replay)
         if not http_headers and ensure_http_headers:
@@ -148,7 +142,20 @@ class ArcWarcRecordLoader(object):
                              rec_headers, stream, http_headers,
                              content_type, length)
 
-    def _load_http_headers(self, rec_type, stream):
+    def load_http_headers(self, rec_type, uri, stream, length):
+        # only if length == 0 don't parse
+        # try parsing is length is unknown (length is None) or length > 0
+        if length == 0:
+            return None
+
+        # only certain record types can have http headers
+        if rec_type not in self.HTTP_RECORDS:
+            return None
+
+        # only http:/https: uris can have http headers
+        if not uri.startswith(self.HTTP_SCHEMES):
+            return None
+
         # request record: parse request
         if rec_type == 'request':
             return self.http_req_parser.parse(stream)

@@ -202,6 +202,45 @@ Content-Length: 67\r\n\
 '
 
 
+DNS_RESPONSE_RECORD = '\
+WARC/1.0\r\n\
+WARC-Type: response\r\n\
+WARC-Record-ID: <urn:uuid:12345678-feb0-11e6-8f83-68a86d1772ce>\r\n\
+WARC-Target-URI: dns:google.com\r\n\
+WARC-Date: 2000-01-01T00:00:00Z\r\n\
+WARC-Payload-Digest: sha1:2AAVJYKKIWK5CF6EWE7PH63EMNLO44TH\r\n\
+WARC-Block-Digest: sha1:2AAVJYKKIWK5CF6EWE7PH63EMNLO44TH\r\n\
+Content-Type: application/http; msgtype=response\r\n\
+Content-Length: 147\r\n\
+\r\n\
+20170509000739\n\
+google.com.     185 IN  A   209.148.113.239\n\
+google.com.     185 IN  A   209.148.113.238\n\
+google.com.     185 IN  A   209.148.113.250\n\
+\r\n\r\n\
+'
+
+DNS_RESOURCE_RECORD = '\
+WARC/1.0\r\n\
+WARC-Type: resource\r\n\
+WARC-Record-ID: <urn:uuid:12345678-feb0-11e6-8f83-68a86d1772ce>\r\n\
+WARC-Target-URI: dns:google.com\r\n\
+WARC-Date: 2000-01-01T00:00:00Z\r\n\
+WARC-Payload-Digest: sha1:2AAVJYKKIWK5CF6EWE7PH63EMNLO44TH\r\n\
+WARC-Block-Digest: sha1:2AAVJYKKIWK5CF6EWE7PH63EMNLO44TH\r\n\
+Content-Type: application/warc-record\r\n\
+Content-Length: 147\r\n\
+\r\n\
+20170509000739\n\
+google.com.     185 IN  A   209.148.113.239\n\
+google.com.     185 IN  A   209.148.113.238\n\
+google.com.     185 IN  A   209.148.113.250\n\
+\r\n\r\n\
+'
+
+
+
+
 # ============================================================================
 # Decorator Setup
 # ============================================================================
@@ -277,6 +316,34 @@ def sample_response_2(writer):
                                      payload=BytesIO(payload),
                                      length=len(payload),
                                      http_headers=http_headers)
+
+
+# ============================================================================
+@sample_record('response_dns', DNS_RESPONSE_RECORD)
+def sample_response_dns(writer):
+    payload = b'''\
+20170509000739
+google.com.     185 IN  A   209.148.113.239
+google.com.     185 IN  A   209.148.113.238
+google.com.     185 IN  A   209.148.113.250
+'''
+
+    return writer.create_warc_record('dns:google.com', 'response',
+                                     payload=BytesIO(payload))
+
+
+# ============================================================================
+@sample_record('resource_dns', DNS_RESOURCE_RECORD)
+def sample_resource_dns(writer):
+    payload = b'''\
+20170509000739
+google.com.     185 IN  A   209.148.113.239
+google.com.     185 IN  A   209.148.113.238
+google.com.     185 IN  A   209.148.113.250
+'''
+
+    return writer.create_warc_record('dns:google.com', 'resource',
+                                     payload=BytesIO(payload))
 
 
 # ============================================================================
