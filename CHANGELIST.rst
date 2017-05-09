@@ -1,3 +1,11 @@
+1.3.1
+~~~~~
+- Fixes `#15 <https://github.com/webrecorder/warcio/issues/15>`_, including:
+- ``WARCWriter.create_warc_record()`` works correctly when specifying a payload with no length param.
+- Writing DNS records now works (tests included).
+- HTTP headers only expected for writing ``request``, ``response`` records if the URI has a ``http:`` or ``https:`` scheme (consistent with reading).
+
+
 1.3
 ~~~
 - Support for reading "streaming" WARC records, with no ``Content-Length`` set. ``Content-Length`` and digests computed as expected when the record is written.
