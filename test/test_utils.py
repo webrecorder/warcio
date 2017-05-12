@@ -15,7 +15,6 @@ def test_headers_to_str_headers():
 
     header_dict = {'foo': b'bar', b'baz': 'barf'}
     ret = utils.headers_to_str_headers(header_dict)
-    assert 0
     assert Counter(ret) == Counter(result)
 
     aiohttp_raw_headers = ((b'foo', b'bar'), (b'baz', b'barf'))
