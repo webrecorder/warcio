@@ -32,8 +32,6 @@ class TestUtils(object):
         # This case-insensitive thingie titlecases the key
         aiohttp_headers = CIMultiDict(foo='bar', baz=b'barf')
         titlecase_result = [('Foo', 'bar'), ('Baz', 'barf')]
-        rtitlecase_result = titlecase_result
-        rtitlecase_result.reverse()
 
         ret = utils.headers_to_str_headers(aiohttp_headers)
         assert Counter(ret) == Counter(titlecase_result)
