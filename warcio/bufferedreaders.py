@@ -103,7 +103,17 @@ class BufferedReader(object):
                 block_size = self.block_size
             data = self.stream.read(block_size)
 
+        # don't process if no raw data read
+        if not data:
+            return
+
         self._process_read(data)
+
+        # if decompressor is set, but decompressed buff is empty
+        # but raw data is not empty, keep reading
+        while self.decompressor and self.empty() and data:
+            data = self.stream.read(block_size)
+            self._process_read(data)
 
     def _process_read(self, data):
         data = self._decompress(data)
@@ -141,6 +151,9 @@ class BufferedReader(object):
         all_buffs = []
         while length is None or length > 0:
             self._fillbuff()
+            if self.empty():
+                break
+
             buff = self.buff.read(length)
             if not buff:
                 break
@@ -164,6 +177,10 @@ class BufferedReader(object):
             return b''
 
         self._fillbuff()
+
+        if self.empty():
+            return b''
+
         linebuff = self.buff.readline(length)
 
         # we may be at a boundary
