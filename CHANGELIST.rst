@@ -1,3 +1,8 @@
+1.3.2
+~~~~~
+- Fixes issues with BufferedReader returning empty response due to brotli decompressor requiring additional data, for more details see: `#21 <https://github.com/webrecorder/warcio/issues/21>`_
+
+
 1.3.1
 ~~~~~
 - Fixes `#15 <https://github.com/webrecorder/warcio/issues/15>`_, including:
