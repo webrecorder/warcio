@@ -1,6 +1,8 @@
 from io import BytesIO
 import zlib
 
+from warcio.utils import BUFF_SIZE
+
 
 #=================================================================
 def gzip_decompressor():
@@ -38,7 +40,7 @@ class BufferedReader(object):
     """
     A wrapping line reader which wraps an existing reader.
     Read operations operate on underlying buffer, which is filled to
-    block_size (1024 default)
+    block_size (16384 default)
 
     If an optional decompress type is specified,
     data is fed through the decompressor when read from the buffer.
@@ -58,7 +60,7 @@ class BufferedReader(object):
                      'deflate_alt': deflate_decompressor_alt
                     }
 
-    def __init__(self, stream, block_size=1024,
+    def __init__(self, stream, block_size=BUFF_SIZE,
                  decomp_type=None,
                  starting_data=None):
         self.stream = stream
@@ -95,12 +97,12 @@ class BufferedReader(object):
         if self.rem_length() > 0:
             return
 
+        block_size = block_size or self.block_size
+
         if self.starting_data:
             data = self.starting_data
             self.starting_data = None
         else:
-            if not block_size:
-                block_size = self.block_size
             data = self.stream.read(block_size)
 
         self._process_read(data)

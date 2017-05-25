@@ -1,3 +1,8 @@
+1.3.3
+~~~~~
+- Set default read ``block_size`` to 16384, ensure ``block_size`` is never None (caused an issue in py2.7)
+
+
 1.3.2
 ~~~~~
 - Fixes issues with BufferedReader returning empty response due to brotli decompressor requiring additional data, for more details see: `#21 <https://github.com/webrecorder/warcio/issues/21>`_
