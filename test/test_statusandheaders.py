@@ -3,8 +3,8 @@
 >>> st1
 StatusAndHeaders(protocol = 'HTTP/1.0', statusline = '200 OK', headers = [('Content-Type', 'ABC'), ('Some', 'Value'), ('Multi-Line', 'Value1    Also This')])
 
-# add range
->>> StatusAndHeaders(statusline = '200 OK', headers=[('Content-Type', 'text/plain')]).add_range(10, 4, 100)
+# add range (and byte headers)
+>>> StatusAndHeaders(statusline = '200 OK', headers=[(b'Content-Type', b'text/plain')]).add_range(10, 4, 100)
 StatusAndHeaders(protocol = '', statusline = '206 Partial Content', headers = [('Content-Type', 'text/plain'), ('Content-Range', 'bytes 10-13/100'), ('Accept-Ranges', 'bytes')])
 
 # other protocol expected

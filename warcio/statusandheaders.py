@@ -4,7 +4,7 @@ Representation and parsing of HTTP-style status + headers
 
 from six.moves import range
 from six import iteritems
-from warcio.utils import to_native_str
+from warcio.utils import to_native_str, headers_to_str_headers
 import uuid
 
 
@@ -22,7 +22,7 @@ class StatusAndHeaders(object):
             protocol, statusline = statusline.split(' ', 1)
 
         self.statusline = statusline
-        self.headers = headers
+        self.headers = headers_to_str_headers(headers)
         self.protocol = protocol
         self.total_len = total_len
         self.headers_buff = None

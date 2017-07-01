@@ -1,6 +1,11 @@
 import six
 from contextlib import contextmanager
 
+try:
+    import collections.abc as collections_abc  # only works on python 3.3+
+except ImportError:
+    import collections as collections_abc
+
 BUFF_SIZE = 16384
 
 
@@ -24,3 +29,29 @@ def open_or_default(filename, mod, default_fh):  #pragma: no cover
         res.close()
     else:
         yield default_fh
+
+
+# #===========================================================================
+def headers_to_str_headers(headers):
+    '''
+    Converts dict or tuple-based headers of bytes or str to
+    tuple-based headers of str, which is the python norm (pep 3333)
+    '''
+    ret = []
+
+    if isinstance(headers, collections_abc.Mapping):
+        h = headers.items()
+    else:
+        h = headers
+
+    if six.PY2:
+        return h
+
+    for tup in h:
+        k, v = tup
+        if isinstance(k, six.binary_type):
+            k = k.decode('iso-8859-1')
+        if isinstance(v, six.binary_type):
+            v = v.decode('iso-8859-1')
+        ret.append((k, v))
+    return ret
