@@ -1,3 +1,8 @@
+1.3.4
+~~~~~
+- Continuous read for more data to decompress (introduced in 1.3.2 for brotli decomp) should only happen if no unused data remaining. Otherwise, likely at gzip member end.
+
+
 1.3.3
 ~~~~~
 - Set default read ``block_size`` to 16384, ensure ``block_size`` is never None (caused an issue in py2.7)
