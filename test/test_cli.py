@@ -17,26 +17,26 @@ def test_index():
     files = ['example.warc.gz', 'example.warc', 'example.arc.gz', 'example.arc']
     files = [get_test_file(filename) for filename in files]
 
-    args = ['index', '-f', 'offset,warc-type,warc-target-uri,warc-filename']
+    args = ['index', '-f', 'offset,warc-type,warc-target-uri,warc-filename,http:content-type']
     args.extend(files)
 
     expected = b"""\
 {"offset": 0, "warc-type": "warcinfo", "warc-filename": "temp-20170306040353.warc.gz"}
 {"offset": 353, "warc-type": "warcinfo", "warc-filename": "temp-20170306040353.warc.gz"}
-{"offset": 784, "warc-type": "response", "warc-target-uri": "http://example.com/"}
+{"offset": 784, "warc-type": "response", "warc-target-uri": "http://example.com/", "http:content-type": "text/html"}
 {"offset": 2012, "warc-type": "request", "warc-target-uri": "http://example.com/"}
-{"offset": 2538, "warc-type": "revisit", "warc-target-uri": "http://example.com/"}
+{"offset": 2538, "warc-type": "revisit", "warc-target-uri": "http://example.com/", "http:content-type": "text/html"}
 {"offset": 3123, "warc-type": "request", "warc-target-uri": "http://example.com/"}
 {"offset": 0, "warc-type": "warcinfo", "warc-filename": "temp-20170306040353.warc.gz"}
 {"offset": 488, "warc-type": "warcinfo", "warc-filename": "temp-20170306040353.warc.gz"}
-{"offset": 1197, "warc-type": "response", "warc-target-uri": "http://example.com/"}
+{"offset": 1197, "warc-type": "response", "warc-target-uri": "http://example.com/", "http:content-type": "text/html"}
 {"offset": 2566, "warc-type": "request", "warc-target-uri": "http://example.com/"}
-{"offset": 3370, "warc-type": "revisit", "warc-target-uri": "http://example.com/"}
+{"offset": 3370, "warc-type": "revisit", "warc-target-uri": "http://example.com/", "http:content-type": "text/html"}
 {"offset": 4316, "warc-type": "request", "warc-target-uri": "http://example.com/"}
 {"offset": 0, "warc-type": "warcinfo", "warc-filename": "live-web-example.arc.gz"}
-{"offset": 171, "warc-type": "response", "warc-target-uri": "http://example.com/"}
+{"offset": 171, "warc-type": "response", "warc-target-uri": "http://example.com/", "http:content-type": "text/html"}
 {"offset": 0, "warc-type": "warcinfo", "warc-filename": "live-web-example.arc.gz"}
-{"offset": 151, "warc-type": "response", "warc-target-uri": "http://example.com/"}
+{"offset": 151, "warc-type": "response", "warc-target-uri": "http://example.com/", "http:content-type": "text/html"}
 """
 
     with patch_stdout() as buff:
