@@ -180,7 +180,7 @@ warc file as newline delimited JSON lines (NDJSON).
 
 WARC header fields to include in the index can be specified via the
 ``-f`` flag, and are included in the JSON block (in order, for
-convenience)
+convenience).
 
 ::
 
@@ -188,6 +188,18 @@ convenience)
     {"warc-type": "warcinfo", "content-length": "137"}
     {"warc-type": "response", "warc-target-uri": "http://www.iana.org/", "content-length": "7566"}
     {"warc-type": "request", "warc-target-uri": "http://www.iana.org/", "content-length": "76"}
+
+
+HTTP header fields can be included by prefixing them with the prefix
+``http:``. The special field ``offset`` refers to the record offset within
+the warc file.
+
+::
+
+    warcio index ./test/data/example-iana.org-chunked.warc -f offset,content-type,http:content-type,warc-target-uri
+    {"offset": 0, "content-type": "application/warc-fields"}
+    {"offset": 405, "content-type": "application/http;msgtype=response", "http:content-type": "text/html; charset=UTF-8", "warc-target-uri": "http://www.iana.org/"}
+    {"offset": 8379, "content-type": "application/http;msgtype=request", "warc-target-uri": "http://www.iana.org/"}
 
 (Note: this library does not produce CDX or CDXJ format indexes often
 associated with web archives. To create these indexes, please see the

@@ -52,12 +52,14 @@ def indexer(cmd):
     with open_or_default(cmd.output, 'wt', sys.stdout) as out:
         for filename in cmd.inputs:
             with open(filename, 'rb') as fh:
-                it = ArchiveIterator(fh, no_record_parse=True, arc2warc=True)
+                it = ArchiveIterator(fh, no_record_parse=False, arc2warc=True)
                 for record in it:
                     index = OrderedDict()
                     for field in fields:
                         if field == 'offset':
                             value = it.offset
+                        elif field.startswith('http:'):
+                            value = record.http_headers and record.http_headers.get_header(field[5:])
                         else:
                             value = record.rec_headers.get_header(field)
                         if value is not None:
