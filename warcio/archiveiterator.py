@@ -61,6 +61,7 @@ class ArchiveIterator(six.Iterator):
         self.next_line = None
 
         self.err_count = 0
+        self.record = None
 
         self.the_iter = self._iterate_records()
 
@@ -75,21 +76,19 @@ class ArchiveIterator(six.Iterator):
         """
         raise_invalid_gzip = False
         empty_record = False
-        record = None
 
         while True:
             try:
-                record = self._next_record(self.next_line)
+                self.record = self._next_record(self.next_line)
                 if raise_invalid_gzip:
                     self._raise_invalid_gzip_err()
 
-                yield record
+                yield self.record
 
             except EOFError:
                 empty_record = True
 
-            if record:
-                self.read_to_end(record)
+            self.read_to_end()
 
             if self.reader.decompressor:
                 # if another gzip member, continue
@@ -163,11 +162,15 @@ class ArchiveIterator(six.Iterator):
 
             return line, empty_size
 
-    def read_to_end(self, record):
+    def read_to_end(self, record=None):
         """ Read remainder of the stream
         If a digester is included, update it
         with the data read
         """
+
+        # no current record to read
+        if not self.record:
+            return None
 
         # already at end of this record, don't read until it is consumed
         if self.member_info:
@@ -176,7 +179,7 @@ class ArchiveIterator(six.Iterator):
         curr_offset = self.offset
 
         while True:
-            b = record.raw_stream.read(BUFF_SIZE)
+            b = self.record.raw_stream.read(BUFF_SIZE)
             if not b:
                 break
 
@@ -204,6 +207,18 @@ class ArchiveIterator(six.Iterator):
         self.member_info = (curr_offset, length)
         #return self.member_info
         #return next_line
+
+    def get_record_offset(self):
+        if not self.member_info:
+            self.read_to_end()
+
+        return self.member_info[0]
+
+    def get_record_length(self):
+        if not self.member_info:
+            self.read_to_end()
+
+        return self.member_info[1]
 
     def _next_record(self, next_line):
         """ Use loader to parse the record from the reader stream
