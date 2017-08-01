@@ -2,7 +2,7 @@
 ~~~~~
 - Indexing API improvements:
     - Indexer class moved to ``indexer.py`` and all aspects of indexing process can be extended.
-    - Support for accessing http headers with ``http:`` fields `#22 <https://github.com/webrecorder/warcio/issues/22>`_
+    - Support for accessing http headers with ``http:``-prefixed fields `#22 <https://github.com/webrecorder/warcio/issues/22>`_
     - Special fields: ``filename`` field and ``http:status``
     - JSON ``offset`` and ``length`` fields returned as strings for consistency.
     - ``ArchiveIterator`` API: add ``get_record_offset()`` and ``get_record_length()`` to return current offset/length, iterator now tracks current record

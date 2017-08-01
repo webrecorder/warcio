@@ -197,13 +197,13 @@ the warc file.
 ::
 
     warcio index ./test/data/example-iana.org-chunked.warc -f offset,content-type,http:content-type,warc-target-uri
-    {"offset": 0, "content-type": "application/warc-fields"}
-    {"offset": 405, "content-type": "application/http;msgtype=response", "http:content-type": "text/html; charset=UTF-8", "warc-target-uri": "http://www.iana.org/"}
-    {"offset": 8379, "content-type": "application/http;msgtype=request", "warc-target-uri": "http://www.iana.org/"}
+    {"offset": "0", "content-type": "application/warc-fields"}
+    {"offset": "405", "content-type": "application/http;msgtype=response", "http:content-type": "text/html; charset=UTF-8", "warc-target-uri": "http://www.iana.org/"}
+    {"offset": "8379", "content-type": "application/http;msgtype=request", "warc-target-uri": "http://www.iana.org/"}
 
 (Note: this library does not produce CDX or CDXJ format indexes often
 associated with web archives. To create these indexes, please see the
-`pywb <https://github.com/ikreymer/pywb>`__ library)
+`cdxj-indexer <https://github.com/webrecorder/cdxj-indexer>`__ tool which extends warcio indexing to provide this functionality)
 
 Recompress
 ~~~~~~~~~~
