@@ -1,3 +1,15 @@
+1.4.0
+~~~~~
+- Indexing API improvements:
+    - Indexer class moved to ``indexer.py`` and all aspects of indexing process can be extended.
+    - Support for accessing http headers with ``http:`` fields `#22 <https://github.com/webrecorder/warcio/issues/22>`_
+    - Special fields: ``filename`` field and ``http:status``
+    - JSON ``offset`` and ``length`` fields returned as strings for consistency.
+    - ``ArchiveIterator`` API: add ``get_record_offset()`` and ``get_record_length()`` to return current offset/length, iterator now tracks current record
+
+- ``StatusAndHeaders`` accepts headers in more flexible formats (mapping, byte or string) and normalizes to string tuples `#19 <https://github.com/webrecorder/warcio/issues/19>`_
+
+
 1.3.4
 ~~~~~
 - Continuous read for more data to decompress (introduced in 1.3.2 for brotli decomp) should only happen if no unused data remaining. Otherwise, likely at gzip member end.
