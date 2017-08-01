@@ -110,7 +110,7 @@ class BufferedReader(object):
         # if raw data is not empty and decompressor set, but
         # decompressed buff is empty, keep reading --
         # decompressor likely needs more data to decompress
-        while data and self.decompressor and self.empty():
+        while data and self.decompressor and not self.decompressor.unused_data and self.empty():
             data = self.stream.read(block_size)
             self._process_read(data)
 
