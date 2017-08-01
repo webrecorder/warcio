@@ -109,6 +109,8 @@ class ArchiveIterator(six.Iterator):
             elif empty_record:
                 break
 
+        self.record = None
+
     def _raise_invalid_gzip_err(self):
         """ A gzip file with multiple ARC/WARC records, non-chunked
         has been detected. This is not valid for replay, so notify user

@@ -64,6 +64,9 @@ class TestArchiveIterator(object):
             with pytest.raises(StopIteration):
                 record = next(a)
 
+        assert a.record == None
+        assert a.read_to_end() == None
+
     def test_example_warc_trunc(self):
         """ WARC file with content-length truncated on a response record
         Error output printed, but still read

@@ -3,7 +3,7 @@ from contextlib import contextmanager
 
 try:
     import collections.abc as collections_abc  # only works on python 3.3+
-except ImportError:
+except ImportError:  #pragma: no cover
     import collections as collections_abc
 
 BUFF_SIZE = 16384
@@ -22,11 +22,13 @@ def to_native_str(value, encoding='utf-8'):
 
 # #===========================================================================
 @contextmanager
-def open_or_default(filename, mod, default_fh):  #pragma: no cover
-    if filename:
+def open_or_default(filename, mod, default_fh):
+    if filename and isinstance(filename, str):
         res = open(filename, mod)
         yield res
         res.close()
+    elif filename:
+        yield filename
     else:
         yield default_fh
 
@@ -44,7 +46,7 @@ def headers_to_str_headers(headers):
     else:
         h = headers
 
-    if six.PY2:
+    if six.PY2:  #pragma: no cover
         return h
 
     for tup in h:
