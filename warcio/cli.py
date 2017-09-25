@@ -10,6 +10,7 @@ from warcio.indexer import Indexer
 
 import tempfile
 import shutil
+import sys
 
 
 # ============================================================================
@@ -33,9 +34,45 @@ def main(args=None):
     recompress.add_argument('output')
     recompress.set_defaults(func=Recompressor())
 
+    extract = subparsers.add_parser('extract', help='Extract WARC/ARC Record')
+    extract.add_argument('filename')
+    extract.add_argument('offset')
+    group = extract.add_mutually_exclusive_group()
+    group.add_argument('--payload', action='store_true', help='output only record payload (after content and transfer decoding, if applicable)')
+    group.add_argument('--headers', action='store_true', help='output only record headers (and http headers, if applicable)')
+
+    extract.set_defaults(func=extract_record)
+
     cmd = parser.parse_args(args=args)
     cmd.func(cmd)
 
+# ============================================================================
+def extract_record(cmd):
+    with open(cmd.filename, 'rb') as fh:
+        fh.seek(int(cmd.offset))
+        it = iter(ArchiveIterator(fh))
+        record = next(it)
+
+        try:
+            stdout_raw = sys.stdout.buffer
+        except AttributeError:
+            stdout_raw = sys.stdout
+
+        if cmd.payload:
+            stream = record.content_stream()
+            buf = stream.read(65536)
+            while buf:
+                stdout_raw.write(buf)
+                buf = stream.read(65536)
+        else:
+            stdout_raw.write(record.rec_headers.to_bytes())
+            if record.http_headers:
+                stdout_raw.write(record.http_headers.to_bytes())
+            if not cmd.headers:
+                buf = record.raw_stream.read(65536)
+                while buf:
+                    stdout_raw.write(buf)
+                    buf = record.raw_stream.read(65536)
 
 # ============================================================================
 def get_version():
