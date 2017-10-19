@@ -249,8 +249,9 @@ class BaseWARCWriter(object):
         else:
             self.ensure_digest(record, block=True, payload=True)
 
-        # ensure proper content type
-        record.rec_headers.replace_header('Content-Type', record.content_type)
+        if(record.content_type != None):
+            # ensure proper content type
+            record.rec_headers.replace_header('Content-Type', record.content_type)
 
         if record.rec_type == 'revisit':
             http_headers_only = True
