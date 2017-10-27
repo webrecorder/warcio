@@ -49,6 +49,14 @@ Non-chunked data:
 >>> print_str(ChunkedDataReader(BytesIO(b"xyz123!@#")).read())
 'xyz123!@#'
 
+Non-chunked data, numbers only:
+>>> print_str(ChunkedDataReader(BytesIO(b"ABCDE" * 10)).read())
+'ABCDEABCDEABCDEABCDEABCDEABCDEABCDEABCDEABCDEABCDE'
+
+Non-chunked data, numbers new line, large:
+>>> print_str(ChunkedDataReader(BytesIO(b"ABCDE" * 10 + b'\r\n')).read())
+'ABCDEABCDEABCDEABCDEABCDEABCDEABCDEABCDEABCDEABCDE\r\n'
+
 Non-chunked, compressed data, specify decomp_type
 >>> print_str(ChunkedDataReader(BytesIO(compress('ABCDEF')), decomp_type='gzip').read())
 'ABCDEF'

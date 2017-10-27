@@ -298,8 +298,13 @@ class ChunkedDataReader(BufferedReader):
     def _try_decode(self, length_header):
         # decode length header
         try:
-            chunk_size = int(length_header.strip().split(b';')[0], 16)
-        except ValueError:
+            # ensure line ends with \r\n
+            assert(length_header[-2:] == b'\r\n')
+            chunk_size = length_header[:-2].split(b';')[0]
+            chunk_size = int(chunk_size, 16)
+            # sanity check chunk size
+            assert(chunk_size <= 2**31)
+        except (ValueError, AssertionError):
             raise ChunkedDataException(b"Couldn't decode length header " +
                                        length_header)
 
