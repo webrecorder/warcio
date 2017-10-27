@@ -1,3 +1,11 @@
+1.5.0
+~~~~~
+- new extract cli command `#26 <https://github.com/webrecorder/warcio/issues/26>`_ (by @nlevitt)
+- fix for writing WARC record with no content-type `#27 <https://github.com/webrecorder/warcio/issues/27>`_ (by @thomaspreece)
+- better verification of chunk header before attempting to de-chunk with ChunkedDataReader
+- MANIFEST.in added (by @pmlandwehr)
+
+
 1.4.0
 ~~~~~
 - Indexing API improvements:
