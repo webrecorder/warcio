@@ -249,7 +249,7 @@ class BaseWARCWriter(object):
         else:
             self.ensure_digest(record, block=True, payload=True)
 
-        if(record.content_type != None):
+        if record.content_type != None:
             # ensure proper content type
             record.rec_headers.replace_header('Content-Type', record.content_type)
 

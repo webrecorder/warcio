@@ -186,6 +186,21 @@ text\r\n\
 '
 
 
+RESOURCE_RECORD_NO_CONTENT_TYPE = '\
+WARC/1.0\r\n\
+WARC-Type: resource\r\n\
+WARC-Record-ID: <urn:uuid:12345678-feb0-11e6-8f83-68a86d1772ce>\r\n\
+WARC-Target-URI: ftp://example.com/\r\n\
+WARC-Date: 2000-01-01T00:00:00Z\r\n\
+WARC-Payload-Digest: sha1:B6QJ6BNJ3R4B23XXMRKZKHLPGJY2VE4O\r\n\
+WARC-Block-Digest: sha1:B6QJ6BNJ3R4B23XXMRKZKHLPGJY2VE4O\r\n\
+Content-Length: 9\r\n\
+\r\n\
+some\n\
+text\r\n\
+\r\n\
+'
+
 METADATA_RECORD = '\
 WARC/1.0\r\n\
 WARC-Type: metadata\r\n\
@@ -382,6 +397,22 @@ def sample_resource(writer):
                                       payload=BytesIO(payload),
                                       length=len(payload),
                                       warc_content_type='text/plain')
+
+
+# ============================================================================
+@sample_record('resource_no_ct', RESOURCE_RECORD_NO_CONTENT_TYPE)
+def sample_resource_no_content_type(writer):
+    payload = b'some\ntext'
+
+    rec = writer.create_warc_record('ftp://example.com/', 'resource',
+                                    payload=BytesIO(payload),
+                                    length=len(payload))
+
+    # default content-type added, but removing to match expected string
+    assert rec.content_type == 'application/warc-record'
+
+    rec.content_type = None
+    return rec
 
 
 # ============================================================================
