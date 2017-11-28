@@ -1,0 +1,96 @@
+WARC/1.0
+WARC-Type: request
+WARC-Record-ID: <urn:uuid:a9c5c23a-0221-11e7-8fe3-0242ac120007>
+WARC-Target-URI: http://example.com/
+WARC-Date: 2017-03-06T04:02:06Z
+WARC-Concurrent-To: <urn:uuid:a9c51e3e-0221-11e7-bf66-0242ac120005>
+WARC-Block-Digest: sha1:Z6W6WEQQQICP5WA7OWB2SS75WLK4K7Y3
+WARC-Payload-Digest: sha1:1112H3S6NNFQ2MSVX7XZKYAYSCX5QBYJ
+Content-Type: application/http; msgtype=request
+Content-Length: 493
+
+GET / HTTP/1.0
+Host: example.com
+Accept-Language: en-US,en;q=0.8,ru;q=0.6
+Referer: https://webrecorder.io/temp-MJFXHZ4S/temp/recording-session/record/http://example.com/
+Upgrade-Insecure-Requests: 1
+Connection: close
+User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/56.0.2924.87 Safari/537.36
+Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8
+Dnt: 1
+Accept-Encoding: gzip, deflate, sdch, br
+
+
+
+WARC/1.0
+WARC-Type: request
+WARC-Record-ID: <urn:uuid:a9c5c23a-0221-11e7-8fe3-0242ac120007>
+WARC-Target-URI: http://example.com/
+WARC-Date: 2017-03-06T04:02:06Z
+WARC-Concurrent-To: <urn:uuid:a9c51e3e-0221-11e7-bf66-0242ac120005>
+WARC-Block-Digest: sha1:Z6W6WEQQQICP5WA7OWB2SS75WLK4K7Y3
+WARC-Payload-Digest: sha1:2jmj7l5rSw0yVb/vlWAYkK/YBwk=
+Content-Type: application/http; msgtype=request
+Content-Length: 493
+
+GET / HTTP/1.0
+Host: example.com
+Accept-Language: en-US,en;q=0.8,ru;q=0.6
+Referer: https://webrecorder.io/temp-MJFXHZ4S/temp/recording-session/record/http://example.com/
+Upgrade-Insecure-Requests: 1
+Connection: close
+User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/56.0.2924.87 Safari/537.36
+Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8
+Dnt: 1
+Accept-Encoding: gzip, deflate, sdch, br
+
+
+
+WARC/1.0
+WARC-Type: request
+WARC-Record-ID: <urn:uuid:a9c5c23a-0221-11e7-8fe3-0242ac120007>
+WARC-Target-URI: http://example.com/
+WARC-Date: 2017-03-06T04:02:06Z
+WARC-Concurrent-To: <urn:uuid:a9c51e3e-0221-11e7-bf66-0242ac120005>
+WARC-Block-Digest: sha1:Z6W6WEQQQICP5WA7OWB2SS75WLK4K7Y3
+WARC-Payload-Digest: sha1:2jmj7l5rSw0yVb/vlWAYkK/YBwk=
+Content-Type: application/http; msgtype=request
+Content-Length: 493
+
+GET / HTTP/1.0
+Host: example.com
+Accept-Language: en-US,en;q=0.8,ru;q=0.6
+Referer: https://webrecorder.io/temp-MJFXHZ4S/temp/recording-session/record/http://example.com/
+Upgrade-Insecure-Requests: 1
+Connection: close
+User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/56.0.2924.87 Safari/537.36
+Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8
+Dnt: 1
+Accept-Encoding: gzip, deflate, sdch, br
+
+
+
+WARC/1.0
+WARC-Type: request
+WARC-Record-ID: <urn:uuid:a9c5c23a-0221-11e7-8fe3-0242ac120007>
+WARC-Target-URI: http://example.com/
+WARC-Date: 2017-03-06T04:02:06Z
+WARC-Concurrent-To: <urn:uuid:a9c51e3e-0221-11e7-bf66-0242ac120005>
+WARC-Block-Digest: sha1:z63rEhCCBP7YH3WDqUv9stXFfxs=
+WARC-Payload-Digest: sha1:2jmj7l5rSw0yVb_vlWAYkK_YBwk=
+Content-Type: application/http; msgtype=request
+Content-Length: 493
+
+GET / HTTP/1.0
+Host: example.com
+Accept-Language: en-US,en;q=0.8,ru;q=0.6
+Referer: https://webrecorder.io/temp-MJFXHZ4S/temp/recording-session/record/http://example.com/
+Upgrade-Insecure-Requests: 1
+Connection: close
+User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/56.0.2924.87 Safari/537.36
+Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8
+Dnt: 1
+Accept-Encoding: gzip, deflate, sdch, br
+
+
+
