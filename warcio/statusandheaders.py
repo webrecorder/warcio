@@ -102,6 +102,7 @@ class StatusAndHeaders(object):
 
         self.statusline = '206 Partial Content'
         self.replace_header('Content-Range', content_range)
+        self.replace_header('Content-Length', str(part_len))
         self.replace_header('Accept-Ranges', 'bytes')
         return self
 
