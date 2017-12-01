@@ -1,3 +1,10 @@
+1.5.1
+~~~~~
+
+- remove ``test/data`` from wheel build, as it breaks latest setuptools wheel installation
+- add ``Content-Length`` when adding ``Content-Range`` via ``StatusAndHeaders.add_range`` `#29 <https://github.com/webrecorder/warcio/issues/29>`_
+
+
 1.5.0
 ~~~~~
 - new extract cli command `#26 <https://github.com/webrecorder/warcio/issues/26>`_ (by @nlevitt)

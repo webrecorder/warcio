@@ -5,7 +5,7 @@ from setuptools import setup, find_packages
 from setuptools.command.test import test as TestCommand
 import glob
 
-__version__ = '1.5.0'
+__version__ = '1.5.1'
 
 
 class PyTest(TestCommand):
@@ -27,7 +27,7 @@ setup(
     author='Ilya Kreymer',
     author_email='ikreymer@gmail.com',
     license='Apache 2.0',
-    packages=find_packages(),
+    packages=find_packages(exclude=['test']),
     url='https://github.com/webrecorder/warcio',
     description='Streaming WARC (and ARC) IO library',
     long_description=open('README.rst').read(),
@@ -37,9 +37,6 @@ setup(
     install_requires=[
         'six',
         ],
-    data_files=[
-        ('test/data', glob.glob('test/data/*')),
-    ],
     zip_safe=True,
     entry_points="""
         [console_scripts]

@@ -5,7 +5,7 @@ StatusAndHeaders(protocol = 'HTTP/1.0', statusline = '200 OK', headers = [('Cont
 
 # add range (and byte headers)
 >>> StatusAndHeaders(statusline = '200 OK', headers=[(b'Content-Type', b'text/plain')]).add_range(10, 4, 100)
-StatusAndHeaders(protocol = '', statusline = '206 Partial Content', headers = [('Content-Type', 'text/plain'), ('Content-Range', 'bytes 10-13/100'), ('Accept-Ranges', 'bytes')])
+StatusAndHeaders(protocol = '', statusline = '206 Partial Content', headers = [('Content-Type', 'text/plain'), ('Content-Range', 'bytes 10-13/100'), ('Content-Length', '4'), ('Accept-Ranges', 'bytes')])
 
 # other protocol expected
 >>> StatusAndHeadersParser(['Other']).parse(StringIO(status_headers_1))  # doctest: +IGNORE_EXCEPTION_DETAIL
