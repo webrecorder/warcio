@@ -4,6 +4,7 @@ from warcio.recordloader import ArchiveLoadFailed
 from warcio.warcwriter import BufferWARCWriter
 
 import pytest
+from io import BytesIO
 
 from . import get_test_file
 
@@ -11,12 +12,23 @@ from . import get_test_file
 #==============================================================================
 class TestArchiveIterator(object):
     def _load_archive(self, filename, offset=0, cls=ArchiveIterator,
-                     errs_expected=0, **kwargs):
+                     errs_expected=0, check_digests=True, **kwargs):
 
         with open(get_test_file(filename), 'rb') as fh:
             fh.seek(offset)
-            iter_ = cls(fh, **kwargs)
+            iter_ = cls(fh, check_digests=check_digests, **kwargs)
             rec_types = [record.rec_type for record in iter_]
+
+        assert iter_.err_count == errs_expected
+
+        return rec_types
+
+    def _load_archive_memory(self, stream, offset=0, cls=ArchiveIterator,
+                     errs_expected=0, check_digests=True, **kwargs):
+
+        stream.seek(offset)
+        iter_ = cls(stream, check_digests=check_digests, **kwargs)
+        rec_types = [record.rec_type for record in iter_]
 
         assert iter_.err_count == errs_expected
 
@@ -27,9 +39,9 @@ class TestArchiveIterator(object):
         if record:
             return record.content_stream().read()
 
-    def _find_first_by_type(self, filename, match_type, **params):
+    def _find_first_by_type(self, filename, match_type, check_digests=True, **params):
         with open(get_test_file(filename), 'rb') as fh:
-            for record in ArchiveIterator(fh, **params):
+            for record in ArchiveIterator(fh, check_digests=check_digests, **params):
                 if record.rec_type == match_type:
                     return record
 
@@ -49,7 +61,7 @@ class TestArchiveIterator(object):
         """ Test iterator semantics on 3 record WARC
         """
         with open(get_test_file('example-iana.org-chunked.warc'), 'rb') as fh:
-            a = ArchiveIterator(fh)
+            a = ArchiveIterator(fh, check_digests=True)
             for record in a:
                 assert record.rec_type == 'warcinfo'
                 break
@@ -72,7 +84,12 @@ class TestArchiveIterator(object):
         Error output printed, but still read
         """
         expected = ['warcinfo', 'warcinfo', 'response', 'request']
-        assert self._load_archive('example-trunc.warc', errs_expected=1) == expected
+        assert self._load_archive('example-trunc.warc', errs_expected=1,
+                                  check_digests=False) == expected
+
+        with pytest.raises(ValueError):
+            assert self._load_archive('example-trunc.warc', errs_expected=1,
+                                      check_digests=True) == expected
 
     def test_example_arc_gz(self):
         expected = ['arc_header', 'response']
@@ -148,6 +165,42 @@ Content-Length: 1303\r\n'
         with pytest.raises(ArchiveLoadFailed):
             self._load_archive('example.warc.gz', cls=ARCIterator)
 
+    def test_digests(self):
+        expected = ['warcinfo', 'warcinfo', 'response', 'request', 'revisit', 'request']
 
+        with open(get_test_file('example.warc'), 'rb') as fh:
+            contents = fh.read()
 
+        contents_sha = contents.replace(b'sha1:', b'xxx:', 1)
+        with pytest.raises(ValueError):
+            assert self._load_archive_memory(BytesIO(contents_sha)) == expected
 
+        contents_colon = contents.replace(b'sha1:', b'', 1)
+        with pytest.raises(ValueError):
+            assert self._load_archive_memory(BytesIO(contents_colon)) == expected
+
+        contents_block = contents
+        thing = b'WARC-Block-Digest: sha1:'
+        index = contents_block.find(thing)
+        index += len(thing)
+        b = contents_block[index:index+3]
+        contents_block = contents_block.replace(thing+b, thing+b'111')
+        with pytest.raises(ValueError):
+            assert self._load_archive_memory(BytesIO(contents_block)) == expected
+
+        contents_payload = contents
+        thing = b'WARC-Payload-Digest: sha1:'
+        index = contents_payload.find(thing)
+        index += len(thing)
+        b = contents_payload[index:index+3]
+        contents_payload = contents_payload.replace(thing+b, thing+b'111')
+        with pytest.raises(ValueError):
+            assert self._load_archive_memory(BytesIO(contents_payload)) == expected
+
+        expected = ['request', 'request', 'request']
+        with pytest.raises(ValueError):
+            # record 1: invalid payload digest
+            assert self._load_archive('example_digest.warc') == expected
+
+        # record 2: b64 digest; record 3: b64 filename safe digest
+        assert self._load_archive('example_digest.warc', offset=922) == expected

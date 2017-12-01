@@ -1,6 +1,4 @@
 import tempfile
-import base64
-import hashlib
 import datetime
 import zlib
 import six
@@ -8,7 +6,7 @@ import six
 from socket import gethostname
 from io import BytesIO
 
-from warcio.utils import to_native_str, BUFF_SIZE
+from warcio.utils import to_native_str, BUFF_SIZE, Digester
 from warcio.timeutils import datetime_to_iso_date
 
 from warcio.statusandheaders import StatusAndHeadersParser, StatusAndHeaders
@@ -322,19 +320,6 @@ class GzippingWrapper(object):
         buff = self.compressor.flush()
         self.out.write(buff)
         self.out.flush()
-
-
-# ============================================================================
-class Digester(object):
-    def __init__(self, type_='sha1'):
-        self.type_ = type_
-        self.digester = hashlib.new(type_)
-
-    def update(self, buff):
-        self.digester.update(buff)
-
-    def __str__(self):
-        return self.type_ + ':' + to_native_str(base64.b32encode(self.digester.digest()))
 
 
 # ============================================================================

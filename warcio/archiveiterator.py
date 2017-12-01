@@ -41,7 +41,8 @@ class ArchiveIterator(six.Iterator):
 
     def __init__(self, fileobj, no_record_parse=False,
                  verify_http=False, arc2warc=False,
-                 ensure_http_headers=False, block_size=BUFF_SIZE):
+                 ensure_http_headers=False, block_size=BUFF_SIZE,
+                 check_digests=True):  # XXX is this the right default for check_digests ?
 
         self.fh = fileobj
 
@@ -60,6 +61,7 @@ class ArchiveIterator(six.Iterator):
         self.offset = self.fh.tell()
         self.next_line = None
 
+        self.check_digests = check_digests
         self.err_count = 0
         self.record = None
 
@@ -230,7 +232,8 @@ class ArchiveIterator(six.Iterator):
                                                  next_line,
                                                  self.known_format,
                                                  self.no_record_parse,
-                                                 self.ensure_http_headers)
+                                                 self.ensure_http_headers,
+                                                 self.check_digests)
 
         self.member_info = None
 

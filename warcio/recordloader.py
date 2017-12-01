@@ -74,7 +74,8 @@ class ArcWarcRecordLoader(object):
                             statusline=None,
                             known_format=None,
                             no_record_parse=False,
-                            ensure_http_headers=False):
+                            ensure_http_headers=False,
+                            check_digests=False):
         """ Parse file-like stream and return an ArcWarcRecord
         encapsulating the record headers, http headers (if any),
         and a stream limited to the remainder of the record.
@@ -96,6 +97,9 @@ class ArcWarcRecordLoader(object):
                 rec_type = 'arc_header'
             else:
                 rec_type = 'response'
+            payload_digest = None
+            block_digest = None
+            segment_number = None
 
         elif the_format in ('warc', 'arc2warc'):
             rec_type = rec_headers.get_header('WARC-Type')
@@ -107,6 +111,9 @@ class ArcWarcRecordLoader(object):
             else:
                 sub_len = rec_headers.total_len
                 the_format = 'warc'
+            payload_digest = rec_headers.get_header('WARC-Payload-Digest')
+            block_digest = rec_headers.get_header('WARC-Block-Digest')
+            segment_number = rec_headers.get_header('WARC-Segment-Number')
 
         is_err = False
 
@@ -124,19 +131,27 @@ class ArcWarcRecordLoader(object):
             length = 0
 
         # limit stream to the length for all valid records
+        check_payload_digest = False
         if length is not None and length >= 0:
             stream = LimitReader.wrap_stream(stream, length)
-
+            if check_digests:
+                check_payload_digest = stream.configure_digesters(rec_type, segment_number,
+                                                                  payload_digest, block_digest)
 
         http_headers = None
 
         # load http headers if parsing
         if not no_record_parse:
             http_headers = self.load_http_headers(rec_type, uri, stream, length)
+        else:
+            check_payload_digest = False  # can't find the start of the payload
 
         # generate validate http headers (eg. for replay)
         if not http_headers and ensure_http_headers:
             http_headers = self.default_http_headers(length, content_type)
+
+        if check_payload_digest:
+            stream.begin_payload()
 
         return ArcWarcRecord(the_format, rec_type,
                              rec_headers, stream, http_headers,
