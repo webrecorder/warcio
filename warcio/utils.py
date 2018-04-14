@@ -18,6 +18,8 @@ def to_native_str(value, encoding='utf-8'):
         return value.decode(encoding)
     elif six.PY2 and isinstance(value, six.text_type):  #pragma: no cover
         return value.encode(encoding)
+    else:
+        return value
 
 
 # #===========================================================================

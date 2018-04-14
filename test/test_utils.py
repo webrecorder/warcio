@@ -51,3 +51,16 @@ class TestUtils(object):
         with utils.open_or_default(default_fh, 'rb', None) as fh:
             assert fh.readline().decode('utf-8') == 'NOTWARC/1.0\r\n'
 
+    def test_to_native_str(self):
+        # binary string
+        assert utils.to_native_str(b'10') == '10'
+
+        # unicode string
+        assert utils.to_native_str(u'10') == '10'
+
+        # default string
+        assert utils.to_native_str('10') == '10'
+
+        # not string, leave as is
+        assert utils.to_native_str(10) == 10
+
