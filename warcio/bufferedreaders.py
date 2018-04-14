@@ -1,5 +1,6 @@
 from io import BytesIO
 import zlib
+import sys
 
 from warcio.utils import BUFF_SIZE
 
@@ -140,7 +141,7 @@ class BufferedReader(object):
                         self.decompressor = None
                 # otherwise (partly decompressed), something is wrong
                 else:
-                    print(str(e))
+                    sys.stderr.write(str(e) + '\n')
                     return b''
         return data
 
