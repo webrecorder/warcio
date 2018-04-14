@@ -153,11 +153,12 @@ class BaseWARCWriter(object):
                                        length=length)
 
     def create_revisit_record(self, uri, digest, refers_to_uri, refers_to_date,
-                              http_headers=None):
+                              http_headers=None, warc_headers_dict={}):
 
         assert digest, 'Digest can not be empty'
 
-        record = self.create_warc_record(uri, 'revisit', http_headers=http_headers)
+        record = self.create_warc_record(uri, 'revisit', http_headers=http_headers,
+                                                         warc_headers_dict=warc_headers_dict)
 
         record.rec_headers.add_header('WARC-Profile', self.REVISIT_PROFILE)
 
