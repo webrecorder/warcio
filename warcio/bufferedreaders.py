@@ -222,9 +222,12 @@ class BufferedReader(object):
         return rem
 
     def close(self):
-        if self.stream:
-            self.stream.close()
-            self.stream = None
+        self.stream = None
+        self.buff = None
+
+        if self.decompressor:
+            self.decompressor.flush()
+            self.decompressor = None
 
     @classmethod
     def get_supported_decompressors(cls):

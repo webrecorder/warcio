@@ -6,6 +6,7 @@ from warcio.warcwriter import BufferWARCWriter
 import pytest
 
 from . import get_test_file
+from contextlib import closing, contextmanager
 
 
 #==============================================================================
@@ -23,15 +24,18 @@ class TestArchiveIterator(object):
         return rec_types
 
     def _read_first_response(self, filename):
-        record = self._find_first_by_type(filename, 'response')
-        if record:
-            return record.content_stream().read()
+        with self._find_first_by_type(filename, 'response') as record:
+            if record:
+                return record.content_stream().read()
 
+    @contextmanager
     def _find_first_by_type(self, filename, match_type, **params):
         with open(get_test_file(filename), 'rb') as fh:
-            for record in ArchiveIterator(fh, **params):
-                if record.rec_type == match_type:
-                    return record
+            with closing(ArchiveIterator(fh, **params)) as a:
+                for record in a:
+                    if record.rec_type == match_type:
+                        yield record
+                        break
 
     def test_example_warc_gz(self):
         expected = ['warcinfo', 'warcinfo', 'response', 'request', 'revisit', 'request']
@@ -49,22 +53,23 @@ class TestArchiveIterator(object):
         """ Test iterator semantics on 3 record WARC
         """
         with open(get_test_file('example-iana.org-chunked.warc'), 'rb') as fh:
-            a = ArchiveIterator(fh)
-            for record in a:
-                assert record.rec_type == 'warcinfo'
-                break
+            with closing(ArchiveIterator(fh)) as a:
+                for record in a:
+                    assert record.rec_type == 'warcinfo'
+                    break
 
-            record = next(a)
-            assert record.rec_type == 'response'
-
-            for record in a:
-                assert record.rec_type == 'request'
-                break
-
-            with pytest.raises(StopIteration):
                 record = next(a)
+                assert record.rec_type == 'response'
+
+                for record in a:
+                    assert record.rec_type == 'request'
+                    break
+
+                with pytest.raises(StopIteration):
+                    record = next(a)
 
         assert a.record == None
+        assert a.reader == None
         assert a.read_to_end() == None
 
     def test_example_warc_trunc(self):
@@ -91,25 +96,25 @@ class TestArchiveIterator(object):
         assert self._load_archive('example-resource.warc.gz') == expected
 
     def test_resource_no_http_headers(self):
-        record = self._find_first_by_type('example-resource.warc.gz', 'resource')
-        assert record.http_headers == None
-        assert len(record.content_stream().read()) == int(record.rec_headers.get('Content-Length'))
+        with self._find_first_by_type('example-resource.warc.gz', 'resource') as record:
+            assert record.http_headers == None
+            assert len(record.content_stream().read()) == int(record.rec_headers.get('Content-Length'))
 
     def test_resource_with_http_headers(self):
-        record = self._find_first_by_type('example-resource.warc.gz', 'resource',
-                                          ensure_http_headers=True)
+        with self._find_first_by_type('example-resource.warc.gz', 'resource',
+                                      ensure_http_headers=True) as record:
 
-        assert record.http_headers != None
+            assert record.http_headers != None
 
-        assert (record.http_headers.get_header('Content-Length') ==
-                record.rec_headers.get_header('Content-Length'))
+            assert (record.http_headers.get_header('Content-Length') ==
+                    record.rec_headers.get_header('Content-Length'))
 
-        expected = 'HTTP/1.0 200 OK\r\n\
+            expected = 'HTTP/1.0 200 OK\r\n\
 Content-Type: text/html; charset=utf-8\r\n\
 Content-Length: 1303\r\n'
 
-        assert str(record.http_headers) == expected
-        assert len(record.content_stream().read()) == int(record.rec_headers.get('Content-Length'))
+            assert str(record.http_headers) == expected
+            assert len(record.content_stream().read()) == int(record.rec_headers.get('Content-Length'))
 
     def test_read_content(self):
         assert 'Example Domain' in self._read_first_response('example.warc.gz').decode('utf-8')
