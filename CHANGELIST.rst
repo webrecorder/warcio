@@ -1,3 +1,11 @@
+1.5.2
+~~~~~
+
+- Write any errors during decompression to stderr `#31 <https://github.com/webrecorder/warcio/issues/31>`_
+- ``to_native_str()`` returns original value unchanged if not a string/bytes type
+- ``WarcWriter.create_visit_record()`` accepts additional WARC headers dictionary
+- ``ArchiveIterator.close()`` added which calls ``decompressor.flush()`` to address possible issues in `#34 <https://github.com/webrecorder/warcio/issues/34>`_
+
 1.5.1
 ~~~~~
 
