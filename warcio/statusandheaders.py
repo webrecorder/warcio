@@ -269,7 +269,7 @@ class StatusAndHeadersParser(object):
     @staticmethod
     def make_warc_id(id_=None):
         if not id_:
-            id_ = uuid.uuid1()
+            id_ = uuid.uuid4()
         return '<urn:uuid:{0}>'.format(id_)
 
 
