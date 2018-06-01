@@ -1,8 +1,7 @@
 1.5.3
 ~~~~~
 
-- Add ``close_stream`` option to BufferedReader, defaulting to True (as pre 1.5.2 behavior). `#34 <https://github.com/webrecorder/warcio/issues/34>`_
-- ArchiveIterator usage does not close the wrapped stream, only the decompressor (same as 1.5.2 behavior).
+- ArchiveIterator calls new ``close_decompressor()`` function in BufferedReader instead of close() to only close decompressor, not underlying stream.  `#35 <https://github.com/webrecorder/warcio/issues/35>`_
 
 
 1.5.2
