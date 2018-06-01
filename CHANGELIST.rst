@@ -1,3 +1,10 @@
+1.5.3
+~~~~~
+
+- Add ``close_stream`` option to BufferedReader, defaulting to True (as pre 1.5.2 behavior). `#34 <https://github.com/webrecorder/warcio/issues/34>`_
+- ArchiveIterator usage does not close the wrapped stream, only the decompressor (same as 1.5.2 behavior).
+
+
 1.5.2
 ~~~~~
 
@@ -6,6 +13,7 @@
 - ``WarcWriter.create_visit_record()`` accepts additional WARC headers dictionary
 - ``ArchiveIterator.close()`` added which calls ``decompressor.flush()`` to address possible issues in `#34 <https://github.com/webrecorder/warcio/issues/34>`_
 - Switch ``Warc-Record-ID`` uuid creation to ``uuid4()`` from ``uuid1()``
+
 
 1.5.1
 ~~~~~

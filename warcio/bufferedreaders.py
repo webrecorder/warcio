@@ -63,8 +63,10 @@ class BufferedReader(object):
 
     def __init__(self, stream, block_size=BUFF_SIZE,
                  decomp_type=None,
-                 starting_data=None):
+                 starting_data=None,
+                 close_stream=True):
         self.stream = stream
+        self._close_stream = close_stream
         self.block_size = block_size
 
         self._init_decomp(decomp_type)
@@ -222,6 +224,9 @@ class BufferedReader(object):
         return rem
 
     def close(self):
+        if self.stream and self._close_stream:
+            self.stream.close()
+
         self.stream = None
         self.buff = None
 

@@ -56,7 +56,8 @@ class ArchiveIterator(six.Iterator):
         self.ensure_http_headers = ensure_http_headers
 
         self.reader = DecompressingBufferedReader(self.fh,
-                                                  block_size=block_size)
+                                                  block_size=block_size,
+                                                  close_stream=False)
         self.offset = self.fh.tell()
         self.next_line = None
 
