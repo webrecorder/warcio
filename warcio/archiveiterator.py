@@ -74,7 +74,7 @@ class ArchiveIterator(six.Iterator):
     def close(self):
         self.record = None
         if self.reader:
-            self.reader.close()
+            self.reader.close_decompressor()
             self.reader = None
 
     def _iterate_records(self):
