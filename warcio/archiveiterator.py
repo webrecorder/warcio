@@ -56,8 +56,7 @@ class ArchiveIterator(six.Iterator):
         self.ensure_http_headers = ensure_http_headers
 
         self.reader = DecompressingBufferedReader(self.fh,
-                                                  block_size=block_size,
-                                                  close_stream=False)
+                                                  block_size=block_size)
         self.offset = self.fh.tell()
         self.next_line = None
 
@@ -75,7 +74,7 @@ class ArchiveIterator(six.Iterator):
     def close(self):
         self.record = None
         if self.reader:
-            self.reader.close()
+            self.reader.close_decompressor()
             self.reader = None
 
     def _iterate_records(self):

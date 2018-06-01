@@ -96,7 +96,7 @@ Zero-Length chunk:
 
 from io import BytesIO
 from warcio.bufferedreaders import ChunkedDataReader, ChunkedDataException
-from warcio.bufferedreaders import DecompressingBufferedReader, BufferedReader
+from warcio.bufferedreaders import DecompressingBufferedReader
 from warcio.limitreader import LimitReader
 
 from contextlib import closing
@@ -151,27 +151,6 @@ def test_compress_mix():
     assert b == b'ABC'
     x.read_next_member()
     assert x.read() == b'123'
-
-
-def test_close_stream():
-    # don't close by default
-    b = BytesIO(b'abc')
-    with closing(BufferedReader(b, close_stream=False)) as fh:
-        assert fh.read() == b'abc'
-
-    # stream not close
-    b.seek(0)
-    assert b.read() == b'abc'
-
-    b.seek(0)
-
-    with closing(BufferedReader(b)) as fh:
-        assert fh.read() == b'abc'
-
-    # can't seek, already closed
-    with pytest.raises(ValueError):
-        b.seek(0)
-
 
 
 # Errors
