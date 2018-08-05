@@ -47,7 +47,7 @@ class ArchiveLoadFailed(Exception):
 
 #=================================================================
 class ArcWarcRecordLoader(object):
-    WARC_TYPES = ['WARC/1.0', 'WARC/0.17', 'WARC/0.18']
+    WARC_TYPES = ['WARC/1.1', 'WARC/1.0', 'WARC/0.17', 'WARC/0.18']
 
     HTTP_TYPES = ['HTTP/1.0', 'HTTP/1.1']
 
