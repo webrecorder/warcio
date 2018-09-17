@@ -121,14 +121,15 @@ Writing WARC Records
 
 Starting with 1.6, warcio introduces a way to 'record' HTTP/S traffic directly
 to a WARC file, by monkey-patching Python's ``http.client`` library.
-This approach works well with popular ``requests`` library often used to fetch
-HTTP/S content.
 
-### Create a WARC by Recording HTTP/S Traffic
+This approach works well with the popular ``requests`` library often used to fetch
+HTTP/S content. Note that ``requests`` must be imported after ``record_http`` module.
 
+Quickstart to Writing a WARC
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-To fetch ``https://example.com/`` and save the response and request (response first)
-into a gzip compressed WARC file named ``example.warc.gz``, simply run:
+Fetching the url ``https://example.com/`` while saving the response and request
+into a gzip compressed WARC file named ``example.warc.gz`` can be done with the following four lines:
 
 .. code:: python
 
@@ -137,9 +138,9 @@ into a gzip compressed WARC file named ``example.warc.gz``, simply run:
 
     with record_http('example.warc.gz'):
         requests.get('https://example.com/')
-        requests.get('http://example.com/abc')
 
-The resulting WARC file contain 4 records, a response/request pair for each of the 2 urls.
+
+The WARC ``example.warc.gz`` will contain two records (the response is written first, then the request).
 
 
 Customizing WARC Writing
