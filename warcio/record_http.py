@@ -9,6 +9,7 @@ from contextlib import contextmanager
 from array import array
 
 from warcio.utils import to_native_str, BUFF_SIZE
+from warcio.warcwriter import WARCWriter
 
 from tempfile import SpooledTemporaryFile
 
@@ -152,7 +153,7 @@ class RequestRecorder(object):
             response = self._create_record(self.response_out, 'response')
 
             if self.filter_func:
-                request, response = self.filter_func(request, response)
+                request, response = self.filter_func(request, response, self)
                 if not request or not response:
                     return
 
@@ -168,10 +169,20 @@ httplib.HTTPConnection = RecordingHTTPConnection
 # ============================================================================
 
 @contextmanager
-def record_http(warc_writer, filter_func=None):
-    recorder = RequestRecorder(warc_writer, filter_func)
-    RecordingHTTPConnection.local.recorder = recorder
-    yield
-    RecordingHTTPConnection.local.recorder = None
+def record_http(warc_writer, filter_func=None, append=False):
+    out = None
+    if isinstance(warc_writer, str):
+        out = open(warc_writer, 'wb' if not append else 'ab')
+        warc_writer = WARCWriter(out)
+
+    try:
+        recorder = RequestRecorder(warc_writer, filter_func)
+        RecordingHTTPConnection.local.recorder = recorder
+        yield
+
+    finally:
+        RecordingHTTPConnection.local.recorder = None
+        if out:
+            out.close()
 
 

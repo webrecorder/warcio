@@ -3,13 +3,17 @@ from wsgiref.simple_server import make_server
 from io import BytesIO
 import time
 
+# must be imported before 'requests'
 from warcio.record_http import record_http
-from warcio.warcwriter import BufferWARCWriter, WARCWriter
 import requests
+
 import json
+import os
+import tempfile
 
 from warcio.archiveiterator import ArchiveIterator
 from warcio.utils import BUFF_SIZE
+from warcio.warcwriter import BufferWARCWriter, WARCWriter
 
 
 # ==================================================================
@@ -104,7 +108,7 @@ class TestRecordHttpBin(object):
     def test_post_stream(self):
         warc_writer = BufferWARCWriter(gzip=False)
 
-        def nop_filter(request, response):
+        def nop_filter(request, response, warc_writer):
             assert request
             assert response
             return request, response
@@ -136,7 +140,7 @@ class TestRecordHttpBin(object):
     def test_skip_filter(self):
         warc_writer = BufferWARCWriter(gzip=False)
 
-        def skip_filter(request, response):
+        def skip_filter(request, response, warc_writer):
             assert request
             assert response
             return None, None
@@ -149,5 +153,30 @@ class TestRecordHttpBin(object):
 
         # skipped, nothing written
         assert warc_writer.get_contents() == b''
+
+    def test_record_to_temp_file(self):
+        temp_dir = tempfile.mkdtemp('warctest')
+
+        full_path = os.path.join(temp_dir, 'example.warc.gz')
+
+        url = 'http://localhost:{0}/get?foo=bar'.format(self.port)
+
+        with record_http(full_path):
+            res = requests.get(url)
+
+        with open(full_path, 'rb') as stream:
+            # response
+            ai = ArchiveIterator(stream)
+            response = next(ai)
+            assert response.rec_type == 'response'
+            assert response.rec_headers['WARC-Target-URI'] == url
+
+            # request
+            request = next(ai)
+            assert request.rec_type == 'request'
+            assert request.rec_headers['WARC-Target-URI'] == url
+
+        os.remove(full_path)
+        os.rmdir(temp_dir)
 
 
