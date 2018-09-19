@@ -1,4 +1,5 @@
 import six
+import os
 from contextlib import contextmanager
 
 try:
@@ -59,3 +60,21 @@ def headers_to_str_headers(headers):
             v = v.decode('iso-8859-1')
         ret.append((k, v))
     return ret
+
+
+#=============================================================================
+sys_open = open
+
+def open(filename, mode='r', **kwargs):  #pragma: no cover
+    """
+    open() which supports exclusive mode 'x' in python < 3.3
+    """
+    if six.PY3 or 'x' not in mode:
+        return sys_open(filename, mode, **kwargs)
+
+    fd = os.open(filename, os.O_EXCL | os.O_CREAT | os.O_WRONLY)
+    mode = mode.replace('x', 'w')
+    return os.fdopen(fd, mode, 0x664)
+
+
+

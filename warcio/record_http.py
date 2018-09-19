@@ -8,7 +8,7 @@ from contextlib import contextmanager
 
 from array import array
 
-from warcio.utils import to_native_str, BUFF_SIZE
+from warcio.utils import to_native_str, BUFF_SIZE, open
 from warcio.warcwriter import WARCWriter
 
 from tempfile import SpooledTemporaryFile
@@ -169,10 +169,10 @@ httplib.HTTPConnection = RecordingHTTPConnection
 # ============================================================================
 
 @contextmanager
-def record_http(warc_writer, filter_func=None, append=False):
+def record_http(warc_writer, filter_func=None, append=True):
     out = None
     if isinstance(warc_writer, str):
-        out = open(warc_writer, 'wb' if not append else 'ab')
+        out = open(warc_writer, 'ab' if append else 'xb')
         warc_writer = WARCWriter(out)
 
     try:

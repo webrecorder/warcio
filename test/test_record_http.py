@@ -5,6 +5,7 @@ import time
 
 # must be imported before 'requests'
 from warcio.record_http import record_http
+from pytest import raises
 import requests
 
 import json
@@ -154,12 +155,15 @@ class TestRecordHttpBin(object):
         # skipped, nothing written
         assert warc_writer.get_contents() == b''
 
-    def test_record_to_temp_file(self):
+    def test_record_to_temp_file_append(self):
         temp_dir = tempfile.mkdtemp('warctest')
 
         full_path = os.path.join(temp_dir, 'example.warc.gz')
 
         url = 'http://localhost:{0}/get?foo=bar'.format(self.port)
+
+        with record_http(full_path):
+            res = requests.get(url)
 
         with record_http(full_path):
             res = requests.get(url)
@@ -175,6 +179,32 @@ class TestRecordHttpBin(object):
             request = next(ai)
             assert request.rec_type == 'request'
             assert request.rec_headers['WARC-Target-URI'] == url
+
+            response = next(ai)
+            assert response.rec_type == 'response'
+            assert response.rec_headers['WARC-Target-URI'] == url
+
+            # request
+            request = next(ai)
+            assert request.rec_type == 'request'
+            assert request.rec_headers['WARC-Target-URI'] == url
+
+        os.remove(full_path)
+        os.rmdir(temp_dir)
+
+    def test_error_record_to_temp_file_no_append_no_overwrite(self):
+        temp_dir = tempfile.mkdtemp('warctest')
+
+        full_path = os.path.join(temp_dir, 'example2.warc.gz')
+
+        url = 'http://localhost:{0}/get?foo=bar'.format(self.port)
+
+        with record_http(full_path, append=False):
+            res = requests.get(url)
+
+        with raises(OSError):
+            with record_http(full_path, append=False):
+                res = requests.get(url)
 
         os.remove(full_path)
         os.rmdir(temp_dir)
