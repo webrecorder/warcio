@@ -153,6 +153,8 @@ Content-Length: 1303\r\n'
         with pytest.raises(ArchiveLoadFailed):
             self._load_archive('example.warc.gz', cls=ARCIterator)
 
-
+    def test_corrects_wget_bug(self):
+        with self._find_first_by_type('example-wget-bad-target-uri.warc.gz', 'response') as record:
+            assert record.rec_headers.get('WARC-Target-URI') == 'http://example.com/'
 
 

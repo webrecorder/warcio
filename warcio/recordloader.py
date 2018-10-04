@@ -99,7 +99,7 @@ class ArcWarcRecordLoader(object):
 
         elif the_format in ('warc', 'arc2warc'):
             rec_type = rec_headers.get_header('WARC-Type')
-            uri = rec_headers.get_header('WARC-Target-URI')
+            uri = self._ensure_target_uri_format(rec_headers)
             length = rec_headers.get_header('Content-Length')
             content_type = rec_headers.get_header('Content-Type')
             if the_format == 'warc':
@@ -213,6 +213,22 @@ class ArcWarcRecordLoader(object):
             else:
                 msg = 'Unknown archive format, first line: '
             raise ArchiveLoadFailed(msg + str(se.statusline))
+
+    def _ensure_target_uri_format(self, rec_headers):
+        """Checks the value for the WARC-Target-URI header field to see if it starts
+        with '<' and ends with '>' (Wget 1.19 bug) and if '<' and '>' are present,
+        corrects and updates the field returning the corrected value for the field
+        otherwise just returns the fields value.
+
+        :param StatusAndHeaders rec_headers: The parsed WARC headers
+        :return: The value for the WARC-Target-URI field
+        :rtype: str | None
+        """
+        uri = rec_headers.get_header('WARC-Target-URI')
+        if uri is not None and uri.startswith('<') and uri.endswith('>'):
+            uri = uri[1:-1]
+            rec_headers.replace_header('WARC-Target-URI', uri)
+        return uri
 
 
 #=================================================================
