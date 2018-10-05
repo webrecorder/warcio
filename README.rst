@@ -7,7 +7,7 @@ WARCIO: WARC (and ARC) Streaming Library
 
 
 Background
-~~~~~~~~~~
+----------
 
 This library provides a fast, standalone way to read and write `WARC
 Format <https://en.wikipedia.org/wiki/Web_ARChive>`__ commonly used in
@@ -119,9 +119,37 @@ records) that contain HTML:
 Writing WARC Records
 --------------------
 
+Starting with 1.6, warcio introduces a way to 'record' HTTP/S traffic directly
+to a WARC file, by monkey-patching Python's ``http.client`` library.
+
+This approach works well with the popular ``requests`` library often used to fetch
+HTTP/S content. Note that ``requests`` must be imported after ``record_http`` module.
+
+Quickstart to Writing a WARC
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Fetching the url ``https://example.com/`` while saving the response and request
+into a gzip compressed WARC file named ``example.warc.gz`` can be done with the following four lines:
+
+.. code:: python
+
+    from warcio.record_http import record_http
+    import requests  # requests *must* be imported after record_http
+
+    with record_http('example.warc.gz'):
+        requests.get('https://example.com/')
+
+
+The WARC ``example.warc.gz`` will contain two records (the response is written first, then the request).
+
+
+Customizing WARC Writing
+~~~~~~~~~~~~~~~~~~~~~~~~
+
 The library provides a simple and extensible interface for writing WARC
 records conformant to WARC 1.0 ISO standard
 `(see draft) <http://bibnum.bnf.fr/WARC/WARC_ISO_28500_version1_latestdraft.pdf>`__
+Parts of WARC 1.1 spec are also being implemented.
 
 The library comes with a basic ``WARCWriter`` class for writing to a
 single WARC file and ``BufferWARCWriter`` for writing to an in-memory
@@ -129,6 +157,60 @@ buffer. The ``BaseWARCWriter`` can be extended to support more complex
 operations.
 
 (There is no support for writing legacy ARC files)
+
+For more flexibility, such as to use a custom ``WARCWriter`` class,
+the above example can be written as:
+
+.. code:: python
+
+    from warcio.record_http import record_http
+    from warcio import WARCWriter
+    import requests  # requests *must* be imported after record_http
+
+    with open('example.warc.gz', 'wb') as fh:
+        warc_writer = WARCWriter(fh)
+        with record_http(warc_writer):
+            requests.get('https://example.com/')
+            requests.get('http://example.com/abc')
+            
+
+Filtering Recording
+~~~~~~~~~~~~~~~~~~~
+
+When recording via HTTP, it is possible to provide a custom filter function, 
+which can be used to determine if a WARC request & response should actually be
+written or not.
+
+The filter function is called with the request and response record
+before they are written, and can be used to substitute a different record (for example, a revisit
+instead of a response), or to skip writing altogether by returning nothing, as shown below:
+
+.. code:: python
+
+    def filter_records(warc_writer, request, response):
+        # return None, None to indicate records should be skipped
+        if response.http_headers.get_statuscode() != 200:
+            return None, None
+            
+        # the response record can be replaced with a revisit record
+        elif check_for_dedup():
+            response = create_revisit_record(...)
+            
+        return request, response
+
+    with record_http('example.warc.gz', filter_records):
+         requests.get('https://example.com/')
+         
+Please refer to
+`test/test\_record_http.py <test/test_record_http.py>`__ for additional examples
+of recording ``requests`` traffic to WARC.
+
+Manual/Advanced WARC Writing
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Before 1.6, this was the primary method for fetching a url and then
+writing to a WARC. This process is a bit more verbose,
+but provides for full control of WARC creation and avoid monkey-patching.
 
 The following example loads ``http://example.com/``, creates a WARC
 response record, and writes it, gzip compressed, to ``example.warc.gz``
@@ -159,10 +241,12 @@ The block and payload digests are computed automatically.
 
         writer.write_record(record)
 
-The library also includes additional semantics for: - Creating
-``warcinfo`` and ``revisit`` records - Writing ``response`` and
-``request`` records together - Writing custom WARC records - Reading a
-full WARC record from a stream
+
+The library also includes additional semantics for:
+ - Creating ``warcinfo`` and ``revisit`` records
+ - Writing ``response`` and ``request`` records together
+ - Writing custom WARC records
+ - Reading a full WARC record from a stream
 
 Please refer to `warcwriter.py <warcio/warcwriter.py>`__ and
 `test/test\_writer.py <test/test_writer.py>`__ for additional examples.
