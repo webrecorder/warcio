@@ -222,7 +222,8 @@ class BaseWARCWriter(object):
         return warc_headers
 
     def _set_header_buff(self, record):
-        headers_buff = record.http_headers.to_bytes(self.header_filter, 'iso-8859-1')
+        # HTTP headers %-encoded as ascii (see to_ascii_bytes for more info)
+        headers_buff = record.http_headers.to_ascii_bytes(self.header_filter)
         record.http_headers.headers_buff = headers_buff
 
     def _write_warc_record(self, out, record):
@@ -273,8 +274,9 @@ class BaseWARCWriter(object):
 
         record.rec_headers.replace_header('Content-Length', str(record.length))
 
-        # write record headers
-        out.write(record.rec_headers.to_bytes())
+        # write record headers -- encoded as utf-8
+        # WARC headers can be utf-8 per spec
+        out.write(record.rec_headers.to_bytes(encoding='utf-8'))
 
         # write headers buffer, if any
         if record.http_headers:

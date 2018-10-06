@@ -1,3 +1,6 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
 from warcio.statusandheaders import StatusAndHeaders
 from warcio.warcwriter import BufferWARCWriter, GzippingWrapper
 from warcio.recordloader import ArcWarcRecordLoader
@@ -56,6 +59,27 @@ Content-Length: 97\r\n\
 \r\n\
 HTTP/1.0 200 OK\r\n\
 Content-Type: text/plain; charset="UTF-8"\r\n\
+Custom-Header: somevalue\r\n\
+\r\n\
+some\n\
+text\r\n\
+\r\n\
+'
+
+RESPONSE_RECORD_UNICODE_HEADERS = '\
+WARC/1.0\r\n\
+WARC-Type: response\r\n\
+WARC-Record-ID: <urn:uuid:12345678-feb0-11e6-8f83-68a86d1772ce>\r\n\
+WARC-Target-URI: http://example.com/\r\n\
+WARC-Date: 2000-01-01T00:00:00Z\r\n\
+WARC-Payload-Digest: sha1:B6QJ6BNJ3R4B23XXMRKZKHLPGJY2VE4O\r\n\
+WARC-Block-Digest: sha1:4OWI4LV5GWIWVTL2MPL7OHSLNNAQ3H4W\r\n\
+Content-Type: application/http; msgtype=response\r\n\
+Content-Length: 207\r\n\
+\r\n\
+HTTP/1.0 200 OK\r\n\
+Content-Type: text/plain; charset="UTF-8"\r\n\
+Content-Disposition: attachment; filename*=UTF-8\'\'%D0%B8%D1%81%D0%BF%D1%8B%D1%82%D0%B0%D0%BD%D0%B8%D0%B5.txt\r\n\
 Custom-Header: somevalue\r\n\
 \r\n\
 some\n\
@@ -312,6 +336,24 @@ some\ntext'.encode('utf-8')
     return writer.create_warc_record('http://example.com/', 'response',
                                      payload=BytesIO(payload),
                                      length=len(payload))
+
+
+# ============================================================================
+@sample_record('response-unicode-header', RESPONSE_RECORD_UNICODE_HEADERS)
+def sample_response_from_buff(writer):
+    headers_list = [('Content-Type', 'text/plain; charset="UTF-8"'),
+                    ('Content-Disposition', u'attachment; filename="испытание.txt"'),
+                    ('Custom-Header', 'somevalue')
+                   ]
+
+    payload = b'some\ntext'
+
+    http_headers = StatusAndHeaders('200 OK', headers_list, protocol='HTTP/1.0')
+
+    return writer.create_warc_record('http://example.com/', 'response',
+                                     payload=BytesIO(payload),
+                                     length=len(payload),
+                                     http_headers=http_headers)
 
 
 # ============================================================================
@@ -603,7 +645,8 @@ class TestWarcWriter(object):
         stream.seek(0)
         parsed_record = ArcWarcRecordLoader().parse_record_stream(DecompressingBufferedReader(stream))
 
-        assert full_record.http_headers == parsed_record.http_headers
+        if 'Content-Disposition' not in record_string:
+            assert full_record.http_headers == parsed_record.http_headers
         assert full_record.raw_stream.read() == parsed_record.raw_stream.read()
         assert full_record.rec_headers != parsed_record.rec_headers
 
@@ -660,5 +703,4 @@ class TestWarcWriter(object):
         validate_response(records[1])
 
         validate_warcinfo(records[0])
-
 
