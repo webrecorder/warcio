@@ -2,6 +2,8 @@ import sys
 import pytest
 from collections import Counter
 from io import BytesIO
+import os
+import tempfile
 
 import warcio.utils as utils
 from . import get_test_file
@@ -63,4 +65,18 @@ class TestUtils(object):
 
         # not string, leave as is
         assert utils.to_native_str(10) == 10
+
+    def test_open_exclusive(self):
+        temp_dir = tempfile.mkdtemp('warctest')
+        full_name = os.path.join(temp_dir, 'foo.txt')
+        with utils.open(full_name, 'xt') as fh:
+            fh.write('test')
+
+        with pytest.raises(OSError):
+            with utils.open(full_name, 'xt') as fh:
+                fh.write('test')
+
+        os.remove(full_name)
+        os.rmdir(temp_dir)
+
 

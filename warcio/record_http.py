@@ -169,11 +169,12 @@ httplib.HTTPConnection = RecordingHTTPConnection
 # ============================================================================
 
 @contextmanager
-def record_http(warc_writer, filter_func=None, append=True):
+def record_http(warc_writer, filter_func=None, append=True,
+                **kwargs):
     out = None
     if isinstance(warc_writer, str):
         out = open(warc_writer, 'ab' if append else 'xb')
-        warc_writer = WARCWriter(out)
+        warc_writer = WARCWriter(out, **kwargs)
 
     try:
         recorder = RequestRecorder(warc_writer, filter_func)

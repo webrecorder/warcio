@@ -21,8 +21,11 @@ class FixedTestWARCWriter(BufferWARCWriter):
         return '<urn:uuid:12345678-feb0-11e6-8f83-68a86d1772ce>'
 
     @classmethod
-    def _make_warc_date(cls):
-        return '2000-01-01T00:00:00Z'
+    def _make_warc_date(cls, use_millis=False):
+        if not use_millis:
+            return '2000-01-01T00:00:00Z'
+        else:
+            return '2000-01-01T00:00:00.123456Z'
 
 
 # ============================================================================
@@ -565,6 +568,25 @@ class TestWarcWriter(object):
 
         assert resp_id != req_id
         assert resp_id == req.rec_headers.get_header('WARC-Concurrent-To')
+
+    def test_response_warc_1_1(self, is_gzip):
+        writer = BufferWARCWriter(gzip=is_gzip, warc_version='WARC/1.1')
+
+        resp = sample_response(writer)
+
+        writer.write_record(resp)
+
+        stream = writer.get_stream()
+
+        reader = ArchiveIterator(stream)
+        recs = list(reader)
+
+        assert len(recs) == 1
+        assert recs[0].rec_headers.protocol == 'WARC/1.1'
+
+        # ISO datetime with fractional millis
+        assert '.' in recs[0].rec_headers['WARC-Date']
+        assert len(recs[0].rec_headers['WARC-Date']) == 27
 
     def _conv_to_streaming_record(self, record_buff, rec_type):
         # strip-off the two empty \r\n\r\n added at the end of uncompressed record
