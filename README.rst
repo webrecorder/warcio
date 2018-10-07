@@ -14,10 +14,13 @@ Format <https://en.wikipedia.org/wiki/Web_ARChive>`__ commonly used in
 web archives. Supports Python 2.7+ and Python 3.3+ (using
 `six <https://pythonhosted.org/six/>`__, the only external dependency)
 
+warcio supports reading and writing of WARC files compliant with both the `WARC 1.0 <http://bibnum.bnf.fr/WARC/WARC_ISO_28500_version1_latestdraft.pdf>`__
+and `WARC 1.1 <http://bibnum.bnf.fr/WARC/WARC_ISO_28500_version1-1_latestdraft.pdf>`__ ISO standards.
+
 Install with: ``pip install warcio``
 
 This library is a spin-off of the WARC reading and writing component of
-the `pywb <https://github.com/ikreymer/pywb>`__ high-fidelity replay
+the `pywb <https://github.com/webrecorder/pywb>`__ high-fidelity replay
 library, a key component of
 `Webrecorder <https://github.com/webrecorder/webrecorder>`__
 
@@ -28,11 +31,13 @@ Reading WARC Records
 --------------------
 
 A key feature of the library is to be able to iterate over a stream of
-WARC records using the ``ArchiveIterator``
+WARC records using the ``ArchiveIterator``.
 
-It includes the following features: - Reading a WARC/ARC stream - On the
-fly ARC to WARC record conversion - Decompressing and de-chunking HTTP
-payload content stored in WARC/ARC files.
+It includes the following features:
+
+- Reading a WARC 1.0, WARC 1.1 or ARC stream
+- On the fly ARC to WARC record conversion
+- Decompressing and de-chunking HTTP payload content stored in WARC/ARC files.
 
 For example, the following prints the the url for each WARC ``response``
 record:
@@ -146,10 +151,8 @@ The WARC ``example.warc.gz`` will contain two records (the response is written f
 Customizing WARC Writing
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
-The library provides a simple and extensible interface for writing WARC
-records conformant to WARC 1.0 ISO standard
-`(see draft) <http://bibnum.bnf.fr/WARC/WARC_ISO_28500_version1_latestdraft.pdf>`__
-Parts of WARC 1.1 spec are also being implemented.
+The library provides a simple and extensible interface for writing
+standards-compliant WARC files.
 
 The library comes with a basic ``WARCWriter`` class for writing to a
 single WARC file and ``BufferWARCWriter`` for writing to an in-memory
@@ -171,8 +174,44 @@ the above example can be written as:
         warc_writer = WARCWriter(fh)
         with record_http(warc_writer):
             requests.get('https://example.com/')
-            requests.get('http://example.com/abc')
             
+WARC/1.1 Support
+~~~~~~~~~~~~~~~~
+
+By default, warcio creates WARC 1.0 records for maximum compatibility with existing tools.
+To create WARC/1.1 records, simply specify the warc version as follows:
+
+.. code:: python
+   
+    with record_http('example.warc.gz', warc_version='1.1'):
+        ...
+
+
+.. code:: python
+
+    WARCWriter(fh, warc_version='1.1)
+    ...
+    
+When using WARC 1.1, the main difference is that the ``WARC-Date`` timestamp header
+will be written with millisecond precision, while WARC 1.0 only supports second precision.
+
+WARC 1.0:
+
+.. code::
+ 
+    WARC/1.0
+    ...
+    WARC-Date: 2018-12-26T10:11:12Z
+
+WARC 1.1:
+
+.. code::
+
+    WARC/1.1
+    ...
+    WARC-Date: 2018-12-26T10:11:12.456789Z
+    
+    
 
 Filtering Recording
 ~~~~~~~~~~~~~~~~~~~
