@@ -193,7 +193,7 @@ To create WARC/1.1 records, simply specify the warc version as follows:
     ...
     
 When using WARC 1.1, the main difference is that the ``WARC-Date`` timestamp header
-will be written with millisecond precision, while WARC 1.0 only supports second precision.
+will be written with microsecond precision, while WARC 1.0 only supports second precision.
 
 WARC 1.0:
 

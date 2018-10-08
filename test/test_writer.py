@@ -21,8 +21,8 @@ class FixedTestWARCWriter(BufferWARCWriter):
         return '<urn:uuid:12345678-feb0-11e6-8f83-68a86d1772ce>'
 
     @classmethod
-    def _make_warc_date(cls, use_millis=False):
-        if not use_millis:
+    def _make_warc_date(cls, use_micros=False):
+        if not use_micros:
             return '2000-01-01T00:00:00Z'
         else:
             return '2000-01-01T00:00:00.123456Z'
@@ -584,7 +584,7 @@ class TestWarcWriter(object):
         assert len(recs) == 1
         assert recs[0].rec_headers.protocol == 'WARC/1.1'
 
-        # ISO datetime with fractional millis
+        # ISO 8601 date with fractional seconds (microseconds)
         assert '.' in recs[0].rec_headers['WARC-Date']
         assert len(recs[0].rec_headers['WARC-Date']) == 27
 

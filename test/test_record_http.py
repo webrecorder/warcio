@@ -224,7 +224,7 @@ class TestRecordHttpBin(object):
             assert response.rec_headers.protocol == 'WARC/1.1'
             warc_date = response.rec_headers['WARC-Date']
 
-            # ISO date with fractional millis
+            # ISO 8601 date with fractional seconds (microseconds)
             assert '.' in warc_date
             assert len(warc_date) == 27
 

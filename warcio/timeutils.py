@@ -85,7 +85,7 @@ def datetime_to_http_date(the_datetime):
                       usegmt=True)
 
 
-def datetime_to_iso_date(the_datetime, use_millis=False):
+def datetime_to_iso_date(the_datetime, use_micros=False):
     """
     >>> datetime_to_iso_date(datetime.datetime(2013, 12, 26, 10, 11, 12))
     '2013-12-26T10:11:12Z'
@@ -93,18 +93,18 @@ def datetime_to_iso_date(the_datetime, use_millis=False):
     >>> datetime_to_iso_date(datetime.datetime(2013, 12, 26, 10, 11, 12, 456789))
     '2013-12-26T10:11:12Z'
 
-    >>> datetime_to_iso_date(datetime.datetime(2013, 12, 26, 10, 11, 12), use_millis=True)
+    >>> datetime_to_iso_date(datetime.datetime(2013, 12, 26, 10, 11, 12), use_micros=True)
     '2013-12-26T10:11:12Z'
 
-    >>> datetime_to_iso_date(datetime.datetime(2013, 12, 26, 10, 11, 12, 456789), use_millis=True)
+    >>> datetime_to_iso_date(datetime.datetime(2013, 12, 26, 10, 11, 12, 456789), use_micros=True)
     '2013-12-26T10:11:12.456789Z'
 
-    >>> datetime_to_iso_date(datetime.datetime(2013, 12, 26, 10, 11, 12, 1), use_millis=True)
+    >>> datetime_to_iso_date(datetime.datetime(2013, 12, 26, 10, 11, 12, 1), use_micros=True)
     '2013-12-26T10:11:12.000001Z'
 
     """
 
-    if not use_millis:
+    if not use_micros:
         return the_datetime.strftime(ISO_DT)
     else:
         return the_datetime.isoformat() + 'Z'

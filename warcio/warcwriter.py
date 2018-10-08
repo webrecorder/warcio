@@ -309,16 +309,16 @@ class BaseWARCWriter(object):
         out.flush()
 
     def curr_warc_date(self):
-        use_millis = (self.warc_version >= self.WARC_1_1)
-        return self._make_warc_date(use_millis=use_millis)
+        use_micros = (self.warc_version >= self.WARC_1_1)
+        return self._make_warc_date(use_micros=use_micros)
 
     @classmethod
     def _make_warc_id(cls):
         return StatusAndHeadersParser.make_warc_id()
 
     @classmethod
-    def _make_warc_date(cls, use_millis=False):
-        return datetime_to_iso_date(datetime.datetime.utcnow(), use_millis=use_millis)
+    def _make_warc_date(cls, use_micros=False):
+        return datetime_to_iso_date(datetime.datetime.utcnow(), use_micros=use_micros)
 
     @classmethod
     def _create_temp_file(cls):
