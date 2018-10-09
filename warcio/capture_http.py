@@ -169,7 +169,7 @@ httplib.HTTPConnection = RecordingHTTPConnection
 # ============================================================================
 
 @contextmanager
-def record_http(warc_writer, filter_func=None, append=True,
+def capture_http(warc_writer, filter_func=None, append=True,
                 **kwargs):
     out = None
     if isinstance(warc_writer, str):
