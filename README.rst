@@ -124,7 +124,7 @@ records) that contain HTML:
 Writing WARC Records
 --------------------
 
-Starting with 1.6, warcio introduces a way to 'record' HTTP/S traffic directly
+Starting with 1.6, warcio introduces a way to capture HTTP/S traffic directly
 to a WARC file, by monkey-patching Python's ``http.client`` library.
 
 This approach works well with the popular ``requests`` library often used to fetch
@@ -133,7 +133,7 @@ HTTP/S content. Note that ``requests`` must be imported after ``capture_http`` m
 Quickstart to Writing a WARC
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Fetching the url ``https://example.com/`` while saving the response and request
+Fetching the url ``https://example.com/`` while capturing the response and request
 into a gzip compressed WARC file named ``example.warc.gz`` can be done with the following four lines:
 
 .. code:: python
@@ -213,12 +213,12 @@ WARC 1.1:
     
     
 
-Filtering Recording
-~~~~~~~~~~~~~~~~~~~
+Filtering HTTP Capture
+~~~~~~~~~~~~~~~~~~~~~~
 
 When capturing via HTTP, it is possible to provide a custom filter function, 
-which can be used to determine if a WARC request & response should actually be
-written or not.
+which can be used to determine if a particular request and response records
+should be written to the WARC file or skipped.
 
 The filter function is called with the request and response record
 before they are written, and can be used to substitute a different record (for example, a revisit
