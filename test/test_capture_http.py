@@ -4,7 +4,7 @@ from io import BytesIO
 import time
 
 # must be imported before 'requests'
-from warcio.record_http import record_http
+from warcio.capture_http import capture_http
 from pytest import raises
 import requests
 
@@ -53,7 +53,7 @@ class TestRecordHttpBin(object):
         warc_writer = BufferWARCWriter(gzip=False)
 
         url = 'http://localhost:{0}/get?foo=bar'.format(self.port)
-        with record_http(warc_writer):
+        with capture_http(warc_writer):
             res = requests.get(url, headers={'Host': 'httpbin.org'})
 
         assert res.json()['args'] == {'foo': 'bar'}
@@ -72,7 +72,7 @@ class TestRecordHttpBin(object):
         warc_writer = BufferWARCWriter(gzip=False)
 
         url = 'http://localhost:{0}/bytes/{1}'.format(self.port, BUFF_SIZE * 2)
-        with record_http(warc_writer):
+        with capture_http(warc_writer):
             res = requests.get(url, headers={'Host': 'httpbin.org'})
 
         assert len(res.content) == BUFF_SIZE * 2
@@ -90,7 +90,7 @@ class TestRecordHttpBin(object):
     def test_post_json(self):
         warc_writer = BufferWARCWriter(gzip=False)
 
-        with record_http(warc_writer):
+        with capture_http(warc_writer):
             res = requests.post('http://localhost:{0}/post'.format(self.port),
                                 headers={'Host': 'httpbin.org'},
                                 json={'some': {'data': 'posted'}})
@@ -124,7 +124,7 @@ class TestRecordHttpBin(object):
 
         url = 'http://localhost:{0}/post'.format(self.port)
 
-        with record_http(warc_writer, nop_filter):
+        with capture_http(warc_writer, nop_filter):
             res = requests.post(url, data=postbuff)
 
         # response
@@ -152,7 +152,7 @@ class TestRecordHttpBin(object):
             assert response
             return None, None
 
-        with record_http(warc_writer, skip_filter):
+        with capture_http(warc_writer, skip_filter):
             res = requests.get('http://localhost:{0}/get?foo=bar'.format(self.port),
                                headers={'Host': 'httpbin.org'})
 
@@ -166,10 +166,10 @@ class TestRecordHttpBin(object):
 
         url = 'http://localhost:{0}/get?foo=bar'.format(self.port)
 
-        with record_http(full_path):
+        with capture_http(full_path):
             res = requests.get(url)
 
-        with record_http(full_path):
+        with capture_http(full_path):
             res = requests.get(url)
 
         with open(full_path, 'rb') as stream:
@@ -200,11 +200,11 @@ class TestRecordHttpBin(object):
 
         url = 'http://localhost:{0}/get?foo=bar'.format(self.port)
 
-        with record_http(full_path, append=False):
+        with capture_http(full_path, append=False):
             res = requests.get(url)
 
         with raises(OSError):
-            with record_http(full_path, append=False):
+            with capture_http(full_path, append=False):
                 res = requests.get(url)
 
         os.remove(full_path)
@@ -214,7 +214,7 @@ class TestRecordHttpBin(object):
 
         url = 'http://localhost:{0}/get?foo=bar'.format(self.port)
 
-        with record_http(full_path, append=False, warc_version='1.1', gzip=False):
+        with capture_http(full_path, append=False, warc_version='1.1', gzip=False):
             res = requests.get(url)
 
         with open(full_path, 'rb') as stream:

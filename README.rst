@@ -124,24 +124,24 @@ records) that contain HTML:
 Writing WARC Records
 --------------------
 
-Starting with 1.6, warcio introduces a way to 'record' HTTP/S traffic directly
+Starting with 1.6, warcio introduces a way to capture HTTP/S traffic directly
 to a WARC file, by monkey-patching Python's ``http.client`` library.
 
 This approach works well with the popular ``requests`` library often used to fetch
-HTTP/S content. Note that ``requests`` must be imported after ``record_http`` module.
+HTTP/S content. Note that ``requests`` must be imported after the ``capture_http`` module.
 
-Quickstart to Writing a WARC
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Quick Start to Writing a WARC
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Fetching the url ``https://example.com/`` while saving the response and request
+Fetching the url ``https://example.com/`` while capturing the response and request
 into a gzip compressed WARC file named ``example.warc.gz`` can be done with the following four lines:
 
 .. code:: python
 
-    from warcio.record_http import record_http
-    import requests  # requests *must* be imported after record_http
+    from warcio.capture_http import capture_http
+    import requests  # requests *must* be imported after capture_http
 
-    with record_http('example.warc.gz'):
+    with capture_http('example.warc.gz'):
         requests.get('https://example.com/')
 
 
@@ -166,13 +166,13 @@ the above example can be written as:
 
 .. code:: python
 
-    from warcio.record_http import record_http
+    from warcio.capture_http import capture_http
     from warcio import WARCWriter
-    import requests  # requests *must* be imported after record_http
+    import requests  # requests *must* be imported after capture_http
 
     with open('example.warc.gz', 'wb') as fh:
         warc_writer = WARCWriter(fh)
-        with record_http(warc_writer):
+        with capture_http(warc_writer):
             requests.get('https://example.com/')
             
 WARC/1.1 Support
@@ -183,7 +183,7 @@ To create WARC/1.1 records, simply specify the warc version as follows:
 
 .. code:: python
    
-    with record_http('example.warc.gz', warc_version='1.1'):
+    with capture_http('example.warc.gz', warc_version='1.1'):
         ...
 
 
@@ -213,12 +213,12 @@ WARC 1.1:
     
     
 
-Filtering Recording
-~~~~~~~~~~~~~~~~~~~
+Filtering HTTP Capture
+~~~~~~~~~~~~~~~~~~~~~~
 
-When recording via HTTP, it is possible to provide a custom filter function, 
-which can be used to determine if a WARC request & response should actually be
-written or not.
+When capturing via HTTP, it is possible to provide a custom filter function, 
+which can be used to determine if a particular request and response records
+should be written to the WARC file or skipped.
 
 The filter function is called with the request and response record
 before they are written, and can be used to substitute a different record (for example, a revisit
@@ -237,12 +237,12 @@ instead of a response), or to skip writing altogether by returning nothing, as s
             
         return request, response
 
-    with record_http('example.warc.gz', filter_records):
+    with capture_http('example.warc.gz', filter_records):
          requests.get('https://example.com/')
          
 Please refer to
-`test/test\_record_http.py <test/test_record_http.py>`__ for additional examples
-of recording ``requests`` traffic to WARC.
+`test/test\_capture_http.py <test/test_capture_http.py>`__ for additional examples
+of capturing ``requests`` traffic to WARC.
 
 Manual/Advanced WARC Writing
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
