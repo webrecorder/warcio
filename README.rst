@@ -128,10 +128,10 @@ Starting with 1.6, warcio introduces a way to capture HTTP/S traffic directly
 to a WARC file, by monkey-patching Python's ``http.client`` library.
 
 This approach works well with the popular ``requests`` library often used to fetch
-HTTP/S content. Note that ``requests`` must be imported after ``capture_http`` module.
+HTTP/S content. Note that ``requests`` must be imported after the ``capture_http`` module.
 
-Quickstart to Writing a WARC
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Quick Start to Writing a WARC
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Fetching the url ``https://example.com/`` while capturing the response and request
 into a gzip compressed WARC file named ``example.warc.gz`` can be done with the following four lines:
