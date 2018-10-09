@@ -23,6 +23,8 @@ class TestRecordHttpBin(object):
     def setup_class(cls):
         from httpbin import app as httpbin_app
 
+        cls.temp_dir = tempfile.mkdtemp('warctest')
+
         server = make_server('localhost', 0, httpbin_app)
         addr, cls.port = server.socket.getsockname()
 
@@ -36,6 +38,10 @@ class TestRecordHttpBin(object):
         thread.daemon = True
         thread.start()
         time.sleep(0.1)
+
+    @classmethod
+    def teardown_class(cls):
+        os.rmdir(cls.temp_dir)
 
     def test_get_no_record(self):
         url = 'http://localhost:{0}/get?foo=bar'.format(self.port)
@@ -156,9 +162,7 @@ class TestRecordHttpBin(object):
         assert warc_writer.get_contents() == b''
 
     def test_record_to_temp_file_append(self):
-        temp_dir = tempfile.mkdtemp('warctest')
-
-        full_path = os.path.join(temp_dir, 'example.warc.gz')
+        full_path = os.path.join(self.temp_dir, 'example.warc.gz')
 
         url = 'http://localhost:{0}/get?foo=bar'.format(self.port)
 
@@ -190,12 +194,9 @@ class TestRecordHttpBin(object):
             assert request.rec_headers['WARC-Target-URI'] == url
 
         os.remove(full_path)
-        os.rmdir(temp_dir)
 
     def test_error_record_to_temp_file_no_append_no_overwrite(self):
-        temp_dir = tempfile.mkdtemp('warctest')
-
-        full_path = os.path.join(temp_dir, 'example2.warc.gz')
+        full_path = os.path.join(self.temp_dir, 'example2.warc.gz')
 
         url = 'http://localhost:{0}/get?foo=bar'.format(self.port)
 
@@ -207,6 +208,26 @@ class TestRecordHttpBin(object):
                 res = requests.get(url)
 
         os.remove(full_path)
-        os.rmdir(temp_dir)
+
+    def test_warc_1_1(self):
+        full_path = os.path.join(self.temp_dir, 'example3.warc')
+
+        url = 'http://localhost:{0}/get?foo=bar'.format(self.port)
+
+        with record_http(full_path, append=False, warc_version='1.1', gzip=False):
+            res = requests.get(url)
+
+        with open(full_path, 'rb') as stream:
+            # response
+            ai = ArchiveIterator(stream)
+            response = next(ai)
+            assert response.rec_headers.protocol == 'WARC/1.1'
+            warc_date = response.rec_headers['WARC-Date']
+
+            # ISO 8601 date with fractional seconds (microseconds)
+            assert '.' in warc_date
+            assert len(warc_date) == 27
+
+        os.remove(full_path)
 
 
