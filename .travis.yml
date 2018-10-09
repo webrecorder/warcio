@@ -22,11 +22,11 @@ install:
   # add brotli for tests
   - pip install brotlipy
   - python setup.py install
-  - pip install coverage pytest-cov coveralls
+  - pip install coverage pytest-cov codecov
 
 script:
   - python setup.py test
 
 after_success:
-  - coveralls
+  - codecov
 

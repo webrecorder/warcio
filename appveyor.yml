@@ -22,7 +22,7 @@ environment:
 install:        
   - "SET PATH=%PYTHON%;%PYTHON%\\Scripts;%PATH%"
   - "pip install -U setuptools"
-  - "pip install coverage pytest-cov coveralls"
+  - "pip install coverage pytest-cov codecov"
   - "pip install pycparser==2.18"
   - "pip install brotlipy"
 
