@@ -1,8 +1,8 @@
 1.6.0
 ~~~~~
-- Support WARC/1.1 standard WARC records, reading `#39 <https://github.com/webrecorder/warcio/issues/39>`_ and writing `#46 <https://github.com/webrecorder/warcio/issues/46>`_ with millisecond precision ``WARC-Date``
+- Support WARC/1.1 standard WARC records, reading `#39 <https://github.com/webrecorder/warcio/issues/39>`_ and writing `#46 <https://github.com/webrecorder/warcio/issues/46>`_ with microsecond precision ``WARC-Date``
 - Support simplified semantics for recording http traffic to a WARC `#43 <https://github.com/webrecorder/warcio/issues/43>`_
-- Support parsing incorrect wget 1.19 WARCs with angle brackets, eg: ``WARC-Target-URI: <uri>``
+- Support parsing incorrect wget 1.19 WARCs with angle brackets, eg: ``WARC-Target-URI: <uri>`` `#42 <https://github.com/webrecorder/warcio/issues/42>`_
 - Correct encoding of non-ascii HTTP headers per RFC 8187 `#45 <https://github.com/webrecorder/warcio/issues/45>`_
 - New Util Added: ``warcio.utils.open`` provides exclusive creation mode ``open(..., 'x')`` for Python 2.7
 

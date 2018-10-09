@@ -48,6 +48,7 @@ setup(
         'pytest',
         'pytest-cov',
         'httpbin==0.5.0',
+        'requests',
     ],
     classifiers=[
         'Development Status :: 4 - Beta',
