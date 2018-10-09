@@ -1,3 +1,6 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
 """
 >>> st1 = StatusAndHeadersParser(['HTTP/1.0']).parse(StringIO(status_headers_1))
 >>> st1
@@ -208,3 +211,20 @@ def test_validate_status():
     assert not StatusAndHeaders('Bad OK', []).validate_statusline('204 No Content')
 
 
+def test_non_ascii():
+    st = StatusAndHeaders('200 OK', [('Custom-Header', u'attachment; filename="Éxamplè"')])
+    res = st.to_ascii_bytes().decode('ascii')
+    assert res == "\
+200 OK\r\n\
+Custom-Header: attachment; filename*=UTF-8''%C3%89xampl%C3%A8\r\n\
+\r\n\
+"
+
+def test_non_ascii_2():
+    st = StatusAndHeaders('200 OK', [('Custom-Header', u'value; filename="Éxamplè"; param; other=испытание; another')])
+    res = st.to_ascii_bytes().decode('ascii')
+    assert res == "\
+200 OK\r\n\
+Custom-Header: value; filename*=UTF-8''%C3%89xampl%C3%A8; param; other*=UTF-8''%D0%B8%D1%81%D0%BF%D1%8B%D1%82%D0%B0%D0%BD%D0%B8%D0%B5; another\r\n\
+\r\n\
+"
