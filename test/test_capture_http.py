@@ -18,7 +18,7 @@ from warcio.warcwriter import BufferWARCWriter, WARCWriter
 
 
 # ==================================================================
-class TestRecordHttpBin(object):
+class TestCaptureHttpBin(object):
     @classmethod
     def setup_class(cls):
         from httpbin import app as httpbin_app
@@ -43,17 +43,15 @@ class TestRecordHttpBin(object):
     def teardown_class(cls):
         os.rmdir(cls.temp_dir)
 
-    def test_get_no_record(self):
+    def test_get_no_capture(self):
         url = 'http://localhost:{0}/get?foo=bar'.format(self.port)
         res = requests.get(url, headers={'Host': 'httpbin.org'})
 
         assert res.json()['args'] == {'foo': 'bar'}
 
     def test_get(self):
-        warc_writer = BufferWARCWriter(gzip=False)
-
         url = 'http://localhost:{0}/get?foo=bar'.format(self.port)
-        with capture_http(warc_writer):
+        with capture_http() as warc_writer:
             res = requests.get(url, headers={'Host': 'httpbin.org'})
 
         assert res.json()['args'] == {'foo': 'bar'}
@@ -62,11 +60,13 @@ class TestRecordHttpBin(object):
         response = next(ai)
         assert response.rec_type == 'response'
         assert response.rec_headers['WARC-Target-URI'] == url
+        assert response.rec_headers['WARC-IP-Address'] == '127.0.0.1'
         assert res.json() == json.loads(response.content_stream().read().decode('utf-8'))
 
         request = next(ai)
         assert request.rec_type == 'request'
         assert request.rec_headers['WARC-Target-URI'] == url
+        assert request.rec_headers['WARC-IP-Address'] == '127.0.0.1'
 
     def test_get_cache_to_file(self):
         warc_writer = BufferWARCWriter(gzip=False)
@@ -81,11 +81,13 @@ class TestRecordHttpBin(object):
         response = next(ai)
         assert response.rec_type == 'response'
         assert response.rec_headers['WARC-Target-URI'] == url
+        assert response.rec_headers['WARC-IP-Address'] == '127.0.0.1'
         assert res.content == response.content_stream().read()
 
         request = next(ai)
         assert request.rec_type == 'request'
         assert request.rec_headers['WARC-Target-URI'] == url
+        assert request.rec_headers['WARC-IP-Address'] == '127.0.0.1'
 
     def test_post_json(self):
         warc_writer = BufferWARCWriter(gzip=False)
@@ -132,6 +134,7 @@ class TestRecordHttpBin(object):
         response = next(ai)
         assert response.rec_type == 'response'
         assert response.rec_headers['WARC-Target-URI'] == url
+        assert response.rec_headers['WARC-IP-Address'] == '127.0.0.1'
 
         assert res.json() == json.loads(response.content_stream().read().decode('utf-8'))
 
@@ -139,6 +142,7 @@ class TestRecordHttpBin(object):
         request = next(ai)
         assert request.rec_type == 'request'
         assert request.rec_headers['WARC-Target-URI'] == url
+        assert request.rec_headers['WARC-IP-Address'] == '127.0.0.1'
 
         data = request.content_stream().read().decode('utf-8')
         assert data == 'somedatatopost'
@@ -161,7 +165,7 @@ class TestRecordHttpBin(object):
         # skipped, nothing written
         assert warc_writer.get_contents() == b''
 
-    def test_record_to_temp_file_append(self):
+    def test_capture_to_temp_file_append(self):
         full_path = os.path.join(self.temp_dir, 'example.warc.gz')
 
         url = 'http://localhost:{0}/get?foo=bar'.format(self.port)
@@ -195,7 +199,7 @@ class TestRecordHttpBin(object):
 
         os.remove(full_path)
 
-    def test_error_record_to_temp_file_no_append_no_overwrite(self):
+    def test_error_capture_to_temp_file_no_append_no_overwrite(self):
         full_path = os.path.join(self.temp_dir, 'example2.warc.gz')
 
         url = 'http://localhost:{0}/get?foo=bar'.format(self.port)
@@ -230,4 +234,26 @@ class TestRecordHttpBin(object):
 
         os.remove(full_path)
 
+    def test_remote(self):
+        with capture_http(warc_version='1.1', gzip=True) as writer:
+            requests.get('http://example.com/')
+            requests.get('https://google.com/')
+
+        expected = [('http://example.com/', 'response', True),
+                    ('http://example.com/', 'request', True),
+                    ('https://google.com/', 'response', True),
+                    ('https://google.com/', 'request', True),
+                    ('https://www.google.com/', 'response', True),
+                    ('https://www.google.com/', 'request', True)
+                   ]
+
+        actual = [
+                  (record.rec_headers['WARC-Target-URI'],
+                   record.rec_type,
+                   'WARC-IP-Address' in record.rec_headers)
+
+                  for record in ArchiveIterator(writer.get_stream())
+                 ]
+
+        assert actual == expected
 

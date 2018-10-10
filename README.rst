@@ -139,7 +139,7 @@ into a gzip compressed WARC file named ``example.warc.gz`` can be done with the 
 .. code:: python
 
     from warcio.capture_http import capture_http
-    import requests  # requests *must* be imported after capture_http
+    import requests  # requests must be imported after capture_http
 
     with capture_http('example.warc.gz'):
         requests.get('https://example.com/')
@@ -147,6 +147,38 @@ into a gzip compressed WARC file named ``example.warc.gz`` can be done with the 
 
 The WARC ``example.warc.gz`` will contain two records (the response is written first, then the request).
 
+To write to a default in-memory buffer (``BufferWARCWriter``), don't specify a filename, using ``with capture_http() as writer:``.
+
+Additional requests in the ``capture_http`` context and will be appended to the WARC as expected.
+
+The ``WARC-IP-Address`` header will also be added for each record if the IP address is available.
+
+The following example (similar to a `unit test from the test suite <test/test_capture_http.py>`__) demonstrates the resulting records created with ``capture_http``:
+
+.. code:: python
+
+    with capture_http() as writer:
+        requests.get('http://example.com/')
+        requests.get('https://google.com/')
+
+    expected = [('http://example.com/', 'response', True),
+                ('http://example.com/', 'request', True),
+                ('https://google.com/', 'response', True),
+                ('https://google.com/', 'request', True),
+                ('https://www.google.com/', 'response', True),
+                ('https://www.google.com/', 'request', True)
+               ]
+
+     actual = [
+                (record.rec_headers['WARC-Target-URI'],
+                 record.rec_type,
+                 'WARC-IP-Address' in record.rec_headers)
+
+                for record in ArchiveIterator(writer.get_stream())
+              ]
+
+     assert actual == expected
+        
 
 Customizing WARC Writing
 ~~~~~~~~~~~~~~~~~~~~~~~~
