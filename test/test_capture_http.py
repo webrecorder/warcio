@@ -12,8 +12,6 @@ import json
 import os
 import tempfile
 
-from six.moves import zip
-
 from warcio.archiveiterator import ArchiveIterator
 from warcio.utils import BUFF_SIZE
 from warcio.warcwriter import BufferWARCWriter, WARCWriter
@@ -241,19 +239,21 @@ class TestCaptureHttpBin(object):
             requests.get('http://example.com/')
             requests.get('https://google.com/')
 
-        record_list = [('http://example.com/', 'response'),
-                       ('http://example.com/', 'request'),
-                       ('https://google.com/', 'response'),
-                       ('https://google.com/', 'request'),
-                       ('https://www.google.com/', 'response'),
-                       ('https://www.google.com/', 'request')
-                      ]
+        expected = [('http://example.com/', 'response', True),
+                    ('http://example.com/', 'request', True),
+                    ('https://google.com/', 'response', True),
+                    ('https://google.com/', 'request', True),
+                    ('https://www.google.com/', 'response', True),
+                    ('https://www.google.com/', 'request', True)
+                   ]
 
-        # response
-        ai = ArchiveIterator(writer.get_stream())
-        for actual, expected in zip(ai, record_list):
-            assert actual.rec_type == expected[1]
-            assert actual.rec_headers['WARC-Target-URI'] == expected[0]
-            assert actual.rec_headers['WARC-IP-Address']
+        actual = [
+                  (record.rec_headers['WARC-Target-URI'],
+                   record.rec_type,
+                   'WARC-IP-Address' in record.rec_headers)
 
+                  for record in ArchiveIterator(writer.get_stream())
+                 ]
+
+        assert actual == expected
 
