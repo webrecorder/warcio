@@ -18,7 +18,7 @@ from warcio.warcwriter import BufferWARCWriter, WARCWriter
 
 
 # ==================================================================
-class TestRecordHttpBin(object):
+class TestCaptureHttpBin(object):
     @classmethod
     def setup_class(cls):
         from httpbin import app as httpbin_app
@@ -43,7 +43,7 @@ class TestRecordHttpBin(object):
     def teardown_class(cls):
         os.rmdir(cls.temp_dir)
 
-    def test_get_no_record(self):
+    def test_get_no_capture(self):
         url = 'http://localhost:{0}/get?foo=bar'.format(self.port)
         res = requests.get(url, headers={'Host': 'httpbin.org'})
 
@@ -161,7 +161,7 @@ class TestRecordHttpBin(object):
         # skipped, nothing written
         assert warc_writer.get_contents() == b''
 
-    def test_record_to_temp_file_append(self):
+    def test_capture_to_temp_file_append(self):
         full_path = os.path.join(self.temp_dir, 'example.warc.gz')
 
         url = 'http://localhost:{0}/get?foo=bar'.format(self.port)
@@ -195,7 +195,7 @@ class TestRecordHttpBin(object):
 
         os.remove(full_path)
 
-    def test_error_record_to_temp_file_no_append_no_overwrite(self):
+    def test_error_capture_to_temp_file_no_append_no_overwrite(self):
         full_path = os.path.join(self.temp_dir, 'example2.warc.gz')
 
         url = 'http://localhost:{0}/get?foo=bar'.format(self.port)
