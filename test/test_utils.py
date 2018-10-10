@@ -70,11 +70,11 @@ class TestUtils(object):
         temp_dir = tempfile.mkdtemp('warctest')
         full_name = os.path.join(temp_dir, 'foo.txt')
         with utils.open(full_name, 'xb') as fh:
-            fh.write('test\r\nfoo')
+            fh.write(b'test\r\nfoo')
 
         with pytest.raises(OSError):
             with utils.open(full_name, 'xb') as fh:
-                fh.write('test\r\nfoo')
+                fh.write(b'test\r\nfoo')
 
         with utils.open(full_name, 'rb') as fh:
             assert fh.read() == b'test\r\nfoo'
