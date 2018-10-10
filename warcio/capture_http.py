@@ -9,7 +9,7 @@ from contextlib import contextmanager
 from array import array
 
 from warcio.utils import to_native_str, BUFF_SIZE, open
-from warcio.warcwriter import WARCWriter
+from warcio.warcwriter import WARCWriter, BufferWARCWriter
 
 from tempfile import SpooledTemporaryFile
 
@@ -24,6 +24,26 @@ class RecordingStream(object):
         self.fp = fp
         self.recorder = recorder
 
+        self.recorder.set_remote_ip(self._get_remote_ip())
+
+    def _get_remote_ip(self):
+        try:
+            fp = self.fp
+            # for python 3, need to get 'raw' fp
+            if hasattr(fp, 'raw'):  #pragma: no cover
+                fp = fp.raw
+
+            socket = fp._sock
+
+            # wrapped ssl socket
+            if hasattr(socket, 'socket'):
+                socket = socket.socket
+
+            return socket.getpeername()[0]
+
+        except Exception:  #pragma: no cover
+            return None
+
     # Used in PY2 Only
     def read(self, amt=None):  #pragma: no cover
         buff = self.fp.read(amt)
@@ -36,7 +56,7 @@ class RecordingStream(object):
         self.recorder.write_response(buff)
         return res
 
-    def readline(self, maxlen=None):
+    def readline(self, maxlen=-1):
         line = self.fp.readline(maxlen)
         self.recorder.write_response(line)
         return line
@@ -44,6 +64,9 @@ class RecordingStream(object):
     def close(self):
         self.recorder.done()
         return self.fp.close()
+
+    def flush(self):
+        return self.fp.flush()
 
 
 # ============================================================================
@@ -123,6 +146,7 @@ class RequestRecorder(object):
         self.response_out = None
         self.url = None
         self.lock = threading.Lock()
+        self.warc_headers = {}
 
     def start(self):
         self.request_out = self._create_buffer()
@@ -131,6 +155,10 @@ class RequestRecorder(object):
 
     def _create_buffer(self):
         return SpooledTemporaryFile(BUFF_SIZE)
+
+    def set_remote_ip(self, remote_ip):
+        if remote_ip:
+            self.warc_headers['WARC-IP-Address'] = remote_ip
 
     def write_request(self, buff):
         self.request_out.write(buff)
@@ -142,6 +170,7 @@ class RequestRecorder(object):
         length = out.tell()
         out.seek(0)
         return self.writer.create_warc_record(
+                warc_headers_dict=self.warc_headers,
                 uri=self.url,
                 record_type=record_type,
                 payload=out,
@@ -169,9 +198,15 @@ httplib.HTTPConnection = RecordingHTTPConnection
 # ============================================================================
 
 @contextmanager
-def capture_http(warc_writer, filter_func=None, append=True,
+def capture_http(warc_writer=None, filter_func=None, append=True,
                 **kwargs):
     out = None
+    if warc_writer == None:
+        if 'gzip' not in kwargs:
+            kwargs['gzip'] = False
+
+        warc_writer = BufferWARCWriter(**kwargs)
+
     if isinstance(warc_writer, str):
         out = open(warc_writer, 'ab' if append else 'xb')
         warc_writer = WARCWriter(out, **kwargs)
@@ -179,7 +214,7 @@ def capture_http(warc_writer, filter_func=None, append=True,
     try:
         recorder = RequestRecorder(warc_writer, filter_func)
         RecordingHTTPConnection.local.recorder = recorder
-        yield
+        yield warc_writer
 
     finally:
         RecordingHTTPConnection.local.recorder = None
