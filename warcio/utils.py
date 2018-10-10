@@ -72,7 +72,11 @@ def open(filename, mode='r', **kwargs):  #pragma: no cover
     if six.PY3 or 'x' not in mode:
         return sys_open(filename, mode, **kwargs)
 
-    fd = os.open(filename, os.O_EXCL | os.O_CREAT | os.O_WRONLY)
+    flags = os.O_EXCL | os.O_CREAT | os.O_WRONLY
+    if 'b' in mode:
+        flags |= os.O_BINARY
+
+    fd = os.open(filename, flags)
     mode = mode.replace('x', 'w')
     return os.fdopen(fd, mode, 0x664)
 
