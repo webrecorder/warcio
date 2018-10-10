@@ -2,8 +2,8 @@ WARCIO: WARC (and ARC) Streaming Library
 ========================================
 .. image:: https://travis-ci.org/webrecorder/warcio.svg?branch=master
       :target: https://travis-ci.org/webrecorder/warcio
-.. image:: https://coveralls.io/repos/github/webrecorder/warcio/badge.svg?branch=master
-      :target: https://coveralls.io/github/webrecorder/warcio?branch=master
+.. image:: https://codecov.io/gh/webrecorder/warcio/branch/master/graph/badge.svg
+      :target: https://codecov.io/gh/webrecorder/warcio
 
 
 Background
