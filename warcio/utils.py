@@ -73,7 +73,7 @@ def open(filename, mode='r', **kwargs):  #pragma: no cover
         return sys_open(filename, mode, **kwargs)
 
     flags = os.O_EXCL | os.O_CREAT | os.O_WRONLY
-    if 'b' in mode:
+    if 'b' in mode and hasattr(os, 'O_BINARY'):
         flags |= os.O_BINARY
 
     fd = os.open(filename, flags)
