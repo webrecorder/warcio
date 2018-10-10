@@ -147,14 +147,17 @@ into a gzip compressed WARC file named ``example.warc.gz`` can be done with the 
 
 The WARC ``example.warc.gz`` will contain two records (the response is written first, then the request).
 
-To write to a default in-memory buffer (``BufferWARCWriter``) simply use ``capture_http() as writer`` semantics.
-Records from multiple requests will be concatenated as expected and the ``WARC-IP-Address`` header will also be set if available.
+To write to a default in-memory buffer (``BufferWARCWriter``), don't specify a filename, using ``with capture_http() as writer:``.
 
-The following `test case <test/test_capture_http.py>`__ demonstrates the resulting records created with ``capture_http``:
+Additional requests in the ``capture_http`` context and will be appended to the WARC as expected.
+
+The ``WARC-IP-Address`` header will also be added for each record if the IP address is available.
+
+The following example (similar to a `unit test from the test suite <test/test_capture_http.py>`__) demonstrates the resulting records created with ``capture_http``:
 
 .. code:: python
 
-    with capture_http(warc_version='1.1', gzip=True) as writer:
+    with capture_http() as writer:
         requests.get('http://example.com/')
         requests.get('https://google.com/')
 
