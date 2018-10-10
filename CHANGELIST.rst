@@ -1,5 +1,13 @@
+1.6.1
+~~~~~
+
+- Fixes for ``warcio.utils.open()`` not opening files in binary mode in Python 2.7 on Windows `#49 <https://github.com/webrecorder/warcio/issues/49>`_
+- ``capture_http()`` various fixes and improvements, default writer, ``WARC-IP-Address`` header support `#50 <https://github.com/webrecorder/warcio/issues/50>`_
+
+
 1.6.0
 ~~~~~
+
 - Support WARC/1.1 standard WARC records, reading `#39 <https://github.com/webrecorder/warcio/issues/39>`_ and writing `#46 <https://github.com/webrecorder/warcio/issues/46>`_ with microsecond precision ``WARC-Date``
 - Support simplified semantics for capturing http traffic to a WARC `#43 <https://github.com/webrecorder/warcio/issues/43>`_
 - Support parsing incorrect wget 1.19 WARCs with angle brackets, eg: ``WARC-Target-URI: <uri>`` `#42 <https://github.com/webrecorder/warcio/issues/42>`_
