@@ -44,6 +44,7 @@ class BaseWARCWriter(object):
 
         self.warc_version = self._parse_warc_version(kwargs.get('warc_version'))
         self.header_filter = kwargs.get('header_filter')
+        self.strict = kwargs.get('strict', True)
 
     def _parse_warc_version(self, version):
         if not version:
@@ -237,7 +238,19 @@ class BaseWARCWriter(object):
 
     def _set_header_buff(self, record):
         # HTTP headers %-encoded as ascii (see to_ascii_bytes for more info)
-        headers_buff = record.http_headers.to_ascii_bytes(self.header_filter)
+        if self.strict:
+            headers_buff = record.http_headers.to_strict_ascii_bytes(self.header_filter)
+        else:
+        # non-strict: eg. if capturing network traffic, support writing bytes as is
+        # and default to utf-8
+            if six.PY3:  #pragma: no cover
+                try:
+                    headers_buff = record.http_headers.to_bytes(encoding='utf-8')
+                except:
+                    headers_buff = record.http_headers.to_bytes(encoding='iso-8859-1')
+            else:  #pragma: no cover
+                headers_buff = record.http_headers.to_str() + b'\r\n'
+
         record.http_headers.headers_buff = headers_buff
 
     def _write_warc_record(self, out, record):
@@ -290,6 +303,9 @@ class BaseWARCWriter(object):
 
         # write record headers -- encoded as utf-8
         # WARC headers can be utf-8 per spec
+        if self.strict:
+            record.rec_headers.strict_header_format(to_ascii=False, strip_whitespace=True)
+
         out.write(record.rec_headers.to_bytes(encoding='utf-8'))
 
         # write headers buffer, if any

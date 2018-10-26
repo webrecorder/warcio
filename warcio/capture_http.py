@@ -205,6 +205,9 @@ def capture_http(warc_writer=None, filter_func=None, append=True,
         if 'gzip' not in kwargs:
             kwargs['gzip'] = False
 
+        if 'strict' not in kwargs:
+            kwargs['strict'] = False
+
         warc_writer = BufferWARCWriter(**kwargs)
 
     if isinstance(warc_writer, str):

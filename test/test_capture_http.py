@@ -1,3 +1,6 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
 import threading
 from wsgiref.simple_server import make_server
 from io import BytesIO
@@ -11,22 +14,36 @@ import requests
 import json
 import os
 import tempfile
+import six
 
 from warcio.archiveiterator import ArchiveIterator
 from warcio.utils import BUFF_SIZE
 from warcio.warcwriter import BufferWARCWriter, WARCWriter
 
 
+# ============================================================================
+def headertest_app(environ, start_response):
+    body = b'body'
+    value = u'📁 text 🗄️'
+    value = value.encode('utf-8')
+    if six.PY3:
+        value = value.decode('latin-1')
+
+    headers = []
+    if environ['PATH_INFO'] == '/unicode':
+        headers = [('Content-Length', str(len(body))),
+                   ('Unicode-Header', value)]
+
+    start_response('200 OK', headers=headers)
+    return [body]
+
+
 # ==================================================================
 class TestCaptureHttpBin(object):
     @classmethod
-    def setup_class(cls):
-        from httpbin import app as httpbin_app
-
-        cls.temp_dir = tempfile.mkdtemp('warctest')
-
-        server = make_server('localhost', 0, httpbin_app)
-        addr, cls.port = server.socket.getsockname()
+    def run_server(cls, app):
+        server = make_server('localhost', 0, app)
+        addr, port = server.socket.getsockname()
 
         def run():
             try:
@@ -37,6 +54,19 @@ class TestCaptureHttpBin(object):
         thread = threading.Thread(target=run)
         thread.daemon = True
         thread.start()
+
+        return port
+
+    @classmethod
+    def setup_class(cls):
+        from httpbin import app as httpbin_app
+
+        cls.httpbin_port = cls.run_server(httpbin_app)
+
+        cls.headertest_port = cls.run_server(headertest_app)
+
+        cls.temp_dir = tempfile.mkdtemp('warctest')
+
         time.sleep(0.1)
 
     @classmethod
@@ -44,13 +74,13 @@ class TestCaptureHttpBin(object):
         os.rmdir(cls.temp_dir)
 
     def test_get_no_capture(self):
-        url = 'http://localhost:{0}/get?foo=bar'.format(self.port)
+        url = 'http://localhost:{0}/get?foo=bar'.format(self.httpbin_port)
         res = requests.get(url, headers={'Host': 'httpbin.org'})
 
         assert res.json()['args'] == {'foo': 'bar'}
 
     def test_get(self):
-        url = 'http://localhost:{0}/get?foo=bar'.format(self.port)
+        url = 'http://localhost:{0}/get?foo=bar'.format(self.httpbin_port)
         with capture_http() as warc_writer:
             res = requests.get(url, headers={'Host': 'httpbin.org'})
 
@@ -71,7 +101,7 @@ class TestCaptureHttpBin(object):
     def test_get_cache_to_file(self):
         warc_writer = BufferWARCWriter(gzip=False)
 
-        url = 'http://localhost:{0}/bytes/{1}'.format(self.port, BUFF_SIZE * 2)
+        url = 'http://localhost:{0}/bytes/{1}'.format(self.httpbin_port, BUFF_SIZE * 2)
         with capture_http(warc_writer):
             res = requests.get(url, headers={'Host': 'httpbin.org'})
 
@@ -93,7 +123,7 @@ class TestCaptureHttpBin(object):
         warc_writer = BufferWARCWriter(gzip=False)
 
         with capture_http(warc_writer):
-            res = requests.post('http://localhost:{0}/post'.format(self.port),
+            res = requests.post('http://localhost:{0}/post'.format(self.httpbin_port),
                                 headers={'Host': 'httpbin.org'},
                                 json={'some': {'data': 'posted'}})
 
@@ -124,7 +154,7 @@ class TestCaptureHttpBin(object):
 
         postbuff = BytesIO(b'somedatatopost')
 
-        url = 'http://localhost:{0}/post'.format(self.port)
+        url = 'http://localhost:{0}/post'.format(self.httpbin_port)
 
         with capture_http(warc_writer, nop_filter):
             res = requests.post(url, data=postbuff)
@@ -157,7 +187,7 @@ class TestCaptureHttpBin(object):
             return None, None
 
         with capture_http(warc_writer, skip_filter):
-            res = requests.get('http://localhost:{0}/get?foo=bar'.format(self.port),
+            res = requests.get('http://localhost:{0}/get?foo=bar'.format(self.httpbin_port),
                                headers={'Host': 'httpbin.org'})
 
         assert res.json()['args'] == {'foo': 'bar'}
@@ -168,7 +198,7 @@ class TestCaptureHttpBin(object):
     def test_capture_to_temp_file_append(self):
         full_path = os.path.join(self.temp_dir, 'example.warc.gz')
 
-        url = 'http://localhost:{0}/get?foo=bar'.format(self.port)
+        url = 'http://localhost:{0}/get?foo=bar'.format(self.httpbin_port)
 
         with capture_http(full_path):
             res = requests.get(url)
@@ -202,7 +232,7 @@ class TestCaptureHttpBin(object):
     def test_error_capture_to_temp_file_no_append_no_overwrite(self):
         full_path = os.path.join(self.temp_dir, 'example2.warc.gz')
 
-        url = 'http://localhost:{0}/get?foo=bar'.format(self.port)
+        url = 'http://localhost:{0}/get?foo=bar'.format(self.httpbin_port)
 
         with capture_http(full_path, append=False):
             res = requests.get(url)
@@ -216,7 +246,7 @@ class TestCaptureHttpBin(object):
     def test_warc_1_1(self):
         full_path = os.path.join(self.temp_dir, 'example3.warc')
 
-        url = 'http://localhost:{0}/get?foo=bar'.format(self.port)
+        url = 'http://localhost:{0}/get?foo=bar'.format(self.httpbin_port)
 
         with capture_http(full_path, append=False, warc_version='1.1', gzip=False):
             res = requests.get(url)
@@ -233,6 +263,15 @@ class TestCaptureHttpBin(object):
             assert len(warc_date) == 27
 
         os.remove(full_path)
+
+    def test_unicode_keep_utf8(self):
+        with capture_http(warc_version='1.1', gzip=True) as writer:
+            requests.get('http://localhost:{0}/unicode'.format(self.headertest_port))
+
+        ai = ArchiveIterator(writer.get_stream())
+        record = next(ai)
+
+        assert record.http_headers['Unicode-Header'] == '📁 text 🗄️'
 
     def test_remote(self):
         with capture_http(warc_version='1.1', gzip=True) as writer:

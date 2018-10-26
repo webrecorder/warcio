@@ -158,7 +158,7 @@ headers = {2})".format(self.protocol, self.statusline, self.headers)
     def to_bytes(self, filter_func=None, encoding='utf-8'):
         return self.to_str(filter_func).encode(encoding) + b'\r\n'
 
-    def to_ascii_bytes(self, filter_func=None):
+    def to_strict_ascii_bytes(self, filter_func=None):
         """ Attempt to encode the headers block as ascii
             If encoding fails, call percent_encode_non_ascii_headers()
             to encode any headers per RFCs
@@ -166,29 +166,41 @@ headers = {2})".format(self.protocol, self.statusline, self.headers)
         try:
             string = self.to_str(filter_func)
             string = string.encode('ascii')
-        except UnicodeEncodeError:
-            self.percent_encode_non_ascii_headers()
+        except (UnicodeEncodeError, UnicodeDecodeError):
+            self.strict_header_format(to_ascii=True, strip_whitespace=True)
             string = self.to_str(filter_func)
             string = string.encode('ascii')
 
         return string + b'\r\n'
 
-    def percent_encode_non_ascii_headers(self, encoding='UTF-8'):
+    def strict_header_format(self, encoding='UTF-8', to_ascii=False, strip_whitespace=True):
         """ Encode any headers that are not plain ascii
             as UTF-8 as per:
             https://tools.ietf.org/html/rfc8187#section-3.2.3
             https://tools.ietf.org/html/rfc5987#section-3.2.2
+
+            Also strip out any newlines
         """
         def do_encode(m):
             return "*={0}''".format(encoding) + quote(to_native_str(m.group(1)))
 
         for index in range(len(self.headers) - 1, -1, -1):
             curr_name, curr_value = self.headers[index]
-            try:
-                # test if header is ascii encodable, no action needed
-                curr_value.encode('ascii')
-            except:
-                new_value = self.ENCODE_HEADER_RX.sub(do_encode, curr_value)
+            new_value = curr_value
+            if to_ascii:
+                try:
+                    # test if header is ascii encodable, no action needed
+                    curr_value.encode('ascii')
+                except:
+                    new_value = self.ENCODE_HEADER_RX.sub(do_encode, curr_value)
+                    if new_value == curr_value:
+                        new_value = quote(curr_value)
+
+            if strip_whitespace:
+                new_value = new_value.strip()
+                new_value = new_value.replace('\r', '').replace('\n', '')
+
+            if new_value != curr_value:
                 self.headers[index] = (curr_name, new_value)
 
     # act like a (case-insensitive) dictionary of headers, much like other
