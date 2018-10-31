@@ -1,3 +1,9 @@
+1.6.2
+~~~~~
+
+- Ensure any non-ascii data in http headers is %-encoded, even if non-conformant to RFC 8187 `#51 <https://github.com/webrecorder/warcio/issues/51>`_
+
+
 1.6.1
 ~~~~~
 
