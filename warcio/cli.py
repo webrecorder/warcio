@@ -1,6 +1,7 @@
 from argparse import ArgumentParser, RawTextHelpFormatter
 
 from warcio.archiveiterator import ArchiveIterator
+from warcio.recordloader import ArchiveLoadFailed
 
 from warcio.warcwriter import WARCWriter
 from warcio.bufferedreaders import DecompressingBufferedReader
@@ -103,11 +104,17 @@ class Recompressor(object):
                 try:
                     count = self.load_and_write(stream, cmd.output)
                     msg = 'No Errors Found!'
-                except:
+                except Exception as e:
+                    if cmd.verbose:
+                        print('Parsing Error(s) Found:')
+                        print(str(e) if isinstance(e, ArchiveLoadFailed) else repr(e))
+                        print()
+
                     count = self.decompress_and_recompress(stream, cmd.output)
                     msg = 'Compression Errors Found and Fixed!'
 
                 if cmd.verbose:
+                    print('Records successfully read and compressed:')
                     main(['index', cmd.output])
                     print('')
 
@@ -115,13 +122,13 @@ class Recompressor(object):
                 print(msg)
 
         except:
-            print('Recompress Failed: {0} could not be read as a WARC or ARC'.format(cmd.filename))
-
             if cmd.verbose:
                 print('Exception Details:')
                 import traceback
                 traceback.print_exc()
+                print('')
 
+            print('Recompress Failed: {0} could not be read as a WARC or ARC'.format(cmd.filename))
             sys.exit(1)
 
 
