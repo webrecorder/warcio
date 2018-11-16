@@ -1,3 +1,10 @@
+1.6.3
+~~~~~
+
+- Make ``warcio recompress`` more robust in fixing improperly compressed WARCs, --verbose mode for printing results `#52 <https://github.com/webrecorder/warcio/issues/52>`_
+- BufferedReader supports streaming all members of multi-member gzip file with ``read_all_members=True`` option. 
+
+
 1.6.2
 ~~~~~
 
