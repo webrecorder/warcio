@@ -7,6 +7,12 @@ python:
   - "3.5"
   - "3.6"
 
+matrix:
+  include:
+    - python: "3.7"
+      dist: xenial
+      sudo: required
+
 os:
   - linux
 
@@ -16,11 +22,11 @@ install:
   # add brotli for tests
   - pip install brotlipy
   - python setup.py install
-  - pip install coverage pytest-cov coveralls
+  - pip install coverage pytest-cov codecov
 
 script:
   - python setup.py test
 
 after_success:
-  - coveralls
+  - codecov
 

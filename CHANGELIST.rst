@@ -1,3 +1,41 @@
+1.6.2
+~~~~~
+
+- Ensure any non-ascii data in http headers is %-encoded, even if non-conformant to RFC 8187 `#51 <https://github.com/webrecorder/warcio/issues/51>`_
+
+
+1.6.1
+~~~~~
+
+- Fixes for ``warcio.utils.open()`` not opening files in binary mode in Python 2.7 on Windows `#49 <https://github.com/webrecorder/warcio/issues/49>`_
+- ``capture_http()`` various fixes and improvements, default writer, ``WARC-IP-Address`` header support `#50 <https://github.com/webrecorder/warcio/issues/50>`_
+
+
+1.6.0
+~~~~~
+
+- Support WARC/1.1 standard WARC records, reading `#39 <https://github.com/webrecorder/warcio/issues/39>`_ and writing `#46 <https://github.com/webrecorder/warcio/issues/46>`_ with microsecond precision ``WARC-Date``
+- Support simplified semantics for capturing http traffic to a WARC `#43 <https://github.com/webrecorder/warcio/issues/43>`_
+- Support parsing incorrect wget 1.19 WARCs with angle brackets, eg: ``WARC-Target-URI: <uri>`` `#42 <https://github.com/webrecorder/warcio/issues/42>`_
+- Correct encoding of non-ascii HTTP headers per RFC 8187 `#45 <https://github.com/webrecorder/warcio/issues/45>`_
+- New Util Added: ``warcio.utils.open`` provides exclusive creation mode ``open(..., 'x')`` for Python 2.7
+
+1.5.3
+~~~~~
+
+- ArchiveIterator calls new ``close_decompressor()`` function in BufferedReader instead of close() to only close decompressor, not underlying stream.  `#35 <https://github.com/webrecorder/warcio/issues/35>`_
+
+
+1.5.2
+~~~~~
+
+- Write any errors during decompression to stderr `#31 <https://github.com/webrecorder/warcio/issues/31>`_
+- ``to_native_str()`` returns original value unchanged if not a string/bytes type
+- ``WarcWriter.create_visit_record()`` accepts additional WARC headers dictionary
+- ``ArchiveIterator.close()`` added which calls ``decompressor.flush()`` to address possible issues in `#34 <https://github.com/webrecorder/warcio/issues/34>`_
+- Switch ``Warc-Record-ID`` uuid creation to ``uuid4()`` from ``uuid1()``
+
+
 1.5.1
 ~~~~~
 

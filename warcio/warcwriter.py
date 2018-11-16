@@ -25,7 +25,11 @@ class BaseWARCWriter(object):
 
     REVISIT_PROFILE = 'http://netpreserve.org/warc/1.0/revisit/identical-payload-digest'
 
-    WARC_VERSION = 'WARC/1.0'
+    WARC_1_0 = 'WARC/1.0'
+    WARC_1_1 = 'WARC/1.1'
+
+    # default warc version
+    WARC_VERSION = WARC_1_0
 
     NO_PAYLOAD_DIGEST_TYPES = ('warcinfo', 'revisit')
     NO_BLOCK_DIGEST_TYPES = ('warcinfo')
@@ -36,8 +40,18 @@ class BaseWARCWriter(object):
 
         self.parser = StatusAndHeadersParser([], verify=False)
 
-        self.warc_version = kwargs.get('warc_version', self.WARC_VERSION)
+        self.warc_version = self._parse_warc_version(kwargs.get('warc_version'))
         self.header_filter = kwargs.get('header_filter')
+
+    def _parse_warc_version(self, version):
+        if not version:
+            return self.WARC_VERSION
+
+        version = str(version)
+        if version.startswith('WARC/'):
+            return version
+
+        return 'WARC/' + version
 
     @classmethod
     def _iter_stream(cls, stream):
@@ -132,7 +146,7 @@ class BaseWARCWriter(object):
         warc_headers.add_header('WARC-Record-ID', self._make_warc_id())
         if filename:
             warc_headers.add_header('WARC-Filename', filename)
-        warc_headers.add_header('WARC-Date', self._make_warc_date())
+        warc_headers.add_header('WARC-Date', self.curr_warc_date())
 
         warcinfo = BytesIO()
         for name, value in six.iteritems(info):
@@ -151,11 +165,12 @@ class BaseWARCWriter(object):
                                        length=length)
 
     def create_revisit_record(self, uri, digest, refers_to_uri, refers_to_date,
-                              http_headers=None):
+                              http_headers=None, warc_headers_dict={}):
 
         assert digest, 'Digest can not be empty'
 
-        record = self.create_warc_record(uri, 'revisit', http_headers=http_headers)
+        record = self.create_warc_record(uri, 'revisit', http_headers=http_headers,
+                                                         warc_headers_dict=warc_headers_dict)
 
         record.rec_headers.add_header('WARC-Profile', self.REVISIT_PROFILE)
 
@@ -214,12 +229,13 @@ class BaseWARCWriter(object):
             warc_headers.replace_header('WARC-Target-URI', uri)
 
         if not warc_headers.get_header('WARC-Date'):
-            warc_headers.add_header('WARC-Date', self._make_warc_date())
+            warc_headers.add_header('WARC-Date', self.curr_warc_date())
 
         return warc_headers
 
     def _set_header_buff(self, record):
-        headers_buff = record.http_headers.to_bytes(self.header_filter, 'iso-8859-1')
+        # HTTP headers %-encoded as ascii (see to_ascii_bytes for more info)
+        headers_buff = record.http_headers.to_ascii_bytes(self.header_filter)
         record.http_headers.headers_buff = headers_buff
 
     def _write_warc_record(self, out, record):
@@ -270,8 +286,9 @@ class BaseWARCWriter(object):
 
         record.rec_headers.replace_header('Content-Length', str(record.length))
 
-        # write record headers
-        out.write(record.rec_headers.to_bytes())
+        # write record headers -- encoded as utf-8
+        # WARC headers can be utf-8 per spec
+        out.write(record.rec_headers.to_bytes(encoding='utf-8'))
 
         # write headers buffer, if any
         if record.http_headers:
@@ -291,13 +308,17 @@ class BaseWARCWriter(object):
 
         out.flush()
 
+    def curr_warc_date(self):
+        use_micros = (self.warc_version >= self.WARC_1_1)
+        return self._make_warc_date(use_micros=use_micros)
+
     @classmethod
     def _make_warc_id(cls):
         return StatusAndHeadersParser.make_warc_id()
 
     @classmethod
-    def _make_warc_date(cls):
-        return datetime_to_iso_date(datetime.datetime.utcnow())
+    def _make_warc_date(cls, use_micros=False):
+        return datetime_to_iso_date(datetime.datetime.utcnow(), use_micros=use_micros)
 
     @classmethod
     def _create_temp_file(cls):

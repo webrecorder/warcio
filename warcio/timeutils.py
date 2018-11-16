@@ -22,6 +22,7 @@ ISO_DT = '%Y-%m-%dT%H:%M:%SZ'
 PAD_14_DOWN = '10000101000000'
 PAD_14_UP =   '29991231235959'
 PAD_6_UP =    '299912'
+PAD_MICRO =   '000000'
 
 
 def iso_date_to_datetime(string):
@@ -29,13 +30,32 @@ def iso_date_to_datetime(string):
     >>> iso_date_to_datetime('2013-12-26T10:11:12Z')
     datetime.datetime(2013, 12, 26, 10, 11, 12)
 
-    >>> iso_date_to_datetime('2013-12-26T10:11:12Z')
+    >>> iso_date_to_datetime('2013-12-26T10:11:12.456789Z')
+    datetime.datetime(2013, 12, 26, 10, 11, 12, 456789)
+
+    >>> iso_date_to_datetime('2013-12-26T10:11:12.30Z')
+    datetime.datetime(2013, 12, 26, 10, 11, 12, 300000)
+
+    >>> iso_date_to_datetime('2013-12-26T10:11:12.00001Z')
+    datetime.datetime(2013, 12, 26, 10, 11, 12, 10)
+
+    >>> iso_date_to_datetime('2013-12-26T10:11:12.000001Z')
+    datetime.datetime(2013, 12, 26, 10, 11, 12, 1)
+
+    >>> iso_date_to_datetime('2013-12-26T10:11:12.0000001Z')
     datetime.datetime(2013, 12, 26, 10, 11, 12)
-     """
+
+    >>> iso_date_to_datetime('2013-12-26T10:11:12.000000Z')
+    datetime.datetime(2013, 12, 26, 10, 11, 12)
+    """
 
     nums = DATE_TIMESPLIT.split(string)
     if nums[-1] == '':
         nums = nums[:-1]
+
+    if len(nums) == 7:
+        nums[6] = nums[6][:6]
+        nums[6] += PAD_MICRO[len(nums[6]):]
 
     the_datetime = datetime.datetime(*(int(num) for num in nums))
     return the_datetime
@@ -65,16 +85,29 @@ def datetime_to_http_date(the_datetime):
                       usegmt=True)
 
 
-def datetime_to_iso_date(the_datetime):
+def datetime_to_iso_date(the_datetime, use_micros=False):
     """
     >>> datetime_to_iso_date(datetime.datetime(2013, 12, 26, 10, 11, 12))
     '2013-12-26T10:11:12Z'
 
-    >>> datetime_to_iso_date( datetime.datetime(2013, 12, 26, 10, 11, 12))
+    >>> datetime_to_iso_date(datetime.datetime(2013, 12, 26, 10, 11, 12, 456789))
     '2013-12-26T10:11:12Z'
+
+    >>> datetime_to_iso_date(datetime.datetime(2013, 12, 26, 10, 11, 12), use_micros=True)
+    '2013-12-26T10:11:12Z'
+
+    >>> datetime_to_iso_date(datetime.datetime(2013, 12, 26, 10, 11, 12, 456789), use_micros=True)
+    '2013-12-26T10:11:12.456789Z'
+
+    >>> datetime_to_iso_date(datetime.datetime(2013, 12, 26, 10, 11, 12, 1), use_micros=True)
+    '2013-12-26T10:11:12.000001Z'
+
     """
 
-    return the_datetime.strftime(ISO_DT)
+    if not use_micros:
+        return the_datetime.strftime(ISO_DT)
+    else:
+        return the_datetime.isoformat() + 'Z'
 
 
 def datetime_to_timestamp(the_datetime):

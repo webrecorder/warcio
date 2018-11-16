@@ -73,6 +73,12 @@ class ArchiveIterator(six.Iterator):
     def __next__(self):
         return six.next(self.the_iter)
 
+    def close(self):
+        self.record = None
+        if self.reader:
+            self.reader.close_decompressor()
+            self.reader = None
+
     def _iterate_records(self):
         """ iterate over each record
         """
@@ -111,7 +117,7 @@ class ArchiveIterator(six.Iterator):
             elif empty_record:
                 break
 
-        self.record = None
+        self.close()
 
     def _raise_invalid_gzip_err(self):
         """ A gzip file with multiple ARC/WARC records, non-chunked

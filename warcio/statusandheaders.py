@@ -7,9 +7,13 @@ from six import iteritems
 from warcio.utils import to_native_str, headers_to_str_headers
 import uuid
 
+from six.moves.urllib.parse import quote
+import re
+
 
 #=================================================================
 class StatusAndHeaders(object):
+    ENCODE_HEADER_RX = re.compile(r'[=]["\']?([^;"]+)["\']?(?=[;]?)')
     """
     Representation of parsed http-style status line and headers
     Status Line if first line of request/response
@@ -154,6 +158,42 @@ headers = {2})".format(self.protocol, self.statusline, self.headers)
     def to_bytes(self, filter_func=None, encoding='utf-8'):
         return self.to_str(filter_func).encode(encoding) + b'\r\n'
 
+    def to_ascii_bytes(self, filter_func=None):
+        """ Attempt to encode the headers block as ascii
+            If encoding fails, call percent_encode_non_ascii_headers()
+            to encode any headers per RFCs
+        """
+        try:
+            string = self.to_str(filter_func)
+            string = string.encode('ascii')
+        except (UnicodeEncodeError, UnicodeDecodeError):
+            self.percent_encode_non_ascii_headers()
+            string = self.to_str(filter_func)
+            string = string.encode('ascii')
+
+        return string + b'\r\n'
+
+    def percent_encode_non_ascii_headers(self, encoding='UTF-8'):
+        """ Encode any headers that are not plain ascii
+            as UTF-8 as per:
+            https://tools.ietf.org/html/rfc8187#section-3.2.3
+            https://tools.ietf.org/html/rfc5987#section-3.2.2
+        """
+        def do_encode(m):
+            return "*={0}''".format(encoding) + quote(to_native_str(m.group(1)))
+
+        for index in range(len(self.headers) - 1, -1, -1):
+            curr_name, curr_value = self.headers[index]
+            try:
+                # test if header is ascii encodable, no action needed
+                curr_value.encode('ascii')
+            except:
+                new_value = self.ENCODE_HEADER_RX.sub(do_encode, curr_value)
+                if new_value == curr_value:
+                    new_value = quote(curr_value)
+
+                self.headers[index] = (curr_name, new_value)
+
     # act like a (case-insensitive) dictionary of headers, much like other
     # python http headers apis including http.client.HTTPMessage
     # and requests.structures.CaseInsensitiveDict
@@ -269,7 +309,7 @@ class StatusAndHeadersParser(object):
     @staticmethod
     def make_warc_id(id_=None):
         if not id_:
-            id_ = uuid.uuid1()
+            id_ = uuid.uuid4()
         return '<urn:uuid:{0}>'.format(id_)
 
 

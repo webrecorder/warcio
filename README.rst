@@ -2,22 +2,25 @@ WARCIO: WARC (and ARC) Streaming Library
 ========================================
 .. image:: https://travis-ci.org/webrecorder/warcio.svg?branch=master
       :target: https://travis-ci.org/webrecorder/warcio
-.. image:: https://coveralls.io/repos/github/webrecorder/warcio/badge.svg?branch=master
-      :target: https://coveralls.io/github/webrecorder/warcio?branch=master
+.. image:: https://codecov.io/gh/webrecorder/warcio/branch/master/graph/badge.svg
+      :target: https://codecov.io/gh/webrecorder/warcio
 
 
 Background
-~~~~~~~~~~
+----------
 
 This library provides a fast, standalone way to read and write `WARC
 Format <https://en.wikipedia.org/wiki/Web_ARChive>`__ commonly used in
 web archives. Supports Python 2.7+ and Python 3.3+ (using
 `six <https://pythonhosted.org/six/>`__, the only external dependency)
 
+warcio supports reading and writing of WARC files compliant with both the `WARC 1.0 <http://bibnum.bnf.fr/WARC/WARC_ISO_28500_version1_latestdraft.pdf>`__
+and `WARC 1.1 <http://bibnum.bnf.fr/WARC/WARC_ISO_28500_version1-1_latestdraft.pdf>`__ ISO standards.
+
 Install with: ``pip install warcio``
 
 This library is a spin-off of the WARC reading and writing component of
-the `pywb <https://github.com/ikreymer/pywb>`__ high-fidelity replay
+the `pywb <https://github.com/webrecorder/pywb>`__ high-fidelity replay
 library, a key component of
 `Webrecorder <https://github.com/webrecorder/webrecorder>`__
 
@@ -28,11 +31,13 @@ Reading WARC Records
 --------------------
 
 A key feature of the library is to be able to iterate over a stream of
-WARC records using the ``ArchiveIterator``
+WARC records using the ``ArchiveIterator``.
 
-It includes the following features: - Reading a WARC/ARC stream - On the
-fly ARC to WARC record conversion - Decompressing and de-chunking HTTP
-payload content stored in WARC/ARC files.
+It includes the following features:
+
+- Reading a WARC 1.0, WARC 1.1 or ARC stream
+- On the fly ARC to WARC record conversion
+- Decompressing and de-chunking HTTP payload content stored in WARC/ARC files.
 
 For example, the following prints the the url for each WARC ``response``
 record:
@@ -119,9 +124,67 @@ records) that contain HTML:
 Writing WARC Records
 --------------------
 
-The library provides a simple and extensible interface for writing WARC
-records conformant to WARC 1.0 ISO standard
-`(see draft) <http://bibnum.bnf.fr/WARC/WARC_ISO_28500_version1_latestdraft.pdf>`__
+Starting with 1.6, warcio introduces a way to capture HTTP/S traffic directly
+to a WARC file, by monkey-patching Python's ``http.client`` library.
+
+This approach works well with the popular ``requests`` library often used to fetch
+HTTP/S content. Note that ``requests`` must be imported after the ``capture_http`` module.
+
+Quick Start to Writing a WARC
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Fetching the url ``https://example.com/`` while capturing the response and request
+into a gzip compressed WARC file named ``example.warc.gz`` can be done with the following four lines:
+
+.. code:: python
+
+    from warcio.capture_http import capture_http
+    import requests  # requests must be imported after capture_http
+
+    with capture_http('example.warc.gz'):
+        requests.get('https://example.com/')
+
+
+The WARC ``example.warc.gz`` will contain two records (the response is written first, then the request).
+
+To write to a default in-memory buffer (``BufferWARCWriter``), don't specify a filename, using ``with capture_http() as writer:``.
+
+Additional requests in the ``capture_http`` context and will be appended to the WARC as expected.
+
+The ``WARC-IP-Address`` header will also be added for each record if the IP address is available.
+
+The following example (similar to a `unit test from the test suite <test/test_capture_http.py>`__) demonstrates the resulting records created with ``capture_http``:
+
+.. code:: python
+
+    with capture_http() as writer:
+        requests.get('http://example.com/')
+        requests.get('https://google.com/')
+
+    expected = [('http://example.com/', 'response', True),
+                ('http://example.com/', 'request', True),
+                ('https://google.com/', 'response', True),
+                ('https://google.com/', 'request', True),
+                ('https://www.google.com/', 'response', True),
+                ('https://www.google.com/', 'request', True)
+               ]
+
+     actual = [
+                (record.rec_headers['WARC-Target-URI'],
+                 record.rec_type,
+                 'WARC-IP-Address' in record.rec_headers)
+
+                for record in ArchiveIterator(writer.get_stream())
+              ]
+
+     assert actual == expected
+        
+
+Customizing WARC Writing
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+The library provides a simple and extensible interface for writing
+standards-compliant WARC files.
 
 The library comes with a basic ``WARCWriter`` class for writing to a
 single WARC file and ``BufferWARCWriter`` for writing to an in-memory
@@ -129,6 +192,96 @@ buffer. The ``BaseWARCWriter`` can be extended to support more complex
 operations.
 
 (There is no support for writing legacy ARC files)
+
+For more flexibility, such as to use a custom ``WARCWriter`` class,
+the above example can be written as:
+
+.. code:: python
+
+    from warcio.capture_http import capture_http
+    from warcio import WARCWriter
+    import requests  # requests *must* be imported after capture_http
+
+    with open('example.warc.gz', 'wb') as fh:
+        warc_writer = WARCWriter(fh)
+        with capture_http(warc_writer):
+            requests.get('https://example.com/')
+            
+WARC/1.1 Support
+~~~~~~~~~~~~~~~~
+
+By default, warcio creates WARC 1.0 records for maximum compatibility with existing tools.
+To create WARC/1.1 records, simply specify the warc version as follows:
+
+.. code:: python
+   
+    with capture_http('example.warc.gz', warc_version='1.1'):
+        ...
+
+
+.. code:: python
+
+    WARCWriter(fh, warc_version='1.1)
+    ...
+    
+When using WARC 1.1, the main difference is that the ``WARC-Date`` timestamp header
+will be written with microsecond precision, while WARC 1.0 only supports second precision.
+
+WARC 1.0:
+
+.. code::
+ 
+    WARC/1.0
+    ...
+    WARC-Date: 2018-12-26T10:11:12Z
+
+WARC 1.1:
+
+.. code::
+
+    WARC/1.1
+    ...
+    WARC-Date: 2018-12-26T10:11:12.456789Z
+    
+    
+
+Filtering HTTP Capture
+~~~~~~~~~~~~~~~~~~~~~~
+
+When capturing via HTTP, it is possible to provide a custom filter function, 
+which can be used to determine if a particular request and response records
+should be written to the WARC file or skipped.
+
+The filter function is called with the request and response record
+before they are written, and can be used to substitute a different record (for example, a revisit
+instead of a response), or to skip writing altogether by returning nothing, as shown below:
+
+.. code:: python
+
+    def filter_records(warc_writer, request, response):
+        # return None, None to indicate records should be skipped
+        if response.http_headers.get_statuscode() != 200:
+            return None, None
+            
+        # the response record can be replaced with a revisit record
+        elif check_for_dedup():
+            response = create_revisit_record(...)
+            
+        return request, response
+
+    with capture_http('example.warc.gz', filter_records):
+         requests.get('https://example.com/')
+         
+Please refer to
+`test/test\_capture_http.py <test/test_capture_http.py>`__ for additional examples
+of capturing ``requests`` traffic to WARC.
+
+Manual/Advanced WARC Writing
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Before 1.6, this was the primary method for fetching a url and then
+writing to a WARC. This process is a bit more verbose,
+but provides for full control of WARC creation and avoid monkey-patching.
 
 The following example loads ``http://example.com/``, creates a WARC
 response record, and writes it, gzip compressed, to ``example.warc.gz``
@@ -159,10 +312,12 @@ The block and payload digests are computed automatically.
 
         writer.write_record(record)
 
-The library also includes additional semantics for: - Creating
-``warcinfo`` and ``revisit`` records - Writing ``response`` and
-``request`` records together - Writing custom WARC records - Reading a
-full WARC record from a stream
+
+The library also includes additional semantics for:
+ - Creating ``warcinfo`` and ``revisit`` records
+ - Writing ``response`` and ``request`` records together
+ - Writing custom WARC records
+ - Reading a full WARC record from a stream
 
 Please refer to `warcwriter.py <warcio/warcwriter.py>`__ and
 `test/test\_writer.py <test/test_writer.py>`__ for additional examples.

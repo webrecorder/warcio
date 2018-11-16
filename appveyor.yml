@@ -15,12 +15,16 @@ environment:
     - PYTHON: "C:\\Python35-x64"
     - PYTHON: "C:\\Python36"
     - PYTHON: "C:\\Python36-x64"
+    - PYTHON: "C:\\Python37"
+    - PYTHON: "C:\\Python37-x64"
+
 
 install:        
   - "SET PATH=%PYTHON%;%PYTHON%\\Scripts;%PATH%"
-  - "pip install --disable-pip-version-check --user --upgrade pip"
   - "pip install -U setuptools"
-  - "pip install coverage pytest-cov coveralls"
+  - "pip install colorama==0.3.9"
+  - "pip install coverage pytest-cov codecov"
+  - "pip install pycparser==2.18"
   - "pip install brotlipy"
 
 build_script:

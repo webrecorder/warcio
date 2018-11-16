@@ -1,5 +1,6 @@
 from io import BytesIO
 import zlib
+import sys
 
 from warcio.utils import BUFF_SIZE
 
@@ -63,6 +64,7 @@ class BufferedReader(object):
     def __init__(self, stream, block_size=BUFF_SIZE,
                  decomp_type=None,
                  starting_data=None):
+
         self.stream = stream
         self.block_size = block_size
 
@@ -140,7 +142,7 @@ class BufferedReader(object):
                         self.decompressor = None
                 # otherwise (partly decompressed), something is wrong
                 else:
-                    print(str(e))
+                    sys.stderr.write(str(e) + '\n')
                     return b''
         return data
 
@@ -224,6 +226,15 @@ class BufferedReader(object):
         if self.stream:
             self.stream.close()
             self.stream = None
+
+        self.buff = None
+
+        self.close_decompressor()
+
+    def close_decompressor(self):
+        if self.decompressor:
+            self.decompressor.flush()
+            self.decompressor = None
 
     @classmethod
     def get_supported_decompressors(cls):

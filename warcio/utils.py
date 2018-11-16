@@ -1,4 +1,5 @@
 import six
+import os
 from contextlib import contextmanager
 import base64
 import hashlib
@@ -20,6 +21,8 @@ def to_native_str(value, encoding='utf-8'):
         return value.decode(encoding)
     elif six.PY2 and isinstance(value, six.text_type):  #pragma: no cover
         return value.encode(encoding)
+    else:
+        return value
 
 
 # #===========================================================================
@@ -72,3 +75,22 @@ class Digester(object):
 
     def __str__(self):
         return self.type_ + ':' + to_native_str(base64.b32encode(self.digester.digest()))
+
+
+#=============================================================================
+sys_open = open
+
+def open(filename, mode='r', **kwargs):  #pragma: no cover
+    """
+    open() which supports exclusive mode 'x' in python < 3.3
+    """
+    if six.PY3 or 'x' not in mode:
+        return sys_open(filename, mode, **kwargs)
+
+    flags = os.O_EXCL | os.O_CREAT | os.O_WRONLY
+    if 'b' in mode and hasattr(os, 'O_BINARY'):
+        flags |= os.O_BINARY
+
+    fd = os.open(filename, flags)
+    mode = mode.replace('x', 'w')
+    return os.fdopen(fd, mode, 0x664)

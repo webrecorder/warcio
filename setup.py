@@ -5,7 +5,7 @@ from setuptools import setup, find_packages
 from setuptools.command.test import test as TestCommand
 import glob
 
-__version__ = '1.5.1'
+__version__ = '1.6.2'
 
 
 class PyTest(TestCommand):
@@ -47,6 +47,8 @@ setup(
     tests_require=[
         'pytest',
         'pytest-cov',
+        'httpbin==0.5.0',
+        'requests',
     ],
     classifiers=[
         'Development Status :: 4 - Beta',
