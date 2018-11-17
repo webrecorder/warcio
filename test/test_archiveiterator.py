@@ -13,7 +13,7 @@ from contextlib import closing, contextmanager
 #==============================================================================
 class TestArchiveIterator(object):
     def _load_archive(self, filename, offset=0, cls=ArchiveIterator,
-                     errs_expected=0, check_digests=True, **kwargs):
+                     errs_expected=0, check_digests=False, **kwargs):
 
         with open(get_test_file(filename), 'rb') as fh:
             fh.seek(offset)
@@ -181,12 +181,16 @@ Content-Length: 1303\r\n'
             contents = fh.read()
 
         contents_sha = contents.replace(b'sha1:', b'xxx:', 1)
+        assert contents != contents_sha, 'a replace happened'
         with pytest.raises(ValueError):
-            assert self._load_archive_memory(BytesIO(contents_sha)) == expected
+            assert self._load_archive_memory(BytesIO(contents_sha), check_digests=True) == expected
+        assert self._load_archive_memory(BytesIO(contents_sha), check_digests=False) == expected
 
         contents_colon = contents.replace(b'sha1:', b'', 1)
+        assert contents != contents_colon, 'a replace happened'
         with pytest.raises(ValueError):
-            assert self._load_archive_memory(BytesIO(contents_colon)) == expected
+            assert self._load_archive_memory(BytesIO(contents_colon), check_digests=True) == expected
+        assert self._load_archive_memory(BytesIO(contents_colon), check_digests=False) == expected
 
         contents_block = contents
         thing = b'WARC-Block-Digest: sha1:'
@@ -195,7 +199,8 @@ Content-Length: 1303\r\n'
         b = contents_block[index:index+3]
         contents_block = contents_block.replace(thing+b, thing+b'111')
         with pytest.raises(ValueError):
-            assert self._load_archive_memory(BytesIO(contents_block)) == expected
+            assert self._load_archive_memory(BytesIO(contents_block), check_digests=True) == expected
+        assert self._load_archive_memory(BytesIO(contents_block), check_digests=False) == expected
 
         contents_payload = contents
         thing = b'WARC-Payload-Digest: sha1:'
@@ -204,12 +209,16 @@ Content-Length: 1303\r\n'
         b = contents_payload[index:index+3]
         contents_payload = contents_payload.replace(thing+b, thing+b'111')
         with pytest.raises(ValueError):
-            assert self._load_archive_memory(BytesIO(contents_payload)) == expected
+            assert self._load_archive_memory(BytesIO(contents_payload), check_digests=True) == expected
+        assert self._load_archive_memory(BytesIO(contents_payload), check_digests=False) == expected
 
-        expected = ['request', 'request', 'request']
+        expected1 = ['request', 'request', 'request', 'request']
+        expected2 = ['request', 'request', 'request']
         with pytest.raises(ValueError):
             # record 1: invalid payload digest
-            assert self._load_archive('example_digest.warc') == expected
+            assert self._load_archive('example_digest.warc', check_digests=True) == expected1
+        assert self._load_archive('example_digest.warc', check_digests=False) == expected1
 
         # record 2: b64 digest; record 3: b64 filename safe digest
-        assert self._load_archive('example_digest.warc', offset=922) == expected
+        assert self._load_archive('example_digest.warc', offset=922, check_digests=True) == expected2
+        assert self._load_archive('example_digest.warc', offset=922, check_digests=False) == expected2

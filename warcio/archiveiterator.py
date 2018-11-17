@@ -42,7 +42,7 @@ class ArchiveIterator(six.Iterator):
     def __init__(self, fileobj, no_record_parse=False,
                  verify_http=False, arc2warc=False,
                  ensure_http_headers=False, block_size=BUFF_SIZE,
-                 check_digests=True):  # XXX is this the right default for check_digests ?
+                 check_digests=False):
 
         self.fh = fileobj
 
