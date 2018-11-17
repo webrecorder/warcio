@@ -180,7 +180,13 @@ Content-Length: 1303\r\n'
         with open(get_test_file('example.warc'), 'rb') as fh:
             contents = fh.read()
 
-        contents_sha = contents.replace(b'sha1:', b'xxx:', 1)
+        contents_sha = contents.replace(b'WARC-Block-Digest: sha1:', b'WARC-Block-Digest: xxx:', 1)
+        assert contents != contents_sha, 'a replace happened'
+        with pytest.raises(ArchiveLoadFailed):
+            assert self._load_archive_memory(BytesIO(contents_sha), check_digests=True) == expected
+        assert self._load_archive_memory(BytesIO(contents_sha), check_digests=False) == expected
+
+        contents_sha = contents.replace(b'WARC-Payload-Digest: sha1:', b'WARC-Payload-Digest: xxx:', 1)
         assert contents != contents_sha, 'a replace happened'
         with pytest.raises(ArchiveLoadFailed):
             assert self._load_archive_memory(BytesIO(contents_sha), check_digests=True) == expected
