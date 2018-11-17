@@ -1,6 +1,6 @@
 from argparse import ArgumentParser, RawTextHelpFormatter
 
-from warcio.recordloader import ArchiveLoadFailed
+from warcio.exceptions import ArchiveLoadFailed
 from warcio.archiveiterator import ArchiveIterator
 
 from warcio.warcwriter import WARCWriter
