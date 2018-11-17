@@ -216,9 +216,9 @@ Content-Length: 1303\r\n'
         expected2 = ['request', 'request', 'request']
         with pytest.raises(ValueError):
             # record 1: invalid payload digest
-            assert self._load_archive('example_digest.warc', check_digests=True) == expected1
-        assert self._load_archive('example_digest.warc', check_digests=False) == expected1
+            assert self._load_archive('example-digest.warc', check_digests=True) == expected1
+        assert self._load_archive('example-digest.warc', check_digests=False) == expected1
 
         # record 2: b64 digest; record 3: b64 filename safe digest
-        assert self._load_archive('example_digest.warc', offset=922, check_digests=True) == expected2
-        assert self._load_archive('example_digest.warc', offset=922, check_digests=False) == expected2
+        assert self._load_archive('example-digest.warc', offset=922, check_digests=True) == expected2
+        assert self._load_archive('example-digest.warc', offset=922, check_digests=False) == expected2
