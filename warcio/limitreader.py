@@ -81,10 +81,10 @@ class DigestVerifyingReader(LimitReader):
     A reader which verifies the digest of the wrapped reader
     """
 
-    def __init__(self, *args, check_digests=False, record_type=None,
+    def __init__(self, stream, limit, check_digests=False, record_type=None,
                  payload_digest=None, block_digest=None, segment_number=None):
 
-        super(DigestVerifyingReader, self).__init__(*args)
+        super(DigestVerifyingReader, self).__init__(stream, limit)
 
         if check_digests:
             self.exception = ArchiveLoadFailed
