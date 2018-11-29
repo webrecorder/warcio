@@ -174,7 +174,12 @@ Content-Length: 1303\r\n'
         with self._find_first_by_type('example-wget-bad-target-uri.warc.gz', 'response') as record:
             assert record.rec_headers.get('WARC-Target-URI') == 'http://example.com/'
 
-    def test_digests(self):
+    def _digests_mutilate_helper(self, contents, expected):
+        with pytest.raises(ArchiveLoadFailed):
+            assert self._load_archive_memory(BytesIO(contents), check_digests=True) == expected
+        assert self._load_archive_memory(BytesIO(contents), check_digests=False) == expected
+
+    def test_digests_mutilate(self):
         expected = ['warcinfo', 'warcinfo', 'response', 'request', 'revisit', 'request']
 
         with open(get_test_file('example.warc'), 'rb') as fh:
@@ -182,21 +187,15 @@ Content-Length: 1303\r\n'
 
         contents_sha = contents.replace(b'WARC-Block-Digest: sha1:', b'WARC-Block-Digest: xxx:', 1)
         assert contents != contents_sha, 'a replace happened'
-        with pytest.raises(ArchiveLoadFailed):
-            assert self._load_archive_memory(BytesIO(contents_sha), check_digests=True) == expected
-        assert self._load_archive_memory(BytesIO(contents_sha), check_digests=False) == expected
+        self._digests_mutilate_helper(contents_sha, expected)
 
         contents_sha = contents.replace(b'WARC-Payload-Digest: sha1:', b'WARC-Payload-Digest: xxx:', 1)
         assert contents != contents_sha, 'a replace happened'
-        with pytest.raises(ArchiveLoadFailed):
-            assert self._load_archive_memory(BytesIO(contents_sha), check_digests=True) == expected
-        assert self._load_archive_memory(BytesIO(contents_sha), check_digests=False) == expected
+        self._digests_mutilate_helper(contents_sha, expected)
 
         contents_colon = contents.replace(b'sha1:', b'', 1)
         assert contents != contents_colon, 'a replace happened'
-        with pytest.raises(ArchiveLoadFailed):
-            assert self._load_archive_memory(BytesIO(contents_colon), check_digests=True) == expected
-        assert self._load_archive_memory(BytesIO(contents_colon), check_digests=False) == expected
+        self._digests_mutilate_helper(contents_colon, expected)
 
         contents_block = contents
         thing = b'WARC-Block-Digest: sha1:'
@@ -204,9 +203,7 @@ Content-Length: 1303\r\n'
         index += len(thing)
         b = contents_block[index:index+3]
         contents_block = contents_block.replace(thing+b, thing+b'111')
-        with pytest.raises(ArchiveLoadFailed):
-            assert self._load_archive_memory(BytesIO(contents_block), check_digests=True) == expected
-        assert self._load_archive_memory(BytesIO(contents_block), check_digests=False) == expected
+        self._digests_mutilate_helper(contents_block, expected)
 
         contents_payload = contents
         thing = b'WARC-Payload-Digest: sha1:'
@@ -214,10 +211,9 @@ Content-Length: 1303\r\n'
         index += len(thing)
         b = contents_payload[index:index+3]
         contents_payload = contents_payload.replace(thing+b, thing+b'111')
-        with pytest.raises(ArchiveLoadFailed):
-            assert self._load_archive_memory(BytesIO(contents_payload), check_digests=True) == expected
-        assert self._load_archive_memory(BytesIO(contents_payload), check_digests=False) == expected
+        self._digests_mutilate_helper(contents_payload, expected)
 
+    def test_digests_file(self):
         expected1 = ['request', 'request', 'request', 'request']
         expected2 = ['request', 'request', 'request']
         with pytest.raises(ArchiveLoadFailed):
@@ -228,4 +224,3 @@ Content-Length: 1303\r\n'
         # record 2: b64 digest; record 3: b64 filename safe digest
         assert self._load_archive('example-digest.warc', offset=922, check_digests=True) == expected2
         assert self._load_archive('example-digest.warc', offset=922, check_digests=False) == expected2
-
