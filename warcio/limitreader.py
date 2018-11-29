@@ -76,16 +76,16 @@ class LimitReader(object):
 
 
 # ============================================================================
-class DigestVerifyingReader(object):
+class DigestVerifyingReader(LimitReader):
     """
     A reader which verifies the digest of the wrapped reader
     """
 
-    def __init__(self, stream, length, check_digests=False, record_type=None,
+    def __init__(self, *args, check_digests=False, record_type=None,
                  payload_digest=None, block_digest=None, segment_number=None):
 
-        self.stream = stream
-        self.limit = length
+        super(DigestVerifyingReader, self).__init__(*args)
+
         if check_digests:
             self.exception = ArchiveLoadFailed
         else:
@@ -128,8 +128,7 @@ class DigestVerifyingReader(object):
                 self.payload_digester = None  # prevent double-fire
 
     def _update(self, buff):
-        length = len(buff)
-        self.limit -= length
+        super(DigestVerifyingReader, self)._update(buff)
 
         if self.payload_digester:
             self.payload_digester.update(buff)
@@ -148,15 +147,7 @@ class DigestVerifyingReader(object):
         if self.exception:
             raise self.exception(reason)
         else:
-            logging.warning(reason)
-
-    def read(self, length=None):
-        buff = self.stream.read(length)
-        return self._update(buff)
-
-    def readline(self, length=None):
-        buff = self.stream.readline(length)
-        return self._update(buff)
+            logging.getLogger(__name__).warning(reason)
 
 
 def _compare_digest_rfc_3548(digester, digest):
