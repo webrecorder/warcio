@@ -1,5 +1,5 @@
 import base64
-import logging
+import sys
 
 from warcio.exceptions import ArchiveLoadFailed
 from warcio.utils import to_native_str, Digester
@@ -147,7 +147,7 @@ class DigestVerifyingReader(LimitReader):
         if self.exception:
             raise self.exception(reason)
         else:
-            logging.getLogger(__name__).warning(reason)
+            sys.stderr.write(reason+'\n')
 
 
 def _compare_digest_rfc_3548(digester, digest):
