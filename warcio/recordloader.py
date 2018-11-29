@@ -153,6 +153,9 @@ class ArcWarcRecordLoader(object):
         block_digest = rec_headers.get_header('WARC-Block-Digest')
         segment_number = rec_headers.get_header('WARC-Segment-Number')
 
+        if not payload_digest and not block_digest:
+            return stream, False
+
         stream = DigestVerifyingReader(stream, length,
                                        check_digests=check_digests,
                                        record_type=rec_type,
