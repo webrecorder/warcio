@@ -15,11 +15,11 @@ from six.moves import zip
 
 #=================================================================
 class ArcWarcRecord(object):
-    def __init__(self, *args, check_digest=None):
+    def __init__(self, *args, **kwargs):
         (self.format, self.rec_type, self.rec_headers, self.raw_stream,
          self.http_headers, self.content_type, self.length) = args
         self.payload_length = -1
-        self.check_digest = check_digest
+        self.check_digest = kwargs.get('check_digest')
 
     def content_stream(self):
         if not self.http_headers:

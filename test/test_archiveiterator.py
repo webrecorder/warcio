@@ -189,16 +189,16 @@ Content-Length: 1303\r\n'
     def _digests_mutilate_helper(self, contents, expected_t, expected_f, capsys, full_read=False):
         with pytest.raises(ArchiveLoadFailed):
             assert self._load_archive_memory(BytesIO(contents), check_digests='raise', full_read=full_read) == expected_t
-        captured = capsys.readouterr()
+        capsys.readouterr()
         assert self._load_archive_memory(BytesIO(contents), check_digests='log', full_read=full_read) == expected_t
-        captured = capsys.readouterr()
-        assert captured.err
+        [out, err] = capsys.readouterr()
+        assert err
         assert self._load_archive_memory(BytesIO(contents), check_digests=True, full_read=full_read) == expected_t
-        captured = capsys.readouterr()
-        assert not captured.err
+        [out, err] = capsys.readouterr()
+        assert not err
         assert self._load_archive_memory(BytesIO(contents), check_digests=False, full_read=full_read) == expected_f
-        captured = capsys.readouterr()
-        assert not captured.err
+        [out, err] = capsys.readouterr()
+        assert not err
 
     def test_digests_mutilate(self, capsys):
         expected_f = ['warcinfo', 'warcinfo', 'response', 'request', 'revisit', 'request']
