@@ -31,7 +31,7 @@ class CheckDigest(object):
         if self.kind == 'raise':
             raise ArchiveLoadFailed(value)
         if self.kind == 'log':
-            print(value, file=sys.stderr)
+            sys.stderr.write(value + '\n')
         self.status = False
 
 
