@@ -3,7 +3,8 @@ from warcio.statusandheaders import StatusAndHeadersParser
 from warcio.statusandheaders import StatusAndHeadersParserException
 from warcio.exceptions import ArchiveLoadFailed
 
-from warcio.limitreader import LimitReader, DigestVerifyingReader
+from warcio.limitreader import LimitReader
+from warcio.digestverifyingreader import DigestVerifyingReader, CheckDigest
 
 from warcio.bufferedreaders import BufferedReader, ChunkedDataReader
 
@@ -14,10 +15,11 @@ from six.moves import zip
 
 #=================================================================
 class ArcWarcRecord(object):
-    def __init__(self, *args):
+    def __init__(self, *args, check_digest=None):
         (self.format, self.rec_type, self.rec_headers, self.raw_stream,
          self.http_headers, self.content_type, self.length) = args
         self.payload_length = -1
+        self.check_digest = check_digest
 
     def content_stream(self):
         if not self.http_headers:
@@ -118,24 +120,22 @@ class ArcWarcRecordLoader(object):
         if is_err:
             length = 0
 
+        is_verifying = False
+        check_digest = CheckDigest(check_digests)
+
         # limit stream to the length for all valid records
         if length is not None and length >= 0:
             stream = LimitReader.wrap_stream(stream, length)
-            stream, is_verifying = self.wrap_digest_verifying_stream(stream, rec_type,
-                                                                     rec_headers,
-                                                                     length=length,
-                                                                     check_digests=check_digests)
-        else:
-            is_verifying = False
+            if check_digests:
+                stream, is_verifying = self.wrap_digest_verifying_stream(stream, rec_type,
+                                                                         rec_headers, check_digest,
+                                                                         length=length)
 
         http_headers = None
 
         # load http headers if parsing
         if not no_record_parse:
             http_headers = self.load_http_headers(rec_type, uri, stream, length)
-        else:
-            is_verifying = False  # can't find the start of the payload
-            # XXX resource record might have no headers, a payload digest, and no block digest?
 
         # generate validate http headers (eg. for replay)
         if not http_headers and ensure_http_headers:
@@ -146,9 +146,9 @@ class ArcWarcRecordLoader(object):
 
         return ArcWarcRecord(the_format, rec_type,
                              rec_headers, stream, http_headers,
-                             content_type, length)
+                             content_type, length, check_digest=check_digest)
 
-    def wrap_digest_verifying_stream(self, stream, rec_type, rec_headers, length=None, check_digests=False):
+    def wrap_digest_verifying_stream(self, stream, rec_type, rec_headers, check_digest, length=None):
         payload_digest = rec_headers.get_header('WARC-Payload-Digest')
         block_digest = rec_headers.get_header('WARC-Block-Digest')
         segment_number = rec_headers.get_header('WARC-Segment-Number')
@@ -156,8 +156,7 @@ class ArcWarcRecordLoader(object):
         if not payload_digest and not block_digest:
             return stream, False
 
-        stream = DigestVerifyingReader(stream, length,
-                                       check_digests=check_digests,
+        stream = DigestVerifyingReader(stream, length, check_digest,
                                        record_type=rec_type,
                                        payload_digest=payload_digest,
                                        block_digest=block_digest,
