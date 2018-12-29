@@ -74,18 +74,18 @@ class TestArchiveIterator(object):
                 for record in a:
                     assert record.rec_type == 'warcinfo'
                     assert record.check_digest.status is None
-                    assert len(record.check_digest.problem) == 0
+                    assert len(record.check_digest.problems) == 0
                     break
 
                 record = next(a)
                 assert record.rec_type == 'response'
                 assert record.check_digest.status is None
-                assert len(record.check_digest.problem) == 0
+                assert len(record.check_digest.problems) == 0
 
                 for record in a:
                     assert record.rec_type == 'request'
                     assert record.check_digest.status is None
-                    assert len(record.check_digest.problem) == 0
+                    assert len(record.check_digest.problems) == 0
                     break
 
                 with pytest.raises(StopIteration):

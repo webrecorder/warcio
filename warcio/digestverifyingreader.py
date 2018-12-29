@@ -22,12 +22,11 @@ class CheckDigest(object):
         self._status = value
 
     @property
-    def problem(self):
+    def problems(self):
         return self._problem
 
-    @problem.setter
     def problem(self, value):
-        self.problem.append(value)
+        self._problem.append(value)
         if self.kind == 'raise':
             raise ArchiveLoadFailed(value)
         if self.kind == 'log':
@@ -100,7 +99,7 @@ class DigestVerifyingReader(LimitReader):
         return buff
 
     def problem(self, reason):
-        self.check_digest.problem = reason
+        self.check_digest.problem(reason)
 
 
 def _compare_digest_rfc_3548(digester, digest):
