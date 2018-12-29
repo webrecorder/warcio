@@ -5,7 +5,7 @@ from . import get_test_file
 from contextlib import contextmanager
 from io import BytesIO
 
-from warcio.recordloader import ArchiveLoadFailed
+from warcio.exceptions import ArchiveLoadFailed
 
 import pytest
 import sys
