@@ -7,7 +7,7 @@ from warcio.exceptions import ArchiveLoadFailed
 
 
 # ============================================================================
-class CheckDigest(object):
+class DigestChecker(object):
     def __init__(self, kind=None):
         self._problem = []
         self._status = None
@@ -40,12 +40,12 @@ class DigestVerifyingReader(LimitReader):
     A reader which verifies the digest of the wrapped reader
     """
 
-    def __init__(self, stream, limit, check_digest, record_type=None,
+    def __init__(self, stream, limit, digest_checker, record_type=None,
                  payload_digest=None, block_digest=None, segment_number=None):
 
         super(DigestVerifyingReader, self).__init__(stream, limit)
 
-        self.check_digest = check_digest
+        self.check_digest = digest_checker
 
         if record_type == 'revisit':
             block_digest = None  # XXX my bug, or is example.warc wrong?

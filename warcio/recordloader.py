@@ -4,7 +4,7 @@ from warcio.statusandheaders import StatusAndHeadersParserException
 from warcio.exceptions import ArchiveLoadFailed
 
 from warcio.limitreader import LimitReader
-from warcio.digestverifyingreader import DigestVerifyingReader, CheckDigest
+from warcio.digestverifyingreader import DigestVerifyingReader, DigestChecker
 
 from warcio.bufferedreaders import BufferedReader, ChunkedDataReader
 
@@ -19,7 +19,7 @@ class ArcWarcRecord(object):
         (self.format, self.rec_type, self.rec_headers, self.raw_stream,
          self.http_headers, self.content_type, self.length) = args
         self.payload_length = -1
-        self.check_digest = kwargs.get('check_digest')
+        self.digest_checker = kwargs.get('digest_checker')
 
     def content_stream(self):
         if not self.http_headers:
@@ -121,14 +121,14 @@ class ArcWarcRecordLoader(object):
             length = 0
 
         is_verifying = False
-        check_digest = CheckDigest(check_digests)
+        digest_checker = DigestChecker(check_digests)
 
         # limit stream to the length for all valid records
         if length is not None and length >= 0:
             stream = LimitReader.wrap_stream(stream, length)
             if check_digests:
                 stream, is_verifying = self.wrap_digest_verifying_stream(stream, rec_type,
-                                                                         rec_headers, check_digest,
+                                                                         rec_headers, digest_checker,
                                                                          length=length)
 
         http_headers = None
@@ -146,9 +146,9 @@ class ArcWarcRecordLoader(object):
 
         return ArcWarcRecord(the_format, rec_type,
                              rec_headers, stream, http_headers,
-                             content_type, length, check_digest=check_digest)
+                             content_type, length, digest_checker=digest_checker)
 
-    def wrap_digest_verifying_stream(self, stream, rec_type, rec_headers, check_digest, length=None):
+    def wrap_digest_verifying_stream(self, stream, rec_type, rec_headers, digest_checker, length=None):
         payload_digest = rec_headers.get_header('WARC-Payload-Digest')
         block_digest = rec_headers.get_header('WARC-Block-Digest')
         segment_number = rec_headers.get_header('WARC-Segment-Number')
@@ -156,7 +156,7 @@ class ArcWarcRecordLoader(object):
         if not payload_digest and not block_digest:
             return stream, False
 
-        stream = DigestVerifyingReader(stream, length, check_digest,
+        stream = DigestVerifyingReader(stream, length, digest_checker,
                                        record_type=rec_type,
                                        payload_digest=payload_digest,
                                        block_digest=block_digest,

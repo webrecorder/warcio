@@ -19,7 +19,7 @@ class TestArchiveIterator(object):
         with open(get_test_file(filename), 'rb') as fh:
             fh.seek(offset)
             iter_ = cls(fh, **kwargs)
-            rec_types = [record.rec_type for record in iter_ if record.check_digest.status is not False]
+            rec_types = [record.rec_type for record in iter_ if record.digest_checker.status is not False]
 
         assert iter_.err_count == errs_expected
 
@@ -32,9 +32,9 @@ class TestArchiveIterator(object):
         iter_ = cls(stream, **kwargs)
         if full_read:
             rec_types = [record.rec_type for record in iter_
-                         if (record.content_stream().read() or True) and record.check_digest.status is not False]
+                         if (record.content_stream().read() or True) and record.digest_checker.status is not False]
         else:
-            rec_types = [record.rec_type for record in iter_ if record.check_digest.status is not False]
+            rec_types = [record.rec_type for record in iter_ if record.digest_checker.status is not False]
 
         assert iter_.err_count == errs_expected
 
@@ -73,19 +73,19 @@ class TestArchiveIterator(object):
             with closing(ArchiveIterator(fh)) as a:
                 for record in a:
                     assert record.rec_type == 'warcinfo'
-                    assert record.check_digest.status is None
-                    assert len(record.check_digest.problems) == 0
+                    assert record.digest_checker.status is None
+                    assert len(record.digest_checker.problems) == 0
                     break
 
                 record = next(a)
                 assert record.rec_type == 'response'
-                assert record.check_digest.status is None
-                assert len(record.check_digest.problems) == 0
+                assert record.digest_checker.status is None
+                assert len(record.digest_checker.problems) == 0
 
                 for record in a:
                     assert record.rec_type == 'request'
-                    assert record.check_digest.status is None
-                    assert len(record.check_digest.problems) == 0
+                    assert record.digest_checker.status is None
+                    assert len(record.digest_checker.problems) == 0
                     break
 
                 with pytest.raises(StopIteration):
