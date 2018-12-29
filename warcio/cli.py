@@ -7,6 +7,7 @@ from warcio.warcwriter import WARCWriter
 from warcio.bufferedreaders import DecompressingBufferedReader
 
 from warcio.indexer import Indexer
+from warcio.checker import Checker
 from warcio.utils import BUFF_SIZE
 
 import tempfile
@@ -47,6 +48,11 @@ def main(args=None):
     group.add_argument('--headers', action='store_true', help='output only record headers (and http headers, if applicable)')
 
     extract.set_defaults(func=extract_record)
+
+    check = subparsers.add_parser('check', help='WARC digest checker')
+    check.add_argument('inputs', nargs='+')
+    check.add_argument('-v', '--verbose', action='store_true')
+    check.set_defaults(func=checker)
 
     cmd = parser.parse_args(args=args)
     cmd.func(cmd)
@@ -92,6 +98,12 @@ def get_version():
 def indexer(cmd):
     indexer = Indexer(cmd.fields, cmd.inputs, cmd.output)
     indexer.process_all()
+
+
+# ============================================================================
+def checker(cmd):
+    checker = Checker(cmd)
+    sys.exit(checker.process_all())
 
 
 # ============================================================================
