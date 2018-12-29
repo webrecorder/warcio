@@ -76,14 +76,15 @@ WARC-Record-ID: <urn:uuid:12345678-feb0-11e6-8f83-68a86d1772ce>\r\n\
 WARC-Target-URI: http://example.com/\r\n\
 WARC-Date: 2000-01-01T00:00:00Z\r\n\
 WARC-Payload-Digest: sha1:B6QJ6BNJ3R4B23XXMRKZKHLPGJY2VE4O\r\n\
-WARC-Block-Digest: sha1:4OWI4LV5GWIWVTL2MPL7OHSLNNAQ3H4W\r\n\
+WARC-Block-Digest: sha1:KMUABC6URWIQ7QXCZDQ5FS6WIBBFRORR\r\n\
 Content-Type: application/http; msgtype=response\r\n\
-Content-Length: 207\r\n\
+Content-Length: 268\r\n\
 \r\n\
 HTTP/1.0 200 OK\r\n\
 Content-Type: text/plain; charset="UTF-8"\r\n\
 Content-Disposition: attachment; filename*=UTF-8\'\'%D0%B8%D1%81%D0%BF%D1%8B%D1%82%D0%B0%D0%BD%D0%B8%D0%B5.txt\r\n\
 Custom-Header: somevalue\r\n\
+Unicode-Header: %F0%9F%93%81%20text%20%F0%9F%97%84%EF%B8%8F\r\n\
 \r\n\
 some\n\
 text\r\n\
@@ -343,10 +344,11 @@ some\ntext'.encode('utf-8')
 
 # ============================================================================
 @sample_record('response-unicode-header', RESPONSE_RECORD_UNICODE_HEADERS)
-def sample_response_from_buff(writer):
+def sample_response_unicode(writer):
     headers_list = [('Content-Type', 'text/plain; charset="UTF-8"'),
                     ('Content-Disposition', u'attachment; filename="испытание.txt"'),
-                    ('Custom-Header', 'somevalue')
+                    ('Custom-Header', 'somevalue'),
+                    ('Unicode-Header', '📁 text 🗄️'),
                    ]
 
     payload = b'some\ntext'

@@ -62,7 +62,7 @@ def test_index_2():
         res = main(args=args)
         assert buff.getvalue() == expected
 
-def test_recompress():
+def test_recompress_non_chunked():
     with named_temp() as temp:
         test_file = get_test_file('example-bad-non-chunked.warc.gz')
 
@@ -87,6 +87,32 @@ def test_recompress():
             assert buff.getvalue().decode('utf-8') == expected
 
 
+def test_recompress_wrong_chunks():
+    with named_temp() as temp:
+        test_file = get_test_file('example-wrong-chunks.warc.gz')
+
+        with patch_stdout() as buff:
+            with pytest.raises(ArchiveLoadFailed):
+                main(args=['index', test_file, '-f', 'warc-type'])
+
+
+            expected = """\
+{"offset": "0", "warc-type": "response", "warc-target-uri": "http://example.com/"}
+{"offset": "1061", "warc-type": "request", "warc-target-uri": "http://example.com/"}
+"""
+
+        # recompress!
+        with patch_stdout() as buff:
+            main(args=['recompress', '-v', test_file, temp.name])
+
+            out = buff.getvalue().decode('utf-8')
+            assert '2 records read' in out
+            assert 'Compression Errors Found and Fixed!' in out
+            assert 'No Errors Found!' not in out
+
+            assert expected in out
+
+
 def test_recompress_arc2warc():
     with named_temp() as temp:
         test_file = get_test_file('example.arc.gz')
@@ -104,13 +130,38 @@ def test_recompress_arc2warc():
             assert buff.getvalue().decode('utf-8') == expected
 
 
+def test_recompress_arc2warc_verbose():
+    with patch_stdout() as buff:
+        with named_temp() as temp:
+            test_file = get_test_file('example.arc.gz')
+
+            # recompress!
+            main(args=['recompress', '-v', test_file, temp.name])
+
+            out = buff.getvalue().decode('utf-8')
+            assert '{"offset": "0", "warc-type": "warcinfo"}' in out
+            assert '"warc-target-uri": "http://example.com/"' in out
+
+            assert 'No Errors Found!' in out
+            assert '2 records read' in out
+
+
 def test_recompress_bad_file():
     with named_temp() as temp:
         temp.write(b'abcdefg-not-a-warc\n')
         temp.seek(0)
         with named_temp() as temp2:
-            with pytest.raises(ArchiveLoadFailed):
+            with pytest.raises(SystemExit):
                 main(args=['recompress', temp.name, temp2.name])
+
+def test_recompress_bad_file_verbose():
+    with named_temp() as temp:
+        temp.write(b'abcdefg-not-a-warc\n')
+        temp.seek(0)
+        with named_temp() as temp2:
+            with pytest.raises(SystemExit):
+                main(args=['recompress', '--verbose', temp.name, temp2.name])
+
 
 def test_extract_warcinfo():
     with patch_stdout() as buff:

@@ -166,7 +166,7 @@ headers = {2})".format(self.protocol, self.statusline, self.headers)
         try:
             string = self.to_str(filter_func)
             string = string.encode('ascii')
-        except UnicodeEncodeError:
+        except (UnicodeEncodeError, UnicodeDecodeError):
             self.percent_encode_non_ascii_headers()
             string = self.to_str(filter_func)
             string = string.encode('ascii')
@@ -189,6 +189,9 @@ headers = {2})".format(self.protocol, self.statusline, self.headers)
                 curr_value.encode('ascii')
             except:
                 new_value = self.ENCODE_HEADER_RX.sub(do_encode, curr_value)
+                if new_value == curr_value:
+                    new_value = quote(curr_value)
+
                 self.headers[index] = (curr_name, new_value)
 
     # act like a (case-insensitive) dictionary of headers, much like other

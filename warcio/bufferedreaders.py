@@ -63,7 +63,8 @@ class BufferedReader(object):
 
     def __init__(self, stream, block_size=BUFF_SIZE,
                  decomp_type=None,
-                 starting_data=None):
+                 starting_data=None,
+                 read_all_members=False):
 
         self.stream = stream
         self.block_size = block_size
@@ -74,6 +75,8 @@ class BufferedReader(object):
         self.starting_data = starting_data
         self.num_read = 0
         self.buff_size = 0
+
+        self.read_all_members = read_all_members
 
     def set_decomp(self, decomp_type):
         self._init_decomp(decomp_type)
@@ -203,7 +206,14 @@ class BufferedReader(object):
         return linebuff
 
     def empty(self):
-        return not self.buff or self.buff.tell() >= self.buff_size
+        if not self.buff or self.buff.tell() >= self.buff_size:
+            # if reading all members, attempt to get next member automatically
+            if self.read_all_members:
+                self.read_next_member()
+
+            return True
+
+        return False
 
     def read_next_member(self):
         if not self.decompressor or not self.decompressor.unused_data:
