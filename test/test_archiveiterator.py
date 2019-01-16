@@ -83,9 +83,9 @@ class TestArchiveIterator(object):
         expected = ['arc_header', 'response']
         assert self._load_archive('example.arc.gz') == expected
 
-    def test_space_in_url_arc_gz(self):
-        expected = ['arc_header', 'response']
-        assert self._load_archive('space-in-url.arc.gz') == expected
+    def test_space_in_url_arc(self):
+        expected = ['arc_header', 'response', 'response']
+        assert self._load_archive('space-in-url.arc') == expected
 
     def test_example_arc(self):
         expected = ['arc_header', 'response']
