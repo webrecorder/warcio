@@ -10,6 +10,7 @@ from warcio.timeutils import timestamp_to_iso_date
 
 from six.moves import zip
 
+import re
 
 #=================================================================
 class ArcWarcRecord(object):
@@ -267,7 +268,14 @@ class ARCHeadersParser(object):
             total_read += len(version)
             total_read += len(spec)
 
-        parts = headerline.split(' ')
+        match = re.search(r"\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\s", headerline)
+        if match:
+            ip = match.group(0)
+            split_pos = headerline.index(ip) - 1
+            url, parts = headerline[:split_pos], headerline[split_pos:].strip().split()
+            parts.insert(0, url)
+        else:
+            parts = headerline.split(' ')
 
         if len(parts) != len(headernames):
             msg = 'Wrong # of headers, expected arc headers {0}, Found {1}'
