@@ -16,29 +16,29 @@ class Checker(object):
 
     def process_one(self, filename):
         with open(filename, 'rb') as stream:
-            self.file_printed = False
-            self.filename = filename
+            file_printed = False
+            filename = filename
             for record in ArchiveIterator(stream, check_digests=True):
-                # XXX skip if Arc and not Warc
                 record.content_stream().read()  # make sure digests are checked
                 rec_id = record.rec_headers.get_header('WARC-Record-ID')
                 rec_type = record.rec_headers.get_header('WARC-Type')
-                if record.digest_checker.status is False:
+                if record.digest_checker.passed is False:
                     self.exit_value = 1
-                    self.fprint()
+                    file_printed = _fprint(filename, file_printed)
                     print(' ', 'WARC-Record-ID', rec_id, rec_type)
                     for p in record.digest_checker.problems:
                         print('  ', p)
-                elif record.digest_checker.status is True and self.verbose:
-                    self.fprint()
+                elif record.digest_checker.passed is True and self.verbose:
+                    file_printed = _fprint(filename, file_printed)
                     print(' ', 'WARC-Record-ID', rec_id, rec_type)
                     print('   digest pass')
-                elif record.digest_checker.status is None and self.verbose:
-                    self.fprint()
+                elif record.digest_checker.passed is None and self.verbose:
+                    file_printed = _fprint(filename, file_printed)
                     print(' ', 'WARC-Record-ID', rec_id, rec_type)
                     print('   digest not checked')
 
-    def fprint(self):
-        if not self.file_printed:
-            print(self.filename)
-            self.file_printed = True
+
+def _fprint(filename, file_printed):
+    if not file_printed:
+        print(filename)
+    return True

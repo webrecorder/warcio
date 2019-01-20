@@ -96,14 +96,14 @@ def get_version():
 
 # ============================================================================
 def indexer(cmd):
-    indexer = Indexer(cmd.fields, cmd.inputs, cmd.output)
-    indexer.process_all()
+    _indexer = Indexer(cmd.fields, cmd.inputs, cmd.output)
+    _indexer.process_all()
 
 
 # ============================================================================
 def checker(cmd):
-    checker = Checker(cmd)
-    sys.exit(checker.process_all())
+    _checker = Checker(cmd)
+    sys.exit(_checker.process_all())
 
 
 # ============================================================================
