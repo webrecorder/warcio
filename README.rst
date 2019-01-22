@@ -325,7 +325,7 @@ Please refer to `warcwriter.py <warcio/warcwriter.py>`__ and
 WARCIO CLI: Indexing and Recompression
 --------------------------------------
 
-The library currently ships with two simple command line tools.
+The library currently ships with a few simple command line tools.
 
 Index
 ~~~~~
@@ -359,6 +359,14 @@ the warc file.
 (Note: this library does not produce CDX or CDXJ format indexes often
 associated with web archives. To create these indexes, please see the
 `cdxj-indexer <https://github.com/webrecorder/cdxj-indexer>`__ tool which extends warcio indexing to provide this functionality)
+
+Check
+~~~~~
+
+The ``warcio check`` command will check the payload and block digests
+of WARC records, if possible. An exit value of 1 indicates a failure.
+``warcio check -v`` will print verbose output for each record in the
+WARC file.
 
 Recompress
 ~~~~~~~~~~

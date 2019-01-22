@@ -10,28 +10,28 @@ from warcio.exceptions import ArchiveLoadFailed
 class DigestChecker(object):
     def __init__(self, kind=None):
         self._problem = []
-        self._status = None
+        self._passed = None
         self.kind = kind
 
     @property
-    def status(self):
-        return self._status
+    def passed(self):
+        return self._passed
 
-    @status.setter
-    def status(self, value):
-        self._status = value
+    @passed.setter
+    def passed(self, value):
+        self._passed = value
 
     @property
     def problems(self):
         return self._problem
 
-    def problem(self, value):
+    def problem(self, value, passed=False):
         self._problem.append(value)
         if self.kind == 'raise':
             raise ArchiveLoadFailed(value)
         if self.kind == 'log':
             sys.stderr.write(value + '\n')
-        self.status = False
+        self._passed = passed
 
 
 # ============================================================================
@@ -45,11 +45,11 @@ class DigestVerifyingReader(LimitReader):
 
         super(DigestVerifyingReader, self).__init__(stream, limit)
 
-        self.check_digest = digest_checker
+        self.digest_checker = digest_checker
 
         if record_type == 'revisit':
-            block_digest = None  # XXX my bug, or is example.warc wrong?
-            payload_digest = None  # no payload, so can't check it
+            block_digest = None
+            payload_digest = None
         if segment_number is not None:  #pragma: no cover
             payload_digest = None
 
@@ -65,22 +65,25 @@ class DigestVerifyingReader(LimitReader):
                 algo, _ = _parse_digest(block_digest)
                 self.block_digester = Digester(algo)
             except ValueError:
-                self.problem('unknown hash algorithm name in block digest')
+                self.digest_checker.problem('unknown hash algorithm name in block digest')
                 self.block_digester = None
         if payload_digest:
             try:
                 algo, _ = _parse_digest(self.payload_digest)
                 self.payload_digester_obj = Digester(algo)
             except ValueError:
-                self.problem('unknown hash algorithm name in payload digest')
+                self.digest_checker.problem('unknown hash algorithm name in payload digest')
                 self.payload_digester_obj = None
 
     def begin_payload(self):
         self.payload_digester = self.payload_digester_obj
         if self.limit == 0:
-            if _compare_digest_rfc_3548(self.payload_digester, self.payload_digest) is False:
-                self.problem('payload digest failed: {}'.format(self.payload_digest))
+            check = _compare_digest_rfc_3548(self.payload_digester, self.payload_digest)
+            if check is False:
+                self.digest_checker.problem('payload digest failed: {}'.format(self.payload_digest))
                 self.payload_digester = None  # prevent double-fire
+            elif check is True and self.digest_checker.passed is not False:
+                self.digest_checker.passed = True
 
     def _update(self, buff):
         super(DigestVerifyingReader, self)._update(buff)
@@ -91,15 +94,18 @@ class DigestVerifyingReader(LimitReader):
             self.block_digester.update(buff)
 
         if self.limit == 0:
-            if _compare_digest_rfc_3548(self.block_digester, self.block_digest) is False:
-                self.problem('block digest failed: {}'.format(self.block_digest))
-            if _compare_digest_rfc_3548(self.payload_digester, self.payload_digest) is False:
-                self.problem('payload digest failed {}'.format(self.payload_digest))
+            check = _compare_digest_rfc_3548(self.block_digester, self.block_digest)
+            if check is False:
+                self.digest_checker.problem('block digest failed: {}'.format(self.block_digest))
+            elif check is True and self.digest_checker.passed is not False:
+                self.digest_checker.passed = True
+            check = _compare_digest_rfc_3548(self.payload_digester, self.payload_digest)
+            if check is False:
+                self.digest_checker.problem('payload digest failed {}'.format(self.payload_digest))
+            elif check is True and self.digest_checker.passed is not False:
+                self.digest_checker.passed = True
 
         return buff
-
-    def problem(self, reason):
-        self.check_digest.problem(reason)
 
 
 def _compare_digest_rfc_3548(digester, digest):
