@@ -267,7 +267,7 @@ class ARCHeadersParser(object):
             total_read += len(version)
             total_read += len(spec)
 
-        parts = headerline.rsplit(' ', maxsplit=len(headernames)-1)
+        parts = headerline.rsplit(' ', len(headernames)-1)
 
         if len(parts) != len(headernames):
             msg = 'Wrong # of headers, expected arc headers {0}, Found {1}'
