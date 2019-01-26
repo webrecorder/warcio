@@ -368,6 +368,14 @@ of WARC records, if possible. An exit value of 1 indicates a failure.
 ``warcio check -v`` will print verbose output for each record in the
 WARC file.
 
+Test
+~~~~
+
+The ``warcio test`` command will check one or more WARC files against
+the WARC standard, giving commentary about standards violations,
+recommendations, and other issues.
+
+
 Recompress
 ~~~~~~~~~~
 
