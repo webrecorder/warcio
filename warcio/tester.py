@@ -105,7 +105,7 @@ def validate_warc_fields(record, commentary):
                 commentary.comment('Missing field-name : in warc-fields line:', line)
             else:
                 field_name = line.split(':', 1)[0]
-                if not re.fullmatch(token_re, field_name):
+                if not re.search(token_re, field_name):
                     commentary.comment('invalid warc-fields name:', field_name)
                 else:
                     lines.append(line)
@@ -248,7 +248,7 @@ def validate_actual_uri(field, value, record, version, commentary, pending):
     if re.search(r'\s', value, re.A):
         commentary.error('invalid uri, contains whitespace', field, value)
     scheme, rest = value.split(':', 1)
-    if not re.fullmatch(r'[A-Za-z][A-Za-z0-9+\-\.]*', scheme, re.A):
+    if not re.search(r'\A[A-Za-z][A-Za-z0-9+\-\.]*\Z', scheme, re.A):
         commentary.error('invalid uri scheme, bad character', field, value)
     # https://www.iana.org/assignments/uri-schemes/uri-schemes.xhtml
 
@@ -283,7 +283,7 @@ def validate_timestamp(field, value, record, version, commentary, pending):
             commentary.error('WARC 1.0 may not have fractional seconds', field, value)
     else:
         start, end = value.split('.', 1)
-        if not re.fullmatch(r'[0-9]{1,9}Z', end, re.A):
+        if not re.search(r'\A[0-9]{1,9}Z\Z', end, re.A):
             commentary.error('fractional seconds must have 1-9 digits', field, value)
 
     # XXX the above is pretty incomplete for dash, colon, trailing Z, etc
@@ -297,21 +297,21 @@ def validate_content_length(field, value, record, version, commentary, pending):
         commentary.error('must be an integer', field, value)
 
 
-token_re = r'[!"#$%&\'()*+\-\.0-9A-Z\^_`a-z|~]+'
-digest_re = r'[A-Za-z0-9/+\-_=]+'
+token_re = r'\A[!"#$%&\'()*+\-\.0-9A-Z\^_`a-z|~]+\Z'
+digest_re = r'\A[A-Za-z0-9/+\-_=]+\Z'
 
 
 def validate_content_type(field, value, record, version, commentary, pending):
     if '/' not in value:
         commentary.error('must contain a /', field, value)
     ctype, rest = value.split('/', 1)
-    if not re.fullmatch(token_re, ctype, re.A):
+    if not re.search(token_re, ctype, re.A):
         commentary.error('invalid type', field, value)
     if ';' in rest:
         subtype, rest = rest.split(';', 1)
     else:
         subtype = rest
-    if not re.fullmatch(token_re, subtype, re.A):
+    if not re.search(token_re, subtype, re.A):
         commentary.error('invalid subtype', field, value)
 
     # at this point there can be multiple parameters,
@@ -324,13 +324,13 @@ def validate_digest(field, value, record, version, commentary, pending):
     if ':' not in value:
         commentary.error('missing algorithm', field, value)
     algorithm, digest = value.split(':', 1)
-    if not re.fullmatch(token_re, algorithm, re.A):
+    if not re.search(token_re, algorithm, re.A):
         commentary.error('invalid algorithm', field, value)
-    if not re.fullmatch(token_re, digest, re.A):
+    if not re.search(token_re, digest, re.A):
         # https://github.com/iipc/warc-specifications/issues/48
         # commentary.comment('spec incorrectly says this is an invalid digest', field, value)
         pass
-    if not re.fullmatch(digest_re, digest, re.A):
+    if not re.search(digest_re, digest, re.A):
         commentary.comment('Invalid-looking digest value', field, value)
 
 
