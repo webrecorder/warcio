@@ -8,6 +8,7 @@ from warcio.bufferedreaders import DecompressingBufferedReader
 
 from warcio.indexer import Indexer
 from warcio.checker import Checker
+from warcio.tester import Tester
 from warcio.utils import BUFF_SIZE
 
 import tempfile
@@ -53,6 +54,10 @@ def main(args=None):
     check.add_argument('inputs', nargs='+')
     check.add_argument('-v', '--verbose', action='store_true')
     check.set_defaults(func=checker)
+
+    test = subparsers.add_parser('test', help='WARC standards tester')
+    test.add_argument('inputs', nargs='+')
+    test.set_defaults(func=tester)
 
     cmd = parser.parse_args(args=args)
     cmd.func(cmd)
@@ -104,6 +109,12 @@ def indexer(cmd):
 def checker(cmd):
     _checker = Checker(cmd)
     sys.exit(_checker.process_all())
+
+
+# ============================================================================
+def tester(cmd):
+    _tester = Tester(cmd)
+    sys.exit(_tester.process_all())
 
 
 # ============================================================================

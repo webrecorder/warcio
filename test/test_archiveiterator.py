@@ -185,6 +185,8 @@ Content-Length: 1303\r\n'
     def test_corrects_wget_bug(self):
         with self._find_first_by_type('example-wget-bad-target-uri.warc.gz', 'response') as record:
             assert record.rec_headers.get('WARC-Target-URI') == 'http://example.com/'
+        with self._find_first_by_type('example-wget-bad-target-uri.warc.gz', 'response', fixup_bugs=False) as record:
+            assert record.rec_headers.get('WARC-Target-URI') == 'http://example.com/'
 
     def _digests_mutilate_helper(self, contents, expected_t, expected_f, capsys, full_read=False):
         with pytest.raises(ArchiveLoadFailed):
@@ -243,9 +245,9 @@ Content-Length: 1303\r\n'
         expected_t = ['request', 'request', 'request']
 
         # record 1: invalid payload digest
-        assert self._load_archive('example-digest.warc', check_digests=True) == expected_t
-        assert self._load_archive('example-digest.warc', check_digests=False) == expected_f
+        assert self._load_archive('example-digest-bad.warc', check_digests=True) == expected_t
+        assert self._load_archive('example-digest-bad.warc', check_digests=False) == expected_f
 
         # record 2: b64 digest; record 3: b64 filename safe digest
-        assert self._load_archive('example-digest.warc', offset=922, check_digests=True) == expected_t
-        assert self._load_archive('example-digest.warc', offset=922, check_digests=False) == expected_t
+        assert self._load_archive('example-digest-bad.warc', offset=922, check_digests=True) == expected_t
+        assert self._load_archive('example-digest-bad.warc', offset=922, check_digests=False) == expected_t
