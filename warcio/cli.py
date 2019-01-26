@@ -4,6 +4,8 @@ from warcio.indexer import Indexer
 from warcio.checker import Checker
 from warcio.extractor import Extractor
 from warcio.recompressor import Recompressor
+from warcio.tester import Tester
+from warcio.utils import BUFF_SIZE
 
 import sys
 
@@ -51,6 +53,10 @@ def main(args=None):
     check.add_argument('-v', '--verbose', action='store_true')
     check.set_defaults(func=checker)
 
+    test = subparsers.add_parser('test', help='WARC standards tester')
+    test.add_argument('inputs', nargs='+')
+    test.set_defaults(func=tester)
+
     cmd = parser.parse_args(args=args)
     cmd.func(cmd)
 
@@ -84,6 +90,12 @@ def extractor(cmd):
 def recompressor(cmd):
     _recompressor = Recompressor(cmd.filename, cmd.output, cmd.verbose)
     _recompressor.recompress()
+
+
+# ============================================================================
+def tester(cmd):
+    _tester = Tester(cmd)
+    sys.exit(_tester.process_all())
 
 
 # ============================================================================

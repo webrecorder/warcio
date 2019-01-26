@@ -58,7 +58,7 @@ class ArcWarcRecordLoader(object):
     NON_HTTP_SCHEMES = ('dns:', 'whois:', 'ntp:')
     HTTP_SCHEMES = ('http:', 'https:')
 
-    def __init__(self, verify_http=True, arc2warc=True):
+    def __init__(self, verify_http=True, arc2warc=True, fixup_bugs=True):
         if arc2warc:
             self.arc_parser = ARC2WARCHeadersParser()
         else:
@@ -68,6 +68,7 @@ class ArcWarcRecordLoader(object):
         self.http_parser = StatusAndHeadersParser(self.HTTP_TYPES, verify_http)
 
         self.http_req_parser = StatusAndHeadersParser(self.HTTP_VERBS, verify_http)
+        self.fixup_bugs = fixup_bugs
 
     def parse_record_stream(self, stream,
                             statusline=None,
@@ -99,7 +100,7 @@ class ArcWarcRecordLoader(object):
 
         elif the_format in ('warc', 'arc2warc'):
             rec_type = rec_headers.get_header('WARC-Type')
-            uri = self._ensure_target_uri_format(rec_headers)
+            uri = self._ensure_target_uri_format(rec_headers, fixup_bugs=self.fixup_bugs)
             length = rec_headers.get_header('Content-Length')
             content_type = rec_headers.get_header('Content-Type')
             if the_format == 'warc':
@@ -238,7 +239,7 @@ class ArcWarcRecordLoader(object):
                 msg = 'Unknown archive format, first line: '
             raise ArchiveLoadFailed(msg + str(se.statusline))
 
-    def _ensure_target_uri_format(self, rec_headers):
+    def _ensure_target_uri_format(self, rec_headers, fixup_bugs=True):
         """Checks the value for the WARC-Target-URI header field to see if it starts
         with '<' and ends with '>' (Wget 1.19 bug) and if '<' and '>' are present,
         corrects and updates the field returning the corrected value for the field
@@ -251,8 +252,7 @@ class ArcWarcRecordLoader(object):
         :rtype: str | None
         """
         uri = rec_headers.get_header('WARC-Target-URI')
-
-        if uri is not None and uri.startswith('<') and uri.endswith('>'):
+        if fixup_bugs and uri is not None and uri.startswith('<') and uri.endswith('>'):
             uri = uri[1:-1]
             rec_headers.replace_header('WARC-Target-URI', uri)
 
