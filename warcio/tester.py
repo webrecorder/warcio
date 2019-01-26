@@ -75,10 +75,10 @@ def validate_warc_fields(record, commentary):
     # field-value = *( field-content | LWS )  # LWS signals continuations
     # field-name = token  # token_re
 
-    content = record.content
+    content = record.content  # TESTME
     try:
         text = to_native_str(content, 'utf-8', errors='strict')
-    except UnicodeDecodeError as e:
+    except UnicodeDecodeError as e:  # TESTME
         commentary.error('warc-fields contains invalid utf-8: '+str(e))
         text = to_native_str(content, 'utf-8', errors='replace')
 
@@ -86,14 +86,14 @@ def validate_warc_fields(record, commentary):
     lines = []
     for line in text.splitlines(True):
         if not line.endswith('\r\n'):
-            commentary.error('warc-fields lines must end with \r\n')
+            commentary.comment('warc-fields lines must end with \\r\\n:', line.rstrip())
             line = line.rstrip('\r\n')
         else:
             line = line[:-2]
 
         if line.startswith(' ') or line.startswith('\t'):
             if first_line:
-                commentary.error('The first line of warc-fields cannot start with whitespace')
+                commentary.comment('The first line of warc-fields cannot start with whitespace')
             else:
                 lines[-1] += ' ' + line[1:]
         elif line == '':
@@ -102,22 +102,26 @@ def validate_warc_fields(record, commentary):
         else:
             # check for field-name :
             if ':' not in line:
-                commentary.error('Missing field-name : in warc-fields line', line)
+                commentary.comment('Missing field-name : in warc-fields line:', line)
             else:
                 field_name = line.split(':', 1)[0]
                 if not re.fullmatch(token_re, field_name):
-                    commentary('invalid warc-fields name', field_name)
+                    commentary.comment('invalid warc-fields name:', field_name)
                 else:
                     lines.append(line)
         first_line = False
+
+    if not lines:
+        commentary.comment('warc-fields body present but empty')
+        return
 
     # check known fields
 
 
 def validate_warcinfo(record, commentary, pending):
-    content_type = record.rec_headers.get_header('Content-Type')
+    content_type = record.rec_headers.get_header('Content-Type', 'none')
     if content_type.lower() != 'application/warc-fields':
-        commentary.recommencation('warcinfo Content-Type of application/warc-fields, saw', content_type)
+        commentary.recommendation('warcinfo Content-Type of application/warc-fields, saw', content_type)
     else:
         #   format: warc-fields
         #   allowable fields include but not limited to DMCI plus the following
@@ -133,25 +137,27 @@ def validate_warcinfo(record, commentary, pending):
 
 
 def validate_response(record, commentary, pending):
-    target_uri = record.rec_headers.get_header('WARC-Target-URI').lower()
+    target_uri = record.rec_headers.get_header('WARC-Target-URI', 'none').lower()  # TESTME
 
     if target_uri.startswith('http:') or target_uri.startswith('https:'):
-        content_type = record.rec_headers.get_header('Content-Type')
+        content_type = record.rec_headers.get_header('Content-Type', 'none')
         if canon_content_type(content_type) not in {'application/http;msgtype=response', 'application/http'}:
-            commentary.error('responses for http/https should have Content-Type of application/http; msgtype=response or application/http, saw ', content_type)
+            commentary.error('responses for http/https should have Content-Type of application/http; msgtype=response or application/http, saw', content_type)
 
         if record.rec_headers.get_header('WARC-IP-Address') is None:
             commentary.error('WARC-IP-Address should be used for http and https responses')
 
         # error: http and https schemes should have http response headers
+        #   test by attempting to parse them?
+
         # comment: verify http content-length, if present -- commoncrawl nutch bug
 
 
 def validate_resource(record, commentary, pending):
-    target_uri = record.rec_headers.get_header('WARC-Target-URI').lower()
+    target_uri = record.rec_headers.get_header('WARC-Target-URI', '').lower()  # TESTME
 
     if target_uri.startswith('dns:'):
-        content_type = record.rec_headers.get_header('Content-Type')
+        content_type = record.rec_headers.get_header('Content-Type', 'none')
         if content_type.lower() != 'text/dns':
             commentary.error('recource records for dns: shall have Content-Type of text/dns, saw', content_type)
         else:
@@ -163,13 +169,13 @@ def validate_resource(record, commentary, pending):
 
 
 def validate_request(record, commentary, pending):
-    target_uri = record.rec_headers.get_header('WARC-Target-URI').lower()
+    target_uri = record.rec_headers.get_header('WARC-Target-URI', 'none').lower()  # TESTME
 
     if target_uri.startswith('http:') or target_uri.startswith('https:'):
         content_type = record.rec_headers.get_header('Content-Type')
 
         if canon_content_type(content_type) not in {'application/http;msgtype=request', 'application/http'}:
-            commentary.error('requests for http/https should have Content-Type of application/http; msgtype=request or application/http, saw ', content_type)
+            commentary.error('requests for http/https should have Content-Type of application/http; msgtype=request or application/http, saw', content_type)
 
         if record.rec_headers.get_header('WARC-IP-Address') is None:
             commentary.error('WARC-IP-Address should be used for http and https requests')
@@ -180,7 +186,7 @@ def validate_request(record, commentary, pending):
 
 
 def validate_metadata(record, commentary, pending):
-    content_type = record.rec_headers.get_header('Content-Type')
+    content_type = record.rec_headers.get_header('Content-Type', 'none')  # TESTME
     if content_type.lower() == 'application/warc-fields':
         # dublin core plus via, hopsFromSeed, fetchTimeMs -- w1.1 section 6
         # via: uri -- example in Warc 1.1 section 10.5 does not have <> around it
@@ -190,7 +196,7 @@ def validate_metadata(record, commentary, pending):
 
 
 def validate_revisit(record, commentary, pending):
-    warc_profile = record.rec_headers.get_header('WARC-Profile')
+    warc_profile = record.rec_headers.get_header('WARC-Profile', 'none')  # TESTME
 
     if warc_profile.endswith('/revisit/identical-payload-digest') or warc_profile.endswith('/revisit/uri-agnostic-identical-payload-digest'):
         config = {
@@ -201,7 +207,7 @@ def validate_revisit(record, commentary, pending):
         # may have record block; if not, shall have Content-Length: 0, if yes, should be like a response record, truncated FOR LENGTH ONLY if desired
         # recommended that server response headers be preserved "in this manner"
 
-    elif warc_profile.ends_with('/revisit/server-not-modified'):
+    elif warc_profile.endswith('/revisit/server-not-modified'):
         config = {
             'recommended': ['WARC-Refers-To', 'WARC-Refers-To-Date'],
             'prohibited': ['WARC-Payload-Digest'],
@@ -216,15 +222,15 @@ def validate_revisit(record, commentary, pending):
 def validate_conversion(record, commentary, pending):
     # where practical, have a warc-refers-to field -- not quite a recommendation, perhaps make it a comment?
     # suggests there should be a corresponding metadata record -- which may have a WARC-Refers-To
-    pass
+    pass  # TESTME
 
 
 def validate_continuation(record, commentary, pending):
-    commentary.comment('warcio test continuation code has not been tested, expect bugs')
+    commentary.comment('warcio test continuation code has not been tested, expect bugs')  # TESTME
 
-    warc_type = record.rec_headers.get_header('WARC-Type')
-    if warc_type in {'warcinfo', 'request', 'metadata', 'revisit'}:
-        commentary.recommendation('do not segment warc-type', warc_type)
+    segment_number = record.rec_headers.get_header('WARC-Segment-Number', 'none')
+    if segment_number.isdigit() and int(segment_number) < 2:
+        commentary.error('continuation record must have WARC-Segment-Number > 1, saw', segment_number)
 
     # last segment: required WARC-Segment-Total-Length, optional WARC-Truncated
 
@@ -234,7 +240,7 @@ def validate_actual_uri(field, value, record, version, commentary, pending):
     # should use a registered scheme
     # %XX encoding, normalize to upper case
     # schemes are case-insensitive and normalize to lower
-    if value.startswith('<') or value.endswith('>'):
+    if value.startswith('<') or value.endswith('>'):  # TESTME
         # wget 1.19 bug caused by WARC 1.0 spec error
         commentary.error('uri must not be within <>', field, value)
     if ':' not in value:
@@ -250,10 +256,10 @@ def validate_actual_uri(field, value, record, version, commentary, pending):
 def validate_warc_type(field, value, record, version, commentary, pending):
     if not value.islower():
         # I am unclear if this is allowed? standard is silent
-        commentary.comment('Warc-Type is not lower-case', field, value)
+        commentary.comment('WARC-Type is not lower-case', field, value)
     if value.lower() not in record_types:
         # standard says readers should ignore unknown warc-types
-        commentary.comment('unknown Warc-Type', field, value)
+        commentary.comment('unknown WARC-Type', field, value)
 
 
 def validate_uri(field, value, record, version, commentary, pending):
@@ -307,8 +313,10 @@ def validate_content_type(field, value, record, version, commentary, pending):
         subtype = rest
     if not re.fullmatch(token_re, subtype, re.A):
         commentary.error('invalid subtype', field, value)
+
     # at this point there can be multiple parameters,
     # some of which could have quoted string values with ; in them
+
     # TODO: more checking
 
 
@@ -372,11 +380,17 @@ def validate_profile(field, value, record, version, commentary, pending):
 def validate_segment_number(field, value, record, version, commentary, pending):
     if not value.isdigit():
         commentary.error('must be an integer', field, value)
+        return
     iv = int(value)
     if iv == 0:
         commentary.error('must be 1 or greater', field, value)
-    # TODO: type != continuation must have iv == 1, else iv > 1
-    # might make that check in the 'continuation' section?
+
+    rec_type = record.rec_headers.get_header('WARC-Type', 'none')
+    if rec_type != 'continuation':
+        if iv != 1:
+            commentary.error('non-continuation records must always have WARC-Segment-Number = 1', field, value)
+    elif rec_type in {'warcinfo', 'request', 'metadata', 'revisit'}:
+        commentary.recommendation('do not segment warc-type', warc_type)
 
 
 def validate_segment_total_length(field, value, record, version, commentary, pending):
@@ -507,7 +521,7 @@ record_types = {
     'continuation': {
         'required': ['WARC-Record-ID', 'Content-Length', 'WARC-Date', 'WARC-Type',
                      'WARC-Segment-Origin-ID', 'WARC-Segment-Number', 'WARC-Target-URI'],
-        'optional': [],
+        'optional': ['WARC-Segment-Total-Length', 'WARC-Truncated'],
         'prohibited': ['WARC-Block-Digest', 'WARC-Payload-Digest', 'WARC-Warcinfo-ID', 'WARC-IP-Address', 'WARC-Refers-To', 'WARC-Refers-To-Target-URI', 'WARC-Refers-To-Date', 'WARC-Filename', 'WARC-Profile'],
         'validate': validate_continuation,
     },
@@ -522,10 +536,10 @@ def make_header_set(config, kinds):
 
 
 def validate_fields_against_rec_type(rec_type, config, rec_headers, commentary, allow_all=False):
-    for req in config.get('required', []):
+    for req in sorted(config.get('required', [])):
         if not rec_headers.get_header(req):
             commentary.error('missing required header', req)
-    for rec in config.get('recommended', []):
+    for rec in sorted(config.get('recommended', [])):
         if not rec_headers.get_header(rec):
             commentary.recommendation('missing recommended header', rec)
     allowed = make_header_set(config, ('required', 'optional', 'recommended'))
@@ -554,9 +568,6 @@ def validate_record(record):
 
     record_id = record.rec_headers.get_header('WARC-Record-ID')
     rec_type = record.rec_headers.get_header('WARC-Type')
-    if record_id is None:
-        print('no WARC-Record-ID seen, skipping validation', file=sys.stderr)
-        return
     commentary = Commentary(record_id, rec_type)
     pending = None
 

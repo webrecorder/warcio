@@ -1,0 +1,79 @@
+WARC/1.0
+WARC-Type: warcinfo
+Content-Type: application/warc-fields
+Content-Length: 146
+
+ first line can't start with a space
+test: invalid utf8 Ã(
+test: lines should end with \r\n
+foo:
+ bar
+
+no colon
+token cannot have a space:
+
+
+WARC/1.0
+WARC-Type: warcinfo
+Content-Type: application/warc-fields
+Content-Length: 0
+
+
+WARC/1.0
+WARC-Type: response
+WARC-Target-URI: HtTp://example.com/
+Content-Type: text/plain
+Content-Length: 0
+
+
+WARC/1.0
+WARC-Type: resource
+WARC-Target-URI: DnS:asdfasdf
+Content-Type: text/plain
+Content-Length: 0
+
+
+WARC/1.0
+WARC-Type: resource
+WARC-Target-URI: DnS:asdfasdf
+Content-Type: text/dns
+Content-Length: 0
+
+
+WARC/1.0
+WARC-Type: request
+WARC-Target-URI: hTtP://example.com/
+Content-Type: text/plain
+Content-Length: 0
+
+
+WARC/1.0
+WARC-Type: metadata
+Content-Type: application/warc-fields
+Content-Length: 0
+
+
+WARC/1.0
+WARC-Type: revisit
+WARC-Profile: none
+Content-Length: 0
+
+
+WARC/1.0
+WARC-Type: revisit
+WARC-Profile: http://netpreserve.org/warc/1.1/revisit/identical-payload-digest
+Content-Length: 0
+
+
+WARC/1.0
+WARC-Type: revisit
+WARC-Profile: http://netpreserve.org/warc/1.0/revisit/server-not-modified
+Content-Length: 0
+
+
+WARC/1.0
+WARC-Type: continuation
+WARC-Segment-Number: 1
+Content-Length: 0
+
+
