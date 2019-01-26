@@ -93,7 +93,10 @@ class BaseWARCWriter(object):
             pos = 0
             temp_file = self._create_temp_file()
 
-        if block_digester and record.http_headers and record.http_headers.headers_buff:
+        if block_digester and record.http_headers:
+            if not record.http_headers.headers_buff:
+                record.http_headers.compute_headers_buffer(self.header_filter)
+
             block_digester.update(record.http_headers.headers_buff)
 
         for buf in self._iter_stream(record.raw_stream):
@@ -235,17 +238,12 @@ class BaseWARCWriter(object):
 
         return warc_headers
 
-    def _set_header_buff(self, record):
-        # HTTP headers %-encoded as ascii (see to_ascii_bytes for more info)
-        headers_buff = record.http_headers.to_ascii_bytes(self.header_filter)
-        record.http_headers.headers_buff = headers_buff
-
     def _write_warc_record(self, out, record):
         if self.gzip:
             out = GzippingWrapper(out)
 
         if record.http_headers:
-            self._set_header_buff(record)
+            record.http_headers.compute_headers_buffer(self.header_filter)
 
         # Content-Length is None/unknown
         # Fix record by: buffering and recomputing all digests and length
