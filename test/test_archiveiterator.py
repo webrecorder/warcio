@@ -284,7 +284,7 @@ Content-Length: 1303\r\n'
         with self._find_first_by_type('example-wget-bad-target-uri.warc.gz', 'response') as record:
             assert record.rec_headers.get('WARC-Target-URI') == 'http://example.com/'
         with self._find_first_by_type('example-wget-bad-target-uri.warc.gz', 'response', fixup_bugs=False) as record:
-            assert record.rec_headers.get('WARC-Target-URI') == 'http://example.com/'
+            assert record.rec_headers.get('WARC-Target-URI') == '<http://example.com/>'
 
     def test_corrects_space_in_target_uri(self):
         with self._find_first_by_type('example-space-in-target-uri.warc.gz', 'resource') as record:

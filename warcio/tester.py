@@ -6,6 +6,7 @@ import sys
 import traceback
 
 from warcio.archiveiterator import WARCIterator
+from warcio.utils import to_native_str
 
 
 class Commentary:
@@ -69,10 +70,10 @@ def validate_warc_fields(record, commentary):
 
     content = record.content
     try:
-        text = content.decode('utf-8', errors='strict')
+        text = to_native_str(content, 'utf-8', errors='strict')
     except UnicodeDecodeError as e:
         commentary.error('warc-fields contains invalid utf-8: '+str(e))
-        text = content.decode('utf-8', errors='replace')
+        text = to_native_str(content, 'utf-8', errors='replace')
 
     first_line = True
     lines = []
