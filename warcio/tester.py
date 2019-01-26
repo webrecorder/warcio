@@ -245,10 +245,10 @@ def validate_actual_uri(field, value, record, version, commentary, pending):
         commentary.error('uri must not be within <>', field, value)
     if ':' not in value:
         commentary.error('invalid uri, no scheme', field, value)
-    if re.search(r'\s', value, re.A):
+    if re.search(r'\s', value):
         commentary.error('invalid uri, contains whitespace', field, value)
     scheme, rest = value.split(':', 1)
-    if not re.search(r'\A[A-Za-z][A-Za-z0-9+\-\.]*\Z', scheme, re.A):
+    if not re.search(r'\A[A-Za-z][A-Za-z0-9+\-\.]*\Z', scheme):
         commentary.error('invalid uri scheme, bad character', field, value)
     # https://www.iana.org/assignments/uri-schemes/uri-schemes.xhtml
 
@@ -283,7 +283,7 @@ def validate_timestamp(field, value, record, version, commentary, pending):
             commentary.error('WARC 1.0 may not have fractional seconds', field, value)
     else:
         start, end = value.split('.', 1)
-        if not re.search(r'\A[0-9]{1,9}Z\Z', end, re.A):
+        if not re.search(r'\A[0-9]{1,9}Z\Z', end):
             commentary.error('fractional seconds must have 1-9 digits', field, value)
 
     # XXX the above is pretty incomplete for dash, colon, trailing Z, etc
@@ -305,13 +305,13 @@ def validate_content_type(field, value, record, version, commentary, pending):
     if '/' not in value:
         commentary.error('must contain a /', field, value)
     ctype, rest = value.split('/', 1)
-    if not re.search(token_re, ctype, re.A):
+    if not re.search(token_re, ctype):
         commentary.error('invalid type', field, value)
     if ';' in rest:
         subtype, rest = rest.split(';', 1)
     else:
         subtype = rest
-    if not re.search(token_re, subtype, re.A):
+    if not re.search(token_re, subtype):
         commentary.error('invalid subtype', field, value)
 
     # at this point there can be multiple parameters,
@@ -324,13 +324,13 @@ def validate_digest(field, value, record, version, commentary, pending):
     if ':' not in value:
         commentary.error('missing algorithm', field, value)
     algorithm, digest = value.split(':', 1)
-    if not re.search(token_re, algorithm, re.A):
+    if not re.search(token_re, algorithm):
         commentary.error('invalid algorithm', field, value)
-    if not re.search(token_re, digest, re.A):
+    if not re.search(token_re, digest):
         # https://github.com/iipc/warc-specifications/issues/48
         # commentary.comment('spec incorrectly says this is an invalid digest', field, value)
         pass
-    if not re.search(digest_re, digest, re.A):
+    if not re.search(digest_re, digest):
         commentary.comment('Invalid-looking digest value', field, value)
 
 
