@@ -90,7 +90,7 @@ def test_check_valid():
 
 
 def test_check_invalid():
-    filenames = [get_test_file('example-digest.warc')]
+    filenames = [get_test_file('example-digest-bad.warc')]
 
     args = ['check'] + filenames
     value = check_helper(args, 1)

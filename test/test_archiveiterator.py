@@ -186,7 +186,7 @@ Content-Length: 1303\r\n'
         with self._find_first_by_type('example-wget-bad-target-uri.warc.gz', 'response') as record:
             assert record.rec_headers.get('WARC-Target-URI') == 'http://example.com/'
         with self._find_first_by_type('example-wget-bad-target-uri.warc.gz', 'response', fixup_bugs=False) as record:
-            assert record.rec_headers.get('WARC-Target-URI') == 'http://example.com/'
+            assert record.rec_headers.get('WARC-Target-URI') == '<http://example.com/>'
 
     def _digests_mutilate_helper(self, contents, expected_t, expected_f, capsys, full_read=False):
         with pytest.raises(ArchiveLoadFailed):

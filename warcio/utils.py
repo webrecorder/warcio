@@ -13,14 +13,14 @@ BUFF_SIZE = 16384
 
 
 # #===========================================================================
-def to_native_str(value, encoding='utf-8'):
+def to_native_str(value, encoding='utf-8', errors='strict'):
     if isinstance(value, str):
         return value
 
     if six.PY3 and isinstance(value, six.binary_type):  #pragma: no cover
-        return value.decode(encoding)
+        return value.decode(encoding, errors)
     elif six.PY2 and isinstance(value, six.text_type):  #pragma: no cover
-        return value.encode(encoding)
+        return value.encode(encoding, errors)
     else:
         return value
 
