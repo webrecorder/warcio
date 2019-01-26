@@ -72,6 +72,11 @@ Content-Length: 0
 
 
 WARC/1.0
+WARC-Type: conversion
+Content-Length: 0
+
+
+WARC/1.0
 WARC-Type: continuation
 WARC-Segment-Number: 1
 Content-Length: 0

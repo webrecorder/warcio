@@ -5,15 +5,15 @@ import sys
 import traceback
 
 from warcio.archiveiterator import WARCIterator
-from warcio.utils import to_native_str
+from warcio.utils import to_native_str, Digester
 
 
-def try_ipaddress_init():
+def try_ipaddress_import():
     # ipaddress is in 3.3+ but not 2.7. It is in pypi but we wish to limit dependencies.
     try:
         import ipaddress
     except ImportError:  # pragma: no cover
-        pass
+        print('ipaddress module not imported')
 
 
 class Commentary:
@@ -75,10 +75,10 @@ def validate_warc_fields(record, commentary):
     # field-value = *( field-content | LWS )  # LWS signals continuations
     # field-name = token  # token_re
 
-    content = record.content  # TESTME
+    content = record.content
     try:
         text = to_native_str(content, 'utf-8', errors='strict')
-    except UnicodeDecodeError as e:  # TESTME
+    except UnicodeDecodeError as e:
         commentary.error('warc-fields contains invalid utf-8: '+str(e))
         text = to_native_str(content, 'utf-8', errors='replace')
 
@@ -137,7 +137,7 @@ def validate_warcinfo(record, commentary, pending):
 
 
 def validate_response(record, commentary, pending):
-    target_uri = record.rec_headers.get_header('WARC-Target-URI', 'none').lower()  # TESTME
+    target_uri = record.rec_headers.get_header('WARC-Target-URI', 'none').lower()
 
     if target_uri.startswith('http:') or target_uri.startswith('https:'):
         content_type = record.rec_headers.get_header('Content-Type', 'none')
@@ -154,7 +154,7 @@ def validate_response(record, commentary, pending):
 
 
 def validate_resource(record, commentary, pending):
-    target_uri = record.rec_headers.get_header('WARC-Target-URI', '').lower()  # TESTME
+    target_uri = record.rec_headers.get_header('WARC-Target-URI', '').lower()
 
     if target_uri.startswith('dns:'):
         content_type = record.rec_headers.get_header('Content-Type', 'none')
@@ -169,7 +169,7 @@ def validate_resource(record, commentary, pending):
 
 
 def validate_request(record, commentary, pending):
-    target_uri = record.rec_headers.get_header('WARC-Target-URI', 'none').lower()  # TESTME
+    target_uri = record.rec_headers.get_header('WARC-Target-URI', 'none').lower()
 
     if target_uri.startswith('http:') or target_uri.startswith('https:'):
         content_type = record.rec_headers.get_header('Content-Type')
@@ -186,7 +186,7 @@ def validate_request(record, commentary, pending):
 
 
 def validate_metadata(record, commentary, pending):
-    content_type = record.rec_headers.get_header('Content-Type', 'none')  # TESTME
+    content_type = record.rec_headers.get_header('Content-Type', 'none')
     if content_type.lower() == 'application/warc-fields':
         # dublin core plus via, hopsFromSeed, fetchTimeMs -- w1.1 section 6
         # via: uri -- example in Warc 1.1 section 10.5 does not have <> around it
@@ -196,7 +196,7 @@ def validate_metadata(record, commentary, pending):
 
 
 def validate_revisit(record, commentary, pending):
-    warc_profile = record.rec_headers.get_header('WARC-Profile', 'none')  # TESTME
+    warc_profile = record.rec_headers.get_header('WARC-Profile', 'none')
 
     if warc_profile.endswith('/revisit/identical-payload-digest') or warc_profile.endswith('/revisit/uri-agnostic-identical-payload-digest'):
         config = {
@@ -222,11 +222,11 @@ def validate_revisit(record, commentary, pending):
 def validate_conversion(record, commentary, pending):
     # where practical, have a warc-refers-to field -- not quite a recommendation, perhaps make it a comment?
     # suggests there should be a corresponding metadata record -- which may have a WARC-Refers-To
-    pass  # TESTME
+    pass
 
 
 def validate_continuation(record, commentary, pending):
-    commentary.comment('warcio test continuation code has not been tested, expect bugs')  # TESTME
+    commentary.comment('warcio test continuation code has not been tested, expect bugs')
 
     segment_number = record.rec_headers.get_header('WARC-Segment-Number', 'none')
     if segment_number.isdigit() and int(segment_number) < 2:
@@ -240,14 +240,14 @@ def validate_actual_uri(field, value, record, version, commentary, pending):
     # should use a registered scheme
     # %XX encoding, normalize to upper case
     # schemes are case-insensitive and normalize to lower
-    if value.startswith('<') or value.endswith('>'):  # TESTME
+    if value.startswith('<') or value.endswith('>'):
         # wget 1.19 bug caused by WARC 1.0 spec error
         commentary.error('uri must not be within <>', field, value)
     if ':' not in value:
         commentary.error('invalid uri, no scheme', field, value)
     if re.search(r'\s', value):
         commentary.error('invalid uri, contains whitespace', field, value)
-    scheme, rest = value.split(':', 1)
+    scheme = value.split(':', 1)[0]
     if not re.search(r'\A[A-Za-z][A-Za-z0-9+\-\.]*\Z', scheme):
         commentary.error('invalid uri scheme, bad character', field, value)
     # https://www.iana.org/assignments/uri-schemes/uri-schemes.xhtml
@@ -282,9 +282,10 @@ def validate_timestamp(field, value, record, version, commentary, pending):
             # XXX specification infelicity: would be nice to have 'advice to implementers' here
             commentary.error('WARC 1.0 may not have fractional seconds', field, value)
     else:
-        start, end = value.split('.', 1)
-        if not re.search(r'\A[0-9]{1,9}Z\Z', end):
-            commentary.error('fractional seconds must have 1-9 digits', field, value)
+        if '.' in value:
+            start, end = value.split('.', 1)
+            if not re.search(r'\A[0-9]{1,9}Z\Z', end):
+                commentary.error('fractional seconds must have 1-9 digits', field, value)
 
     # XXX the above is pretty incomplete for dash, colon, trailing Z, etc
 
@@ -304,7 +305,12 @@ digest_re = r'\A[A-Za-z0-9/+\-_=]+\Z'
 def validate_content_type(field, value, record, version, commentary, pending):
     if '/' not in value:
         commentary.error('must contain a /', field, value)
-    ctype, rest = value.split('/', 1)
+    splits = value.split('/', 1)
+    ctype = splits[0]
+    if len(splits) > 1:
+        rest = splits[1]
+    else:
+        rest = ''
     if not re.search(token_re, ctype):
         commentary.error('invalid type', field, value)
     if ';' in rest:
@@ -323,9 +329,19 @@ def validate_content_type(field, value, record, version, commentary, pending):
 def validate_digest(field, value, record, version, commentary, pending):
     if ':' not in value:
         commentary.error('missing algorithm', field, value)
-    algorithm, digest = value.split(':', 1)
+    splits = value.split(':', 1)
+    algorithm = splits[0]
+    if len(splits) > 1:
+        digest = splits[1]
+    else:
+        digest = 'none'
     if not re.search(token_re, algorithm):
         commentary.error('invalid algorithm', field, value)
+    else:
+        try:
+            Digester(algorithm)
+        except ValueError:
+            commentary.comment('unknown digest algorithm', field, value)
     if not re.search(token_re, digest):
         # https://github.com/iipc/warc-specifications/issues/48
         # commentary.comment('spec incorrectly says this is an invalid digest', field, value)
@@ -389,8 +405,8 @@ def validate_segment_number(field, value, record, version, commentary, pending):
     if rec_type != 'continuation':
         if iv != 1:
             commentary.error('non-continuation records must always have WARC-Segment-Number = 1', field, value)
-    elif rec_type in {'warcinfo', 'request', 'metadata', 'revisit'}:
-        commentary.recommendation('do not segment warc-type', warc_type)
+    if rec_type in {'warcinfo', 'request', 'metadata', 'revisit'}:
+        commentary.recommendation('do not segment WARC-Type', rec_type)
 
 
 def validate_segment_total_length(field, value, record, version, commentary, pending):
@@ -418,7 +434,7 @@ warc_fields = {
         'validate': validate_uri,
     },
     'WARC-Block-Digest': {
-        'validate': validate_digest,  # openssl check? or just let check_digest get it?
+        'validate': validate_digest,
     },
     'WARC-Payload-Digest': {
         'validate': validate_digest,
@@ -487,6 +503,7 @@ record_types = {
         'optional': ['WARC-Block-Digest', 'WARC-Payload-Digest', 'WARC-IP-Address', 'WARC-Truncated',
                      'WARC-Concurrent-To', 'WARC-Warcinfo-ID', 'WARC-Identified-Payload-Type'],
         'prohibited': ['WARC-Refers-To', 'WARC-Refers-To-Target-URI', 'WARC-Refers-To-Date', 'WARC-Filename', 'WARC-Profile'],
+        'validate': validate_resource,
     },
     'request': {
         'required': ['WARC-Record-ID', 'Content-Length', 'WARC-Date', 'WARC-Type',
@@ -577,6 +594,7 @@ def validate_record(record):
         field = field.lower()
         if field != 'warc-concurrent-to' and field in seen_fields:
             commentary.error('duplicate field seen', field, value)
+        seen_fields.add(field)
         if field not in warc_fields:
             commentary.comment('unknown field, no validation performed', field_case, value)
             continue
@@ -588,9 +606,8 @@ def validate_record(record):
         if 'validate' in config:
             config['validate'](field, value, record, version, commentary, pending)
 
-    # TODO: validate warc types: unknown should get a comment
     if rec_type not in record_types:
-        commentary.comment('unknown record type, no validation performed', rec_type)
+        pass  # we print a comment for this elsewhere
     else:
         validate_fields_against_rec_type(rec_type, record_types[rec_type], record.rec_headers, commentary)
         validate_record_against_rec_type(record_types[rec_type], record, commentary, pending)
@@ -614,7 +631,7 @@ def _process_one(warc):
                 record.content  # make sure digests are checked
                 # XXX might need to read and digest the raw stream to check digests for chunked encoding?
                 # XXX chunked lacks Content-Length and presumably the digest needs to be computed on the non-chunked bytes
-            except Exception:
+            except Exception:  # pragma: no cover
                 # because of the top-level try: to catch exceptions in WARCIterator, this is needed to debug our code
                 print('Caught exception in warcio test analysis code')
                 traceback.print_exc()
@@ -643,7 +660,6 @@ class Tester(object):
     def __init__(self, cmd):
         self.inputs = cmd.inputs
         self.exit_value = 0
-        try_ipaddress_init()
 
     def process_all(self):
         for warc in self.inputs:
@@ -651,9 +667,12 @@ class Tester(object):
             try:
                 self.process_one(warc)
             except Exception as e:
-                print('  saw exception '+str(e).rstrip(), file=sys.stderr)
+                print('  saw exception '+repr(e).rstrip(), file=sys.stderr)
                 print('  skipping rest of file', file=sys.stderr)
         return self.exit_value
 
     def process_one(self, filename):
         _process_one(filename)
+
+
+try_ipaddress_import()
