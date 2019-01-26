@@ -1,12 +1,19 @@
 from __future__ import print_function
 
 import re
-import ipaddress
 import sys
 import traceback
 
 from warcio.archiveiterator import WARCIterator
 from warcio.utils import to_native_str
+
+
+def try_ipaddress_init():
+    # ipaddress is in 3.3+ but not 2.7. It is in pypi but we wish to limit dependencies.
+    try:
+        import ipaddress
+    except ImportError:  # pragma: no cover
+        pass
 
 
 class Commentary:
@@ -325,6 +332,8 @@ def validate_ip(field, value, record, version, commentary, pending):
         ipaddress.ip_address(value)
     except ValueError:
         commentary.error('invalid ip', field, value)
+    except NameError:
+        commentary.comment('did not check ip address format, install ipaddress module from pypi if you care')
 
 
 def validate_truncated(field, value, record, version, commentary, pending):
@@ -622,8 +631,8 @@ def _process_one(warc):
 class Tester(object):
     def __init__(self, cmd):
         self.inputs = cmd.inputs
-        self.verbose = cmd.verbose
         self.exit_value = 0
+        try_ipaddress_init()
 
     def process_all(self):
         for warc in self.inputs:
