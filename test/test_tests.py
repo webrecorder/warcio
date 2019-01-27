@@ -25,6 +25,8 @@ def remove_before_test_data(s):
     for line in s.splitlines(True):
         if '/test/data/' in line:
             line = 'test/data/' + line.split('/test/data/', 1)[1]
+        if '\\test\\data\\' in line:
+            line = 'test/data/' + line.split('\\test\\data\\', 1)[1]
         ret += line
     return ret
 
@@ -247,17 +249,16 @@ test/data/standard-torture-validate-field.warc
 """
 
     value = helper(args, 0)
-    print(remove_before_test_data(value))
-
     ret = remove_before_test_data(value)
+
     if six.PY2:
         if 'error: invalid ip warc-ip-address 1.2.3.4.5' not in ret:
             # user did not install ipaddress module
             expected = expected.replace('\n    error: invalid ip warc-ip-address 1.2.3.4.5\n', '\n')
             ret = ret.replace('\n    comment: did not check ip address format, install ipaddress module from pypi if you care\n', '\n')
 
-
-    assert remove_before_test_data(value) == expected
+    print(ret)
+    assert ret == expected
 
 
 def test_arc():
