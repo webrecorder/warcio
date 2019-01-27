@@ -8,14 +8,6 @@ from warcio.archiveiterator import WARCIterator
 from warcio.utils import to_native_str, Digester
 
 
-def try_ipaddress_import():
-    # ipaddress is in 3.3+ but not 2.7. It is in pypi but we wish to limit dependencies.
-    try:
-        import ipaddress
-    except ImportError:  # pragma: no cover
-        print('ipaddress module not imported')
-
-
 class Commentary:
     def __init__(self, record_id, rec_type):
         self._record_id = record_id
@@ -353,10 +345,11 @@ def validate_digest(field, value, record, version, commentary, pending):
 def validate_ip(field, value, record, version, commentary, pending):
     # ipv4 as dotted quad, or ipv6 per section 2.2 of rfc 4291
     try:
+        import ipaddress
         ipaddress.ip_address(value)
     except ValueError:
         commentary.error('invalid ip', field, value)
-    except NameError:
+    except (ImportError, NameError):
         commentary.comment('did not check ip address format, install ipaddress module from pypi if you care')
 
 
@@ -673,6 +666,3 @@ class Tester(object):
 
     def process_one(self, filename):
         _process_one(filename)
-
-
-try_ipaddress_import()

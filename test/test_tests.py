@@ -1,8 +1,10 @@
+import six
+
 from warcio.cli import main
+from warcio.utils import to_native_str
 
 from . import get_test_file
 from .test_cli import patch_stdout
-from warcio.utils import to_native_str
 
 
 def helper(args, expected_exit_value):
@@ -154,7 +156,13 @@ test/data/standard-torture-validate-record.warc
 
     value = helper(args, 0)
     print(remove_before_test_data(value))
-    assert remove_before_test_data(value) == expected
+
+    ret = remove_before_test_data(value)
+
+    if six.PY2:
+        expected = expected.replace('\n    error: warc-fields contains invalid utf-8: \'utf-8\' codec can\'t decode byte 0xc3 in position 57: invalid continuation byte\n', '\n')
+
+    assert ret == expected
 
 
 def test_torture_validate_field():
@@ -195,6 +203,7 @@ test/data/standard-torture-validate-field.warc
     error: duplicate field seen warc-block-digest has space:asdf
     error: invalid algorithm warc-block-digest has space:asdf
     error: duplicate field seen warc-block-digest sha1:&$*^&*^#*&^
+    error: invalid ip warc-ip-address 1.2.3.4.5
     error: uri must be within <> warc-warcinfo-id asdf:asdf
     error: duplicate field seen warc-profile http://netpreserve.org/warc/1.0/revisit/identical-payload-digest
     error: must contain a / warc-identified-payload-type asdf
@@ -214,7 +223,6 @@ test/data/standard-torture-validate-field.warc
     comment: unknown WARC-Type warc-type CAPITALIZED
     comment: unknown digest algorithm warc-block-digest asdf
     comment: Invalid-looking digest value warc-block-digest sha1:&$*^&*^#*&^
-    comment: did not check ip address format, install ipaddress module from pypi if you care
     comment: extension seen warc-truncated invalid
     comment: extension seen warc-profile asdf
     comment: extension seen warc-profile http://netpreserve.org/warc/1.0/revisit/identical-payload-digest
@@ -240,6 +248,15 @@ test/data/standard-torture-validate-field.warc
 
     value = helper(args, 0)
     print(remove_before_test_data(value))
+
+    ret = remove_before_test_data(value)
+    if six.PY2:
+        if 'error: invalid ip warc-ip-address 1.2.3.4.5' not in ret:
+            # user did not install ipaddress module
+            expected = expected.replace('\n    error: invalid ip warc-ip-address 1.2.3.4.5\n', '\n')
+            ret = ret.replace('\n    comment: did not check ip address format, install ipaddress module from pypi if you care\n', '\n')
+
+
     assert remove_before_test_data(value) == expected
 
 
