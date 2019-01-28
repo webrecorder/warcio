@@ -2,6 +2,7 @@ from __future__ import print_function
 
 import re
 import sys
+import six
 
 from warcio.archiveiterator import WARCIterator
 from warcio.utils import to_native_str, Digester
@@ -68,11 +69,22 @@ def validate_warc_fields(record, commentary):
     # field-name = token  # token_re
 
     content = record.content
-    try:
-        text = to_native_str(content, 'utf-8', errors='strict')
-    except UnicodeDecodeError as e:
-        commentary.error('warc-fields contains invalid utf-8: '+str(e))
-        text = to_native_str(content, 'utf-8', errors='replace')
+
+    if six.PY2:  # pragma: no cover
+        try:
+            content.decode('utf-8', errors='strict')
+            text = content  # already a str
+        except UnicodeDecodeError as e:
+            err = str(e)
+            err = err.replace('utf8', 'utf-8')  # sigh
+            commentary.error('warc-fields contains invalid utf-8: '+err)
+            text = content.decode('utf-8', errors='replace')
+    else:  # pragma: no cover
+        try:
+            text = to_native_str(content, 'utf-8', errors='strict')
+        except UnicodeDecodeError as e:
+            commentary.error('warc-fields contains invalid utf-8: '+str(e))
+            text = to_native_str(content, 'utf-8', errors='replace')
 
     first_line = True
     lines = []
@@ -350,10 +362,12 @@ def validate_digest(field, value, record, version, commentary, pending):
 def validate_ip(field, value, record, version, commentary, pending):
     try:
         import ipaddress
+        if six.PY2:  # pragma: no cover
+            value = unicode(value)
         ipaddress.ip_address(value)
     except ValueError:
         commentary.error('invalid ip', field, value)
-    except (ImportError, NameError):  # pragma: no cover (for python 2.7)
+    except (ImportError, NameError):  # pragma: no cover
         commentary.comment('did not check ip address format, install ipaddress module from pypi if you care')
 
 

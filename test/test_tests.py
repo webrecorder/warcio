@@ -187,13 +187,9 @@ test/data/standard-torture-validate-record.warc
     value = helper(args, 0)
     print(remove_before_test_data(value))
 
-    ret = remove_before_test_data(value)
+    actual = remove_before_test_data(value)
 
-    if six.PY2:
-        expected = expected.replace('\n    error: warc-fields contains invalid utf-8: \'utf-8\' codec can\'t decode byte 0xc3 in position 57: invalid continuation byte\n', '\n')
-        ret = ret.replace('\n    comment: did not check ip address format, install ipaddress module from pypi if you care\n', '\n')
-
-    assert ret == expected
+    assert actual == expected
 
 
 def test_torture_validate_field():
@@ -278,16 +274,10 @@ test/data/standard-torture-validate-field.warc
 """
 
     value = helper(args, 0)
-    ret = remove_before_test_data(value)
+    actual = remove_before_test_data(value)
 
-    if six.PY2:
-        if 'error: invalid ip warc-ip-address 1.2.3.4.5' not in ret:
-            # user did not install ipaddress module
-            expected = expected.replace('\n    error: invalid ip warc-ip-address 1.2.3.4.5\n', '\n')
-            ret = ret.replace('\n    comment: did not check ip address format, install ipaddress module from pypi if you care\n', '\n')
-
-    print(ret)
-    assert ret == expected
+    print(actual)
+    assert actual == expected
 
 
 def test_arc():
