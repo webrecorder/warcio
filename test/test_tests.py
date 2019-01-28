@@ -191,6 +191,7 @@ test/data/standard-torture-validate-record.warc
 
     if six.PY2:
         expected = expected.replace('\n    error: warc-fields contains invalid utf-8: \'utf-8\' codec can\'t decode byte 0xc3 in position 57: invalid continuation byte\n', '\n')
+        ret = ret.replace('\n    comment: did not check ip address format, install ipaddress module from pypi if you care\n', '\n')
 
     assert ret == expected
 
