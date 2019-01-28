@@ -6,7 +6,7 @@ WARC-Target-URI: h<>ttp://example.com/
 WARC-Type: does-not-exist
 WARC-Type: CAPITALIZED
 WARC-Concurrent-To: http://example.com/
-WARC-Record-ID: <foo:bar>
+WARC-Record-ID: <urn:uuid:torture-validate-field>
 WARC-Date: 2017-03-06T04:03:53Z
 WARC-Date: 2017-03-06T04:03:53.Z
 Content-Type: asdf

@@ -126,7 +126,7 @@ def validate_warc_fields(record, commentary):
 def validate_warcinfo(record, commentary, pending):
     content_type = record.rec_headers.get_header('Content-Type', 'none')
     if content_type.lower() != 'application/warc-fields':
-        commentary.recommendation('warcinfo Content-Type recommended to be application/warc-fields, saw:', content_type)
+        commentary.recommendation('warcinfo Content-Type recommended to be application/warc-fields:', content_type)
     else:
         #   format: warc-fields
         #   allowable fields include but not limited to DMCI plus the following
@@ -147,7 +147,7 @@ def validate_response(record, commentary, pending):
     if target_uri.startswith('http:') or target_uri.startswith('https:'):
         content_type = record.rec_headers.get_header('Content-Type', 'none')
         if canon_content_type(content_type) not in {'application/http; msgtype=response', 'application/http'}:
-            commentary.error('responses for http/https should have Content-Type of application/http; msgtype=response or application/http, saw:', content_type)
+            commentary.error('responses for http/https should have Content-Type of application/http; msgtype=response or application/http:', content_type)
 
         if record.rec_headers.get_header('WARC-IP-Address') is None:
             commentary.error('WARC-IP-Address should be used for http and https responses')
@@ -164,7 +164,7 @@ def validate_resource(record, commentary, pending):
     if target_uri.startswith('dns:'):
         content_type = record.rec_headers.get_header('Content-Type', 'none')
         if content_type.lower() != 'text/dns':
-            commentary.error('recource records for dns: shall have Content-Type of text/dns, saw:', content_type)
+            commentary.error('resource records for dns shall have Content-Type of text/dns:', content_type)
         else:
             # rfc 2540 and rfc 1035
             #validate_text_dns()
@@ -180,7 +180,7 @@ def validate_request(record, commentary, pending):
         content_type = record.rec_headers.get_header('Content-Type')
 
         if canon_content_type(content_type) not in {'application/http; msgtype=request', 'application/http'}:
-            commentary.error('requests for http/https should have Content-Type of application/http; msgtype=request or application/http, saw:', content_type)
+            commentary.error('requests for http/https should have Content-Type of application/http; msgtype=request or application/http:', content_type)
 
         if record.rec_headers.get_header('WARC-IP-Address') is None:
             commentary.error('WARC-IP-Address should be used for http and https requests')
@@ -240,12 +240,12 @@ def validate_continuation(record, commentary, pending):
 
     segment_number = record.rec_headers.get_header('WARC-Segment-Number', 'none')
     if segment_number.isdigit() and int(segment_number) < 2:
-        commentary.error('continuation record must have WARC-Segment-Number > 1, saw:', segment_number)
+        commentary.error('continuation record must have WARC-Segment-Number > 1:', segment_number)
 
     # last segment: required WARC-Segment-Total-Length, optional WARC-Truncated
 
 
-def validate_actual_uri(field, value, record, version, commentary, pending):
+def validate_unbracketed_uri(field, value, record, version, commentary, pending):
     # uri per RFC 3986
     # should use a registered scheme
     # %XX encoding, normalize to upper case
@@ -272,16 +272,16 @@ def validate_warc_type(field, value, record, version, commentary, pending):
         commentary.comment('unknown WARC-Type:', field, value)
 
 
-def validate_uri(field, value, record, version, commentary, pending):
+def validate_bracketed_uri(field, value, record, version, commentary, pending):
     # < uri >
     if not (value.startswith('<') and value.endswith('>')):
         commentary.error('uri must be within <>:', field, value)
         return
-    validate_actual_uri(field, value[1:-1], record, version, commentary, pending)
+    validate_unbracketed_uri(field, value[1:-1], record, version, commentary, pending)
 
 
 def validate_record_id(field, value, record, version, commentary, pending):
-    validate_uri(field, value, record, version, commentary, pending)
+    validate_bracketed_uri(field, value, record, version, commentary, pending)
     # TODO: should be "globally unique for its period of intended use"
 
 
@@ -379,7 +379,7 @@ def validate_truncated(field, value, record, version, commentary, pending):
 
 
 def validate_warcinfo_id(field, value, record, version, commentary, pending):
-    validate_uri(field, value, record, version, commentary, pending)
+    validate_bracketed_uri(field, value, record, version, commentary, pending)
     # TODO: should point at a warcinfo record
 
 
@@ -446,7 +446,7 @@ warc_fields = {
         'validate': validate_content_type,
     },
     'WARC-Concurrent-To': {
-        'validate': validate_uri,
+        'validate': validate_bracketed_uri,
     },
     'WARC-Block-Digest': {
         'validate': validate_digest,
@@ -458,10 +458,10 @@ warc_fields = {
         'validate': validate_ip,
     },
     'WARC-Refers-To': {
-        'validate': validate_uri,
+        'validate': validate_bracketed_uri,
     },
     'WARC-Target-URI': {
-        'validate': validate_actual_uri,
+        'validate': validate_unbracketed_uri,
     },
     'WARC-Truncated': {
         'validate': validate_truncated,
@@ -479,7 +479,7 @@ warc_fields = {
         'validate': validate_content_type,
     },
     'WARC-Segment-Origin-ID': {
-        'validate': validate_uri,
+        'validate': validate_bracketed_uri,
     },
     'WARC-Segment-Number': {
         'validate': validate_segment_number,
@@ -488,7 +488,7 @@ warc_fields = {
         'validate': validate_segment_total_length,
     },
     'WARC-Refers-To-Target-URI': {
-        'validate': validate_actual_uri,
+        'validate': validate_unbracketed_uri,
         'minver': '1.1',
     },
     'WARC-Refers-To-Date': {
