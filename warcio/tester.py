@@ -2,10 +2,10 @@ from __future__ import print_function
 
 import re
 import sys
-import traceback
 
 from warcio.archiveiterator import WARCIterator
 from warcio.utils import to_native_str, Digester
+from warcio.exceptions import ArchiveLoadFailed
 
 
 class Commentary:
@@ -196,8 +196,11 @@ def validate_revisit(record, commentary, pending):
             'recommended': ['WARC-Refers-To', 'WARC-Refers-To-Target-URI', 'WARC-Refers-To-Date'],
         }
         validate_fields_against_rec_type('revisit', config, record.rec_headers, commentary, allow_all=True)
-        # may have record block; if not, shall have Content-Length: 0, if yes, should be like a response record, truncated FOR LENGTH ONLY if desired
-        # recommended that server response headers be preserved "in this manner"
+        # may have record block;
+        #  if not, shall have Content-Length: 0,
+        #  if yes, should be like a response record, truncated FOR LENGTH ONLY if desired
+        #  recommended that server response headers be preserved "in this manner"
+        #   I suppose that means headers are required if there is any content?!
 
     elif warc_profile.endswith('/revisit/server-not-modified'):
         config = {
@@ -205,7 +208,9 @@ def validate_revisit(record, commentary, pending):
             'prohibited': ['WARC-Payload-Digest'],
         }
         validate_fields_against_rec_type('revisit', config, record.rec_headers, commentary, allow_all=True)
-        #   may have content body; if not, shall have Content-Length: 0, if yes, should be like a response record, truncated if desired
+        #   may have content body;
+        #     if not, shall have Content-Length: 0,
+        #     if yes, should be like a response record, truncated if desired
         #   WARC-Refers-To-Date should be the same as WARC-Date in the original record if present
     else:
         commentary.comment('no revisit details validation done due to unknown profile')
@@ -343,13 +348,12 @@ def validate_digest(field, value, record, version, commentary, pending):
 
 
 def validate_ip(field, value, record, version, commentary, pending):
-    # ipv4 as dotted quad, or ipv6 per section 2.2 of rfc 4291
     try:
         import ipaddress
         ipaddress.ip_address(value)
     except ValueError:
         commentary.error('invalid ip', field, value)
-    except (ImportError, NameError):
+    except (ImportError, NameError):  # pragma: no cover (for python 2.7)
         commentary.comment('did not check ip address format, install ipaddress module from pypi if you care')
 
 
@@ -369,12 +373,14 @@ def validate_filename(field, value, record, version, commentary, pending):
 
 
 profiles = {
-    '1.0': ['http://netpreserve.org/warc/1.1/revisit/identical-payload-digest',
-            'http://netpreserve.org/warc/1.1/revisit/server-not-modified',
+    # XXX WARC/0.17 and WARC/0.18
+    '1.0': ['http://netpreserve.org/warc/1.0/revisit/identical-payload-digest',
+            'http://netpreserve.org/warc/1.0/revisit/server-not-modified',
             # the following removed from iipc/webarchive-commons in may 2017; common in the wild TODO comment or not?
+            # https://github.com/iipc/webarchive-commons/commits/988bec707c27a01333becfc3bd502af4441ea1e1/src/main/java/org/archive/format/warc/WARCConstants.java
             'http://netpreserve.org/warc/1.0/revisit/uri-agnostic-identical-payload-digest'],
-    '1.1': ['http://netpreserve.org/warc/1.0/revisit/identical-payload-digest',
-            'http://netpreserve.org/warc/1.0/revisit/server-not-modified'],
+    '1.1': ['http://netpreserve.org/warc/1.1/revisit/identical-payload-digest',
+            'http://netpreserve.org/warc/1.1/revisit/server-not-modified'],
 }
 
 
@@ -614,21 +620,15 @@ def _process_one(warc):
     with open(warc, 'rb') as stream:
         for record in WARCIterator(stream, check_digests=True, fixup_bugs=False):
 
-            try:
-                record = WrapRecord(record)
-                digest_present = (record.rec_headers.get_header('WARC-Payload-Digest') or
-                                  record.rec_headers.get_header('WARC-Block-Digest'))
+            record = WrapRecord(record)
+            digest_present = (record.rec_headers.get_header('WARC-Payload-Digest') or
+                              record.rec_headers.get_header('WARC-Block-Digest'))
 
-                commentary = validate_record(record)
+            commentary = validate_record(record)
 
-                record.content  # make sure digests are checked
-                # XXX might need to read and digest the raw stream to check digests for chunked encoding?
-                # XXX chunked lacks Content-Length and presumably the digest needs to be computed on the non-chunked bytes
-            except Exception:  # pragma: no cover
-                # because of the top-level try: to catch exceptions in WARCIterator, this is needed to debug our code
-                print('Caught exception in warcio test analysis code')
-                traceback.print_exc()
-                exit(1)
+            record.content  # make sure digests are checked
+            # XXX might need to read and digest the raw stream to check digests for chunked encoding?
+            # XXX chunked lacks Content-Length and presumably the digest needs to be computed on the non-chunked bytes
 
             if commentary.has_comments() or record.digest_checker.passed is False:
                 print(' ', 'WARC-Record-ID', commentary.record_id())
@@ -637,7 +637,7 @@ def _process_one(warc):
                 if record.digest_checker.passed is True:
                     print('    digest pass')
                 elif record.digest_checker.passed is None:
-                    if digest_present:
+                    if digest_present:  # pragma: no cover
                         print('    digest present but not checked')
                     else:
                         print('    digest not present')
@@ -659,8 +659,8 @@ class Tester(object):
             print(warc)
             try:
                 self.process_one(warc)
-            except Exception as e:
-                print('  saw exception '+repr(e).rstrip(), file=sys.stderr)
+            except ArchiveLoadFailed as e:
+                print('  saw exception ArchiveLoadFailed: '+str(e).rstrip(), file=sys.stderr)
                 print('  skipping rest of file', file=sys.stderr)
         return self.exit_value
 
