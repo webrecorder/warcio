@@ -2,6 +2,7 @@ import six
 
 from warcio.cli import main
 from warcio.utils import to_native_str
+import warcio.tester
 
 from . import get_test_file
 from .test_cli import patch_stdout
@@ -65,8 +66,10 @@ test/data/standard-torture-validate-record.warc
   WARC-Record-ID None
     WARC-Type warcinfo
     digest not present
+    error: uri must be within <> warc-refers-to probhibited
     error: missing required header WARC-Date
     error: missing required header WARC-Record-ID
+    error: field not allowed in record_type WARC-Refers-To warcinfo
     error: warc-fields contains invalid utf-8: 'utf-8' codec can't decode byte 0xc3 in position 57: invalid continuation byte
     comment: The first line of warc-fields cannot start with whitespace
     comment: warc-fields lines must end with \\r\\n: test: lines should end with \\r\\n
@@ -129,6 +132,7 @@ test/data/standard-torture-validate-record.warc
     recommendation: missing recommended header WARC-Refers-To
     recommendation: missing recommended header WARC-Refers-To-Date
     recommendation: missing recommended header WARC-Refers-To-Target-URI
+    comment: extension seen warc-profile http://netpreserve.org/warc/1.1/revisit/identical-payload-digest
   WARC-Record-ID None
     WARC-Type revisit
     digest not present
@@ -138,7 +142,6 @@ test/data/standard-torture-validate-record.warc
     error: missing required header WARC-Target-URI
     recommendation: missing recommended header WARC-Refers-To
     recommendation: missing recommended header WARC-Refers-To-Date
-    comment: extension seen warc-profile http://netpreserve.org/warc/1.0/revisit/server-not-modified
   WARC-Record-ID None
     WARC-Type conversion
     digest not present
@@ -227,7 +230,6 @@ test/data/standard-torture-validate-field.warc
     comment: Invalid-looking digest value warc-block-digest sha1:&$*^&*^#*&^
     comment: extension seen warc-truncated invalid
     comment: extension seen warc-profile asdf
-    comment: extension seen warc-profile http://netpreserve.org/warc/1.0/revisit/identical-payload-digest
     comment: field was introduced after this warc version WARC-Refers-To-Target-URI http://example.com 1.0
     comment: field was introduced after this warc version WARC-Refers-To-Date not-a-date 1.0
     comment: unknown field, no validation performed WARC-Unknown-Field asdf
@@ -274,3 +276,52 @@ test/data/does-not-exist.arc
 
     value = helper(args, 0)
     assert remove_before_test_data(value) == expected
+
+
+def test_digests():
+    # needed for test coverage
+    files = ['example-digest-bad.warc']
+    files = [get_test_file(filename) for filename in files]
+
+    args = ['test']
+    args.extend(files)
+
+    expected = """\
+test/data/example-digest-bad.warc
+  WARC-Record-ID <urn:uuid:a9c5c23a-0221-11e7-8fe3-0242ac120007>
+    WARC-Type request
+    payload digest failed: sha1:1112H3S6NNFQ2MSVX7XZKYAYSCX5QBYJ
+    error: WARC-IP-Address should be used for http and https requests
+  WARC-Record-ID <urn:uuid:a9c5c23a-0221-11e7-8fe3-0242ac120007>
+    WARC-Type request
+    digest pass
+    error: WARC-IP-Address should be used for http and https requests
+  WARC-Record-ID <urn:uuid:a9c5c23a-0221-11e7-8fe3-0242ac120007>
+    WARC-Type request
+    digest pass
+    error: WARC-IP-Address should be used for http and https requests
+  WARC-Record-ID <urn:uuid:a9c5c23a-0221-11e7-8fe3-0242ac120007>
+    WARC-Type request
+    digest pass
+    error: WARC-IP-Address should be used for http and https requests
+"""
+
+    value = helper(args, 0)
+    assert remove_before_test_data(value) == expected
+
+
+def test_leftovers():
+    commentary = warcio.tester.Commentary('id', 'type')
+
+    # hard to test because invalid WARC Content-Length raises in archiveiterator
+    warcio.tester.validate_content_length('content-length', 'not-an-integer', None, '1.0', commentary, None)
+
+    # hard to test because warcio checks the WARC version
+    warcio.tester.validate_profile('blah', 'blah', None, '999', commentary, None)
+
+    expected = '''\
+error: must be an integer content-length not-an-integer
+comment: no profile check because unknown warc version blah blah
+'''
+
+    assert '\n'.join(commentary.comments())+'\n' == expected

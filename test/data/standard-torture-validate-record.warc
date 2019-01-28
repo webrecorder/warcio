@@ -1,6 +1,7 @@
 WARC/1.0
 WARC-Type: warcinfo
 Content-Type: application/warc-fields
+WARC-Refers-To: probhibited
 Content-Length: 146
 
  first line can't start with a space
