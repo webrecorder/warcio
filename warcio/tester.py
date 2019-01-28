@@ -503,20 +503,21 @@ record_types = {
         'required': ['WARC-Record-ID', 'Content-Length', 'WARC-Date', 'WARC-Type', 'Content-Type'],
         'optional': ['WARC-Block-Digest', 'WARC-Payload-Digest', 'WARC-Filename', 'WARC-Truncated'],
         'prohibited': ['WARC-Refers-To', 'WARC-Profile', 'WARC-Identified-Payload-Type'],
+        'ignored': ['WARC-Segment-Number'],
         'validate': validate_warcinfo,
     },
     'response': {
         'required': ['WARC-Record-ID', 'Content-Length', 'WARC-Date', 'WARC-Type',
                      'Content-Type', 'WARC-Target-URI'],
         'optional': ['WARC-Block-Digest', 'WARC-Payload-Digest', 'WARC-IP-Address', 'WARC-Truncated',
-                     'WARC-Concurrent-To', 'WARC-Warcinfo-ID', 'WARC-IP-Address'],
+                     'WARC-Concurrent-To', 'WARC-Warcinfo-ID', 'WARC-IP-Address', 'WARC-Segment-Number'],
         'prohibited': ['WARC-Refers-To', 'WARC-Refers-To-Target-URI', 'WARC-Refers-To-Date', 'WARC-Filename', 'WARC-Profile'],
         'validate': validate_response,
     },
     'resource': {
         'required': ['WARC-Record-ID', 'Content-Length', 'WARC-Date', 'WARC-Type', 'WARC-Target-URI', 'Content-Type'],
         'optional': ['WARC-Block-Digest', 'WARC-Payload-Digest', 'WARC-IP-Address', 'WARC-Truncated',
-                     'WARC-Concurrent-To', 'WARC-Warcinfo-ID', 'WARC-Identified-Payload-Type'],
+                     'WARC-Concurrent-To', 'WARC-Warcinfo-ID', 'WARC-Identified-Payload-Type', 'WARC-Segment-Number'],
         'prohibited': ['WARC-Refers-To', 'WARC-Refers-To-Target-URI', 'WARC-Refers-To-Date', 'WARC-Filename', 'WARC-Profile'],
         'validate': validate_resource,
     },
@@ -526,6 +527,7 @@ record_types = {
         'optional': ['WARC-Block-Digest', 'WARC-Payload-Digest', 'WARC-IP-Address', 'WARC-Truncated',
                      'WARC-Concurrent-To', 'WARC-Warcinfo-ID', 'WARC-IP-Address'],
         'prohibited': ['WARC-Refers-To', 'WARC-Refers-To-Target-URI', 'WARC-Refers-To-Date', 'WARC-Filename', 'WARC-Profile'],
+        'ignored': ['WARC-Segment-Number'],
         'validate': validate_request,
     },
     'metadata': {
@@ -534,6 +536,7 @@ record_types = {
         'optional': ['WARC-Block-Digest', 'WARC-IP-Address', 'WARC-Truncated',
                      'WARC-Concurrent-To', 'WARC-Refers-To', 'WARC-Target-URI', 'WARC-Warcinfo-ID'],
         'prohibited': ['WARC-Payload-Digest', 'WARC-Refers-To-Target-URI', 'WARC-Refers-To-Date', 'WARC-Filename', 'WARC-Profile'],
+        'ignored': ['WARC-Segment-Number'],
         'validate': validate_metadata,
     },
     'revisit': {
@@ -542,11 +545,12 @@ record_types = {
         'optional': ['WARC-Block-Digest', 'WARC-Truncated', 'WARC-IP-Address', 'WARC-Warcinfo-ID',  # normal optionals
                      'WARC-Payload-Digest', 'WARC-Refers-To', 'WARC-Refers-To-Target-URI', 'WARC-Refers-To-Date'],  # these are for profiles
         'prohibited': ['WARC-Filename'],
+        'ignored': ['WARC-Segment-Number'],
         'validate': validate_revisit,
     },
     'conversion': {
         'required': ['WARC-Record-ID', 'Content-Length', 'WARC-Date', 'WARC-Type', 'WARC-Target-URI'],
-        'optional': ['WARC-Block-Digest', 'WARC-Payload-Digest', 'WARC-Truncated', 'WARC-Refers-To', 'WARC-Warcinfo-ID'],
+        'optional': ['WARC-Block-Digest', 'WARC-Payload-Digest', 'WARC-Truncated', 'WARC-Refers-To', 'WARC-Warcinfo-ID', 'WARC-Segment-Number'],
         'prohibited': ['WARC-Concurrent-To', 'WARC-IP-Address', 'WARC-Refers-To-Target-URI', 'WARC-Refers-To-Date', 'WARC-Filename', 'WARC-Profile'],
         'validate': validate_conversion,
     },
@@ -574,7 +578,7 @@ def validate_fields_against_rec_type(rec_type, config, rec_headers, commentary, 
     for rec in sorted(config.get('recommended', [])):
         if not rec_headers.get_header(rec):
             commentary.recommendation('missing recommended header:', rec)
-    allowed = make_header_set(config, ('required', 'optional', 'recommended'))
+    allowed = make_header_set(config, ('required', 'optional', 'recommended', 'ignored'))
     prohibited = make_header_set(config, ('prohibited',))
 
     for field, value in rec_headers.headers:
