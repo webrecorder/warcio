@@ -420,6 +420,9 @@ def validate_segment_number(field, value, record, version, commentary, pending):
     if rec_type != 'continuation':
         if iv != 1:
             commentary.error('non-continuation records must always have WARC-Segment-Number: 1:', field, value)
+        origin_id = record.rec_headers.get_header('WARC-Segment-Origin-ID')
+        if origin_id is None:
+            commentary.error('segmented records must have both WARC-Segment-Number and WARC-Segment-Origin-ID')
     if rec_type in {'warcinfo', 'request', 'metadata', 'revisit'}:
         commentary.recommendation('do not segment WARC-Type', rec_type)
 
@@ -503,21 +506,21 @@ record_types = {
         'required': ['WARC-Record-ID', 'Content-Length', 'WARC-Date', 'WARC-Type', 'Content-Type'],
         'optional': ['WARC-Block-Digest', 'WARC-Payload-Digest', 'WARC-Filename', 'WARC-Truncated'],
         'prohibited': ['WARC-Refers-To', 'WARC-Profile', 'WARC-Identified-Payload-Type'],
-        'ignored': ['WARC-Segment-Number'],
+        'ignored': ['WARC-Segment-Number', 'WARC-Segment-Origin-ID'],
         'validate': validate_warcinfo,
     },
     'response': {
         'required': ['WARC-Record-ID', 'Content-Length', 'WARC-Date', 'WARC-Type',
                      'Content-Type', 'WARC-Target-URI'],
         'optional': ['WARC-Block-Digest', 'WARC-Payload-Digest', 'WARC-IP-Address', 'WARC-Truncated',
-                     'WARC-Concurrent-To', 'WARC-Warcinfo-ID', 'WARC-IP-Address', 'WARC-Segment-Number'],
+                     'WARC-Concurrent-To', 'WARC-Warcinfo-ID', 'WARC-IP-Address', 'WARC-Segment-Number', 'WARC-Segment-Origin-ID'],
         'prohibited': ['WARC-Refers-To', 'WARC-Refers-To-Target-URI', 'WARC-Refers-To-Date', 'WARC-Filename', 'WARC-Profile'],
         'validate': validate_response,
     },
     'resource': {
         'required': ['WARC-Record-ID', 'Content-Length', 'WARC-Date', 'WARC-Type', 'WARC-Target-URI', 'Content-Type'],
         'optional': ['WARC-Block-Digest', 'WARC-Payload-Digest', 'WARC-IP-Address', 'WARC-Truncated',
-                     'WARC-Concurrent-To', 'WARC-Warcinfo-ID', 'WARC-Identified-Payload-Type', 'WARC-Segment-Number'],
+                     'WARC-Concurrent-To', 'WARC-Warcinfo-ID', 'WARC-Identified-Payload-Type', 'WARC-Segment-Number', 'WARC-Segment-Origin-ID'],
         'prohibited': ['WARC-Refers-To', 'WARC-Refers-To-Target-URI', 'WARC-Refers-To-Date', 'WARC-Filename', 'WARC-Profile'],
         'validate': validate_resource,
     },
@@ -527,7 +530,7 @@ record_types = {
         'optional': ['WARC-Block-Digest', 'WARC-Payload-Digest', 'WARC-IP-Address', 'WARC-Truncated',
                      'WARC-Concurrent-To', 'WARC-Warcinfo-ID', 'WARC-IP-Address'],
         'prohibited': ['WARC-Refers-To', 'WARC-Refers-To-Target-URI', 'WARC-Refers-To-Date', 'WARC-Filename', 'WARC-Profile'],
-        'ignored': ['WARC-Segment-Number'],
+        'ignored': ['WARC-Segment-Number', 'WARC-Segment-Origin-ID'],
         'validate': validate_request,
     },
     'metadata': {
@@ -536,7 +539,7 @@ record_types = {
         'optional': ['WARC-Block-Digest', 'WARC-IP-Address', 'WARC-Truncated',
                      'WARC-Concurrent-To', 'WARC-Refers-To', 'WARC-Target-URI', 'WARC-Warcinfo-ID'],
         'prohibited': ['WARC-Payload-Digest', 'WARC-Refers-To-Target-URI', 'WARC-Refers-To-Date', 'WARC-Filename', 'WARC-Profile'],
-        'ignored': ['WARC-Segment-Number'],
+        'ignored': ['WARC-Segment-Number', 'WARC-Segment-Origin-ID'],
         'validate': validate_metadata,
     },
     'revisit': {
@@ -545,18 +548,18 @@ record_types = {
         'optional': ['WARC-Block-Digest', 'WARC-Truncated', 'WARC-IP-Address', 'WARC-Warcinfo-ID',  # normal optionals
                      'WARC-Payload-Digest', 'WARC-Refers-To', 'WARC-Refers-To-Target-URI', 'WARC-Refers-To-Date'],  # these are for profiles
         'prohibited': ['WARC-Filename'],
-        'ignored': ['WARC-Segment-Number'],
+        'ignored': ['WARC-Segment-Number', 'WARC-Segment-Origin-ID'],
         'validate': validate_revisit,
     },
     'conversion': {
         'required': ['WARC-Record-ID', 'Content-Length', 'WARC-Date', 'WARC-Type', 'WARC-Target-URI'],
-        'optional': ['WARC-Block-Digest', 'WARC-Payload-Digest', 'WARC-Truncated', 'WARC-Refers-To', 'WARC-Warcinfo-ID', 'WARC-Segment-Number'],
+        'optional': ['WARC-Block-Digest', 'WARC-Payload-Digest', 'WARC-Truncated', 'WARC-Refers-To', 'WARC-Warcinfo-ID', 'WARC-Segment-Number', 'WARC-Segment-Origin-ID'],
         'prohibited': ['WARC-Concurrent-To', 'WARC-IP-Address', 'WARC-Refers-To-Target-URI', 'WARC-Refers-To-Date', 'WARC-Filename', 'WARC-Profile'],
         'validate': validate_conversion,
     },
     'continuation': {
         'required': ['WARC-Record-ID', 'Content-Length', 'WARC-Date', 'WARC-Type',
-                     'WARC-Segment-Origin-ID', 'WARC-Segment-Number', 'WARC-Target-URI'],
+                     'WARC-Segment-Number', 'WARC-Segment-Origin-ID', 'WARC-Target-URI'],
         'optional': ['WARC-Segment-Total-Length', 'WARC-Truncated'],
         'prohibited': ['WARC-Block-Digest', 'WARC-Payload-Digest', 'WARC-Warcinfo-ID', 'WARC-IP-Address', 'WARC-Refers-To', 'WARC-Refers-To-Target-URI', 'WARC-Refers-To-Date', 'WARC-Filename', 'WARC-Profile'],
         'validate': validate_continuation,
@@ -587,8 +590,8 @@ def validate_fields_against_rec_type(rec_type, config, rec_headers, commentary, 
             commentary.error('field not allowed in record type:', rec_type, field)
         elif allow_all or fl in allowed:
             pass
-        elif fl in warc_fields:
-            commentary.comment('Unknown field for this record type, perhaps an extension:', rec_type, field)
+        elif fl in warc_fields:  # pragma: no cover (this is a configuration error, if it happens)
+            commentary.comment('Known field, but not expected for this record type:', rec_type, field)
         else:
             # an 'unknown field' comment has already been issued in validate_record
             pass

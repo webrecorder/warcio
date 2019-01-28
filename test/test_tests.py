@@ -232,6 +232,7 @@ test/data/standard-torture-validate-field.warc
   WARC-Record-ID None
     WARC-Type request
     digest not present
+    error: segmented records must have both WARC-Segment-Number and WARC-Segment-Origin-ID
     error: missing required header: Content-Type
     error: missing required header: WARC-Date
     error: missing required header: WARC-Record-ID
