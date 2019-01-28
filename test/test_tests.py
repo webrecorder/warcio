@@ -1,5 +1,3 @@
-import six
-
 from warcio.cli import main
 from warcio.utils import to_native_str
 import warcio.tester
@@ -32,28 +30,6 @@ def remove_before_test_data(s):
     return ret
 
 
-def test_torture_missing():
-    files = ['standard-torture-missing.warc']
-    files = [get_test_file(filename) for filename in files]
-
-    args = ['test']
-    args.extend(files)
-
-    expected = """\
-test/data/standard-torture-missing.warc
-  WARC-Record-ID None
-    WARC-Type warcinfo
-    digest not present
-    error: missing required header Content-Type
-    error: missing required header WARC-Date
-    error: missing required header WARC-Record-ID
-    recommendation: warcinfo Content-Type of application/warc-fields, saw none
-"""
-
-    value = helper(args, 0)
-    assert remove_before_test_data(value) == expected
-
-
 def test_torture_validate_record():
     files = ['standard-torture-validate-record.warc']
     files = [get_test_file(filename) for filename in files]
@@ -75,110 +51,117 @@ test/data/standard-torture-validate-record.warc
     comment: warc-fields lines must end with \\r\\n: test: lines should end with \\r\\n
     comment: Missing field-name : in warc-fields line: no colon
     comment: invalid warc-fields name: token cannot have a space
-  WARC-Record-ID None
+  WARC-Record-ID test-empty-warc-fields
     WARC-Type warcinfo
     digest not present
+    error: uri must be within <> warc-record-id test-empty-warc-fields
     error: missing required header WARC-Date
-    error: missing required header WARC-Record-ID
     comment: warc-fields body present but empty
-  WARC-Record-ID None
+  WARC-Record-ID test-warcinfo-non-recommended-content-type
+    WARC-Type warcinfo
+    digest not present
+    error: uri must be within <> warc-record-id test-warcinfo-non-recommended-content-type
+    error: missing required header WARC-Date
+    recommendation: warcinfo Content-Type recommended to be application/warc-fields, saw not-application/warc-fields
+  WARC-Record-ID test-response-content-type
     WARC-Type response
     digest not present
+    error: uri must be within <> warc-record-id test-response-content-type
     error: missing required header WARC-Date
-    error: missing required header WARC-Record-ID
     error: responses for http/https should have Content-Type of application/http; msgtype=response or application/http, saw text/plain
     error: WARC-IP-Address should be used for http and https responses
-  WARC-Record-ID None
+  WARC-Record-ID test-resource-dns-content-type
     WARC-Type resource
     digest not present
+    error: uri must be within <> warc-record-id test-resource-dns-content-type
     error: missing required header WARC-Date
-    error: missing required header WARC-Record-ID
     error: recource records for dns: shall have Content-Type of text/dns, saw text/plain
-  WARC-Record-ID None
+  WARC-Record-ID test-resource-dns-empty
     WARC-Type resource
     digest not present
+    error: uri must be within <> warc-record-id test-resource-dns-empty
     error: missing required header WARC-Date
-    error: missing required header WARC-Record-ID
-  WARC-Record-ID None
+    comment: unknown field, no validation performed WARC-Test-TODO add another with valid block
+  WARC-Record-ID test-resource-not-dns
     WARC-Type resource
     digest not present
+    error: uri must be within <> warc-record-id test-resource-not-dns
     error: missing required header Content-Type
     error: missing required header WARC-Date
-    error: missing required header WARC-Record-ID
-  WARC-Record-ID None
+  WARC-Record-ID test-request-unrecommended-content-type
     WARC-Type request
     digest not present
+    error: uri must be within <> warc-record-id test-request-unrecommended-content-type
     error: missing required header WARC-Date
-    error: missing required header WARC-Record-ID
     error: requests for http/https should have Content-Type of application/http; msgtype=request or application/http, saw text/plain
     error: WARC-IP-Address should be used for http and https requests
-  WARC-Record-ID None
+  WARC-Record-ID test-request-unrecommended-content-type-with-ip
     WARC-Type request
     digest not present
+    error: uri must be within <> warc-record-id test-request-unrecommended-content-type-with-ip
     error: missing required header WARC-Date
-    error: missing required header WARC-Record-ID
     error: requests for http/https should have Content-Type of application/http; msgtype=request or application/http, saw text/plain
-  WARC-Record-ID None
+  WARC-Record-ID test-metadata-warc-fields-empty
     WARC-Type metadata
     digest not present
+    error: uri must be within <> warc-record-id test-metadata-warc-fields-empty
     error: missing required header WARC-Date
-    error: missing required header WARC-Record-ID
     comment: warc-fields body present but empty
-  WARC-Record-ID None
+  WARC-Record-ID test-metadata-not-warc-fields
     WARC-Type metadata
     digest not present
+    error: uri must be within <> warc-record-id test-metadata-not-warc-fields
     error: missing required header WARC-Date
-    error: missing required header WARC-Record-ID
-  WARC-Record-ID None
+  WARC-Record-ID test-revisit-profile-unknown
     WARC-Type revisit
     digest not present
+    error: uri must be within <> warc-record-id test-revisit-profile-unknown
     error: missing required header Content-Type
     error: missing required header WARC-Date
-    error: missing required header WARC-Record-ID
     error: missing required header WARC-Target-URI
     comment: extension seen warc-profile none
     comment: no revisit details validation done due to unknown profile
-  WARC-Record-ID None
+  WARC-Record-ID test-revisit-profile-future
     WARC-Type revisit
     digest not present
+    error: uri must be within <> warc-record-id test-revisit-profile-future
     error: missing required header Content-Type
     error: missing required header WARC-Date
-    error: missing required header WARC-Record-ID
     error: missing required header WARC-Target-URI
     error: missing required header WARC-Payload-Digest
     recommendation: missing recommended header WARC-Refers-To
     recommendation: missing recommended header WARC-Refers-To-Date
     recommendation: missing recommended header WARC-Refers-To-Target-URI
     comment: extension seen warc-profile http://netpreserve.org/warc/1.1/revisit/identical-payload-digest
-  WARC-Record-ID None
+  WARC-Record-ID test-revisit-profile-good
     WARC-Type revisit
     digest not present
+    error: uri must be within <> warc-record-id test-revisit-profile-good
     error: missing required header Content-Type
     error: missing required header WARC-Date
-    error: missing required header WARC-Record-ID
     error: missing required header WARC-Target-URI
     recommendation: missing recommended header WARC-Refers-To
     recommendation: missing recommended header WARC-Refers-To-Date
-  WARC-Record-ID None
+  WARC-Record-ID test-conversion
     WARC-Type conversion
     digest not present
+    error: uri must be within <> warc-record-id test-conversion
     error: missing required header WARC-Date
-    error: missing required header WARC-Record-ID
     error: missing required header WARC-Target-URI
-  WARC-Record-ID None
+  WARC-Record-ID test-continuation-segment-1
     WARC-Type continuation
     digest not present
+    error: uri must be within <> warc-record-id test-continuation-segment-1
     error: missing required header WARC-Date
-    error: missing required header WARC-Record-ID
     error: missing required header WARC-Segment-Origin-ID
     error: missing required header WARC-Target-URI
     error: continuation record must have WARC-Segment-Number > 1, saw 1
     comment: warcio test continuation code has not been tested, expect bugs
-  WARC-Record-ID None
+  WARC-Record-ID test-continuation-segment-valid
     WARC-Type continuation
     digest not present
+    error: uri must be within <> warc-record-id test-continuation-segment-valid
     error: missing required header WARC-Date
-    error: missing required header WARC-Record-ID
     error: missing required header WARC-Segment-Origin-ID
     error: missing required header WARC-Target-URI
     comment: warcio test continuation code has not been tested, expect bugs

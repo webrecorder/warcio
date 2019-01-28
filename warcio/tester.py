@@ -125,7 +125,7 @@ def validate_warc_fields(record, commentary):
 def validate_warcinfo(record, commentary, pending):
     content_type = record.rec_headers.get_header('Content-Type', 'none')
     if content_type.lower() != 'application/warc-fields':
-        commentary.recommendation('warcinfo Content-Type of application/warc-fields, saw', content_type)
+        commentary.recommendation('warcinfo Content-Type recommended to be application/warc-fields, saw', content_type)
     else:
         #   format: warc-fields
         #   allowable fields include but not limited to DMCI plus the following
