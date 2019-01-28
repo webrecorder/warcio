@@ -638,6 +638,7 @@ def _process_one(warc):
                     print('    digest pass')
                 elif record.digest_checker.passed is None:
                     if digest_present:  # pragma: no cover
+                        # WARC record missing Content-Length: header, which is verboten
                         print('    digest present but not checked')
                     else:
                         print('    digest not present')

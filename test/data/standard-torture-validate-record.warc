@@ -42,6 +42,12 @@ Content-Length: 0
 
 
 WARC/1.0
+WARC-Type: resource
+WARC-Target-URI: foo:bar
+Content-Length: 0
+
+
+WARC/1.0
 WARC-Type: request
 WARC-Target-URI: hTtP://example.com/
 Content-Type: text/plain
@@ -49,8 +55,22 @@ Content-Length: 0
 
 
 WARC/1.0
+WARC-Type: request
+WARC-Target-URI: hTtP://example.com/
+WARC-IP-Address: 1.2.3.4
+Content-Type: text/plain
+Content-Length: 0
+
+
+WARC/1.0
 WARC-Type: metadata
 Content-Type: application/warc-fields
+Content-Length: 0
+
+
+WARC/1.0
+WARC-Type: metadata
+Content-Type: not-application/warc-fields
 Content-Length: 0
 
 
@@ -80,6 +100,12 @@ Content-Length: 0
 WARC/1.0
 WARC-Type: continuation
 WARC-Segment-Number: 1
+Content-Length: 0
+
+
+WARC/1.0
+WARC-Type: continuation
+WARC-Segment-Number: 2
 Content-Length: 0
 
 
