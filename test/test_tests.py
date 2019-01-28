@@ -51,80 +51,68 @@ test/data/standard-torture-validate-record.warc
     comment: warc-fields lines must end with \\r\\n: test: lines should end with \\r\\n
     comment: Missing colon in warc-fields line: no colon
     comment: Invalid warc-fields name: token cannot have a space
-  WARC-Record-ID test-empty-warc-fields
+  WARC-Record-ID <uri:uuid:test-empty-warc-fields>
     WARC-Type warcinfo
     digest not present
-    error: uri must be within <>: WARC-Record-ID test-empty-warc-fields
     error: missing required header: WARC-Date
     comment: warc-fields body present but empty
-  WARC-Record-ID test-warcinfo-non-recommended-content-type
+  WARC-Record-ID <uri:uuid:test-warcinfo-non-recommended-content-type>
     WARC-Type warcinfo
     digest not present
-    error: uri must be within <>: WARC-Record-ID test-warcinfo-non-recommended-content-type
     error: missing required header: WARC-Date
-    recommendation: warcinfo Content-Type recommended to be application/warc-fields, saw: not-application/warc-fields
-  WARC-Record-ID test-response-content-type
+    recommendation: warcinfo Content-Type recommended to be application/warc-fields: not-application/warc-fields
+  WARC-Record-ID <uri:uuid:test-response-content-type>
     WARC-Type response
     digest not present
-    error: uri must be within <>: WARC-Record-ID test-response-content-type
     error: missing required header: WARC-Date
-    error: responses for http/https should have Content-Type of application/http; msgtype=response or application/http, saw: text/plain
+    error: responses for http/https should have Content-Type of application/http; msgtype=response or application/http: text/plain
     error: WARC-IP-Address should be used for http and https responses
-  WARC-Record-ID test-resource-dns-content-type
+  WARC-Record-ID <uri:uuid:test-resource-dns-content-type>
     WARC-Type resource
     digest not present
-    error: uri must be within <>: WARC-Record-ID test-resource-dns-content-type
     error: missing required header: WARC-Date
-    error: recource records for dns: shall have Content-Type of text/dns, saw: text/plain
-  WARC-Record-ID test-resource-dns-empty
+    error: resource records for dns shall have Content-Type of text/dns: text/plain
+  WARC-Record-ID <uri:uuid:test-resource-dns-empty>
     WARC-Type resource
     digest not present
-    error: uri must be within <>: WARC-Record-ID test-resource-dns-empty
     error: missing required header: WARC-Date
     comment: unknown field, no validation performed: WARC-Test-TODO add another with valid block
-  WARC-Record-ID test-resource-not-dns
+  WARC-Record-ID <uri:uuid:test-resource-not-dns>
     WARC-Type resource
     digest not present
-    error: uri must be within <>: WARC-Record-ID test-resource-not-dns
     error: missing required header: Content-Type
     error: missing required header: WARC-Date
-  WARC-Record-ID test-request-unrecommended-content-type
+  WARC-Record-ID <uri:uuid:test-request-content-type>
     WARC-Type request
     digest not present
-    error: uri must be within <>: WARC-Record-ID test-request-unrecommended-content-type
     error: missing required header: WARC-Date
-    error: requests for http/https should have Content-Type of application/http; msgtype=request or application/http, saw: text/plain
+    error: requests for http/https should have Content-Type of application/http; msgtype=request or application/http: text/plain
     error: WARC-IP-Address should be used for http and https requests
-  WARC-Record-ID test-request-unrecommended-content-type-with-ip
+  WARC-Record-ID <uri:uuid:test-request-content-type-with-ip>
     WARC-Type request
     digest not present
-    error: uri must be within <>: WARC-Record-ID test-request-unrecommended-content-type-with-ip
     error: missing required header: WARC-Date
-    error: requests for http/https should have Content-Type of application/http; msgtype=request or application/http, saw: text/plain
-  WARC-Record-ID test-metadata-warc-fields-empty
+    error: requests for http/https should have Content-Type of application/http; msgtype=request or application/http: text/plain
+  WARC-Record-ID <uri:uuid:test-metadata-warc-fields-empty>
     WARC-Type metadata
     digest not present
-    error: uri must be within <>: WARC-Record-ID test-metadata-warc-fields-empty
     error: missing required header: WARC-Date
     comment: warc-fields body present but empty
-  WARC-Record-ID test-metadata-not-warc-fields
+  WARC-Record-ID <uri:uuid:test-metadata-not-warc-fields>
     WARC-Type metadata
     digest not present
-    error: uri must be within <>: WARC-Record-ID test-metadata-not-warc-fields
     error: missing required header: WARC-Date
-  WARC-Record-ID test-revisit-profile-unknown
+  WARC-Record-ID <uri:uuid:test-revisit-profile-unknown>
     WARC-Type revisit
     digest not present
-    error: uri must be within <>: WARC-Record-ID test-revisit-profile-unknown
     error: missing required header: Content-Type
     error: missing required header: WARC-Date
     error: missing required header: WARC-Target-URI
     comment: extension seen: WARC-Profile none
     comment: no revisit details validation done due to unknown profile: none
-  WARC-Record-ID test-revisit-profile-future
+  WARC-Record-ID <uri:uuid:test-revisit-profile-future>
     WARC-Type revisit
     digest not present
-    error: uri must be within <>: WARC-Record-ID test-revisit-profile-future
     error: missing required header: Content-Type
     error: missing required header: WARC-Date
     error: missing required header: WARC-Target-URI
@@ -133,34 +121,30 @@ test/data/standard-torture-validate-record.warc
     recommendation: missing recommended header: WARC-Refers-To-Date
     recommendation: missing recommended header: WARC-Refers-To-Target-URI
     comment: extension seen: WARC-Profile http://netpreserve.org/warc/1.1/revisit/identical-payload-digest
-  WARC-Record-ID test-revisit-profile-good
+  WARC-Record-ID <uri:uuid:test-revisit-profile-good>
     WARC-Type revisit
     digest not present
-    error: uri must be within <>: WARC-Record-ID test-revisit-profile-good
     error: missing required header: Content-Type
     error: missing required header: WARC-Date
     error: missing required header: WARC-Target-URI
     recommendation: missing recommended header: WARC-Refers-To
     recommendation: missing recommended header: WARC-Refers-To-Date
-  WARC-Record-ID test-conversion
+  WARC-Record-ID <uri:uuid:test-conversion>
     WARC-Type conversion
     digest not present
-    error: uri must be within <>: WARC-Record-ID test-conversion
     error: missing required header: WARC-Date
     error: missing required header: WARC-Target-URI
-  WARC-Record-ID test-continuation-segment-1
+  WARC-Record-ID <uri:uuid:test-continuation-segment-1>
     WARC-Type continuation
     digest not present
-    error: uri must be within <>: WARC-Record-ID test-continuation-segment-1
     error: missing required header: WARC-Date
     error: missing required header: WARC-Segment-Origin-ID
     error: missing required header: WARC-Target-URI
-    error: continuation record must have WARC-Segment-Number > 1, saw: 1
+    error: continuation record must have WARC-Segment-Number > 1: 1
     comment: warcio test continuation code has not been tested, expect bugs
-  WARC-Record-ID test-continuation-segment-valid
+  WARC-Record-ID <uri:uuid:test-continuation-segment-valid>
     WARC-Type continuation
     digest not present
-    error: uri must be within <>: WARC-Record-ID test-continuation-segment-valid
     error: missing required header: WARC-Date
     error: missing required header: WARC-Segment-Origin-ID
     error: missing required header: WARC-Target-URI
@@ -184,7 +168,7 @@ def test_torture_validate_field():
 
     expected = """\
 test/data/standard-torture-validate-field.warc
-  WARC-Record-ID <foo:bar>
+  WARC-Record-ID <urn:uuid:torture-validate-field>
     WARC-Type does-not-exist
     unknown hash algorithm name in block digest
     error: uri must not be within <>: WARC-Target-URI <http://example.com/>
