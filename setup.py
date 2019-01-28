@@ -4,6 +4,7 @@
 from setuptools import setup, find_packages
 from setuptools.command.test import test as TestCommand
 import glob
+import sys
 
 __version__ = '1.7.0.dev0'
 
@@ -20,6 +21,15 @@ class PyTest(TestCommand):
         import os
         errcode = pytest.main(['--doctest-module', './warcio', '--cov', 'warcio', '-v', 'test/'])
         sys.exit(errcode)
+
+tests_require = [
+    'pytest',
+    'pytest-cov',
+    'httpbin==0.5.0',
+    'requests',
+]
+if sys.version_info < (3, 3):
+    tests_require.append('ipaddress')
 
 setup(
     name='warcio',
@@ -44,12 +54,7 @@ setup(
     """,
     cmdclass={'test': PyTest},
     test_suite='',
-    tests_require=[
-        'pytest',
-        'pytest-cov',
-        'httpbin==0.5.0',
-        'requests',
-    ],
+    tests_require=tests_require,
     classifiers=[
         'Development Status :: 4 - Beta',
         'Environment :: Web Environment',
