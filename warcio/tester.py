@@ -286,21 +286,16 @@ def validate_record_id(field, value, record, version, commentary, pending):
 
 
 def validate_timestamp(field, value, record, version, commentary, pending):
-    use_ms = False if version == '1.0' else True
+    ISO_RE = r'\A\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:.\d{1,9})?Z\Z'
+
+    if not re.match(ISO_RE, value):
+        commentary.error('Invalid timestamp:', field, value)
+
+    use_ms = False if version <= '1.0' else True
     if not use_ms:
         if '.' in value:
-            # XXX specification infelicity: would be nice to have 'advice to implementers' here
-            commentary.error('WARC 1.0 time may not have fractional seconds:', field, value)
-    else:
-        if '.' in value:
-            start, end = value.split('.', 1)
-            if not re.search(r'\A[0-9]{1,9}Z\Z', end):
-                commentary.error('fractional seconds must have 1-9 digits:', field, value)
-
-    # XXX the above is pretty incomplete for dash, colon, trailing Z, etc
-
-    # TODO: "multiple records written as part of a single capture event shall use the same WARC-Date"
-    # how? follow WARC-Concurrent-To pointer(s) from request to response(s)
+            # specification infelicity: would be nice to have 'advice to implementers' here
+            commentary.error('WARC versions <= 1.0 may not have timestamps with fractional seconds:', field, value)
 
 
 def validate_content_length(field, value, record, version, commentary, pending):

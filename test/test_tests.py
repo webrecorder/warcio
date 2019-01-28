@@ -184,7 +184,8 @@ test/data/standard-torture-validate-field.warc
     error: duplicate field seen: WARC-Type CAPITALIZED
     error: uri must be within <>: WARC-Concurrent-To http://example.com/
     error: duplicate field seen: WARC-Date 2017-03-06T04:03:53.Z
-    error: WARC 1.0 time may not have fractional seconds: WARC-Date 2017-03-06T04:03:53.Z
+    error: Invalid timestamp: WARC-Date 2017-03-06T04:03:53.Z
+    error: WARC versions <= 1.0 may not have timestamps with fractional seconds: WARC-Date 2017-03-06T04:03:53.Z
     error: must contain a /: Content-Type asdf
     error: invalid subtype: Content-Type asdf
     error: duplicate field seen: Content-Type has space/asdf
@@ -212,6 +213,7 @@ test/data/standard-torture-validate-field.warc
     error: non-continuation records must always have WARC-Segment-Number: 1: WARC-Segment-Number 2
     error: duplicate field seen: WARC-Segment-Total-Length not-an-integer
     error: must be an integer: WARC-Segment-Total-Length not-an-integer
+    error: Invalid timestamp: WARC-Refers-To-Date not-a-date
     comment: unknown WARC-Type: WARC-Type does-not-exist
     comment: WARC-Type is not lower-case: WARC-Type CAPITALIZED
     comment: unknown WARC-Type: WARC-Type CAPITALIZED
@@ -226,7 +228,7 @@ test/data/standard-torture-validate-field.warc
     WARC-Type invalid
     digest not present
     error: duplicate field seen: WARC-Date 2017-03-06T04:03:53.Z
-    error: fractional seconds must have 1-9 digits: WARC-Date 2017-03-06T04:03:53.Z
+    error: Invalid timestamp: WARC-Date 2017-03-06T04:03:53.Z
     error: duplicate field seen: WARC-Date 2017-03-06T04:03:53.0Z
     comment: unknown WARC-Type: WARC-Type invalid
   WARC-Record-ID None
