@@ -237,7 +237,6 @@ test/data/standard-torture-validate-field.warc
     error: missing required header: WARC-Record-ID
     error: missing required header: WARC-Target-URI
     recommendation: do not segment WARC-Type request
-    comment: Unknown field for this record type, perhaps an extension: request WARC-Segment-Number
 """
 
     value = helper(args, 0)
