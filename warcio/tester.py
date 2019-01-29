@@ -608,7 +608,7 @@ def validate_record(record):
     seen_fields = set()
     for field, value in record.rec_headers.headers:
         field_l = field.lower()
-        if field != 'warc-concurrent-to' and field_l in seen_fields:
+        if field_l != 'warc-concurrent-to' and field_l in seen_fields:
             commentary.error('duplicate field seen:', field, value)
         seen_fields.add(field_l)
         if field_l not in warc_fields:
