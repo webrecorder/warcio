@@ -6,6 +6,14 @@ from . import get_test_file
 from .test_cli import patch_stdout
 
 
+file_map = {}
+
+
+def map_test_file(filename):
+    file_map[filename] = get_test_file(filename)
+    return file_map[filename]
+
+
 def helper(args, expected_exit_value):
     with patch_stdout() as buff:
         exit_value = None
@@ -22,17 +30,16 @@ def helper(args, expected_exit_value):
 def remove_before_test_data(s):
     ret = ''
     for line in s.splitlines(True):
-        if '/test/data/' in line:
-            line = 'test/data/' + line.split('/test/data/', 1)[1]
-        if '\\test\\data\\' in line:
-            line = 'test/data/' + line.split('\\test\\data\\', 1)[1]
+        for filename, value in file_map.items():
+            if value in line:
+                line = line.replace(value, 'test/data/' + filename)
         ret += line
     return ret
 
 
 def test_torture_validate_record():
     files = ['standard-torture-validate-record.warc']
-    files = [get_test_file(filename) for filename in files]
+    files = [map_test_file(filename) for filename in files]
 
     args = ['test']
     args.extend(files)
@@ -55,7 +62,7 @@ test/data/standard-torture-validate-record.warc
     WARC-Type warcinfo
     digest not present
     error: missing required header: WARC-Date
-    comment: warc-fields body present but empty
+    comment: warc-fields block present but empty
   WARC-Record-ID <uri:uuid:test-warcinfo-non-recommended-content-type>
     WARC-Type warcinfo
     digest not present
@@ -67,6 +74,7 @@ test/data/standard-torture-validate-record.warc
     error: missing required header: WARC-Date
     error: responses for http/https should have Content-Type of application/http; msgtype=response or application/http: text/plain
     error: WARC-IP-Address should be used for http and https responses
+    error: http/https responses should have http headers
   WARC-Record-ID <uri:uuid:test-resource-dns-content-type>
     WARC-Type resource
     digest not present
@@ -97,7 +105,7 @@ test/data/standard-torture-validate-record.warc
     WARC-Type metadata
     digest not present
     error: missing required header: WARC-Date
-    comment: warc-fields body present but empty
+    comment: warc-fields block present but empty
   WARC-Record-ID <uri:uuid:test-metadata-not-warc-fields>
     WARC-Type metadata
     digest not present
@@ -108,7 +116,7 @@ test/data/standard-torture-validate-record.warc
     error: missing required header: Content-Type
     error: missing required header: WARC-Date
     error: missing required header: WARC-Target-URI
-    comment: extension seen: WARC-Profile none
+    comment: unknown value, perhaps an extension: WARC-Profile none
     comment: no revisit details validation done due to unknown profile: none
   WARC-Record-ID <uri:uuid:test-revisit-profile-future>
     WARC-Type revisit
@@ -120,7 +128,7 @@ test/data/standard-torture-validate-record.warc
     recommendation: missing recommended header: WARC-Refers-To
     recommendation: missing recommended header: WARC-Refers-To-Date
     recommendation: missing recommended header: WARC-Refers-To-Target-URI
-    comment: extension seen: WARC-Profile http://netpreserve.org/warc/1.1/revisit/identical-payload-digest
+    comment: WARC-Profile value is for a different version: 1.0 http://netpreserve.org/warc/1.1/revisit/identical-payload-digest
   WARC-Record-ID <uri:uuid:test-revisit-profile-good>
     WARC-Type revisit
     digest not present
@@ -161,7 +169,7 @@ test/data/standard-torture-validate-record.warc
 
 def test_torture_validate_field():
     files = ['standard-torture-validate-field.warc']
-    files = [get_test_file(filename) for filename in files]
+    files = [map_test_file(filename) for filename in files]
 
     args = ['test']
     args.extend(files)
@@ -219,10 +227,12 @@ test/data/standard-torture-validate-field.warc
     comment: unknown WARC-Type: WARC-Type CAPITALIZED
     comment: unknown digest algorithm: WARC-Block-Digest asdf
     comment: Invalid-looking digest value: WARC-Block-Digest sha1:&$*^&*^#*&^
-    comment: extension seen: WARC-Truncated invalid
-    comment: extension seen: WARC-Profile asdf
+    comment: unknown value, perhaps an extension: WARC-Truncated invalid
+    comment: unknown value, perhaps an extension: WARC-Profile asdf
     comment: field was introduced after this warc version: 1.0 WARC-Refers-To-Target-URI http://example.com
     comment: field was introduced after this warc version: 1.0 WARC-Refers-To-Date not-a-date
+    comment: This Heretrix extension never made it into the standard: WARC-Refers-To-Filename asdf
+    comment: This Heretrix extension never made it into the standard: WARC-Refers-To-File-Offset 1234
     comment: unknown field, no validation performed: WARC-Unknown-Field asdf
   WARC-Record-ID None
     WARC-Type invalid
@@ -240,6 +250,11 @@ test/data/standard-torture-validate-field.warc
     error: missing required header: WARC-Record-ID
     error: missing required header: WARC-Target-URI
     recommendation: do not segment WARC-Type request
+global warcinfo checks
+  comment: WARC-Warcinfo-ID not found: <urn:uuid:torture-validate-field> WARC-Warcinfo-ID asdf:asdf
+global Concurrent-To checks
+  comment: WARC-Concurrent-To not found: <urn:uuid:torture-validate-field> WARC-Concurrent-To <uri:urn:asdf-asdf-asdf>
+  comment: WARC-Concurrent-To not found: <urn:uuid:torture-validate-field> WARC-Concurrent-To http://example.com/
 """
 
     value = helper(args, 0)
@@ -251,7 +266,7 @@ test/data/standard-torture-validate-field.warc
 
 def test_arc():
     files = ['does-not-exist.arc']
-    files = [get_test_file(filename) for filename in files]
+    files = [map_test_file(filename) for filename in files]
 
     args = ['test']
     args.extend(files)
@@ -267,7 +282,7 @@ test/data/does-not-exist.arc
 def test_digests():
     # needed for test coverage
     files = ['example-digest-bad.warc', 'example.warc']
-    files = [get_test_file(filename) for filename in files]
+    files = [map_test_file(filename) for filename in files]
 
     args = ['test']
     args.extend(files)
@@ -282,23 +297,28 @@ test/data/example-digest-bad.warc
     WARC-Type request
     digest pass
     error: WARC-IP-Address should be used for http and https requests
+    error: Duplicate WARC-Record-ID: <urn:uuid:a9c5c23a-0221-11e7-8fe3-0242ac120007> found in files test/data/example-digest-bad.warc test/data/example-digest-bad.warc
   WARC-Record-ID <urn:uuid:a9c5c23a-0221-11e7-8fe3-0242ac120007>
     WARC-Type request
     digest pass
     error: WARC-IP-Address should be used for http and https requests
+    error: Duplicate WARC-Record-ID: <urn:uuid:a9c5c23a-0221-11e7-8fe3-0242ac120007> found in files test/data/example-digest-bad.warc test/data/example-digest-bad.warc
   WARC-Record-ID <urn:uuid:a9c5c23a-0221-11e7-8fe3-0242ac120007>
     WARC-Type request
     digest pass
     error: WARC-IP-Address should be used for http and https requests
+    error: Duplicate WARC-Record-ID: <urn:uuid:a9c5c23a-0221-11e7-8fe3-0242ac120007> found in files test/data/example-digest-bad.warc test/data/example-digest-bad.warc
 test/data/example.warc
   WARC-Record-ID <urn:uuid:a9c5c23a-0221-11e7-8fe3-0242ac120007>
     WARC-Type request
     digest not present
     error: WARC-IP-Address should be used for http and https requests
+    error: Duplicate WARC-Record-ID: <urn:uuid:a9c5c23a-0221-11e7-8fe3-0242ac120007> found in files test/data/example.warc test/data/example-digest-bad.warc
   WARC-Record-ID <urn:uuid:e6e395ca-0221-11e7-a18d-0242ac120005>
     WARC-Type revisit
     digest present but not checked
     recommendation: missing recommended header: WARC-Refers-To
+    comment: This Heretrix extension never made it into the standard: WARC-Profile http://netpreserve.org/warc/1.0/revisit/uri-agnostic-identical-payload-digest
     comment: field was introduced after this warc version: 1.0 WARC-Refers-To-Target-URI http://example.com/
     comment: field was introduced after this warc version: 1.0 WARC-Refers-To-Date 2017-03-06T04:02:06Z
   WARC-Record-ID <urn:uuid:e6e41fea-0221-11e7-8fe3-0242ac120007>
@@ -318,12 +338,11 @@ def test_leftovers():
     # hard to test because invalid WARC Content-Length raises in archiveiterator
     warcio.tester.validate_content_length('Content-Length', 'not-an-integer', None, '1.0', commentary, None)
 
-    # hard to test because warcio checks the WARC version
+    # hard to test because warcio raises for unknown WARC version
     warcio.tester.validate_profile('blah', 'blah', None, '999', commentary, None)
 
     expected = '''\
 error: must be an integer: Content-Length not-an-integer
-comment: no profile check because unknown warc version: blah blah
 '''
 
     assert '\n'.join(commentary.comments())+'\n' == expected

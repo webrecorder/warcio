@@ -3,14 +3,15 @@ from __future__ import print_function
 import re
 import sys
 import six
+from collections import defaultdict
 
 from warcio.archiveiterator import WARCIterator
 from warcio.utils import to_native_str, Digester
 from warcio.exceptions import ArchiveLoadFailed
 
 
-class Commentary:
-    def __init__(self, record_id, rec_type):
+class Commentary(object):
+    def __init__(self, record_id=None, rec_type=None):
         self._record_id = record_id
         self._rec_type = rec_type
         self.errors = []
@@ -37,6 +38,7 @@ class Commentary:
             return True
 
     def comments(self):
+        # XXX str() all of these, in case an int or other thing slips in?
         for e in self.errors:
             yield 'error: ' + ' '.join(e)
         for r in self.recommendations:
@@ -55,6 +57,13 @@ class WrapRecord(object):
             if self._content is None:
                 self._content = self.obj.content_stream().read()
             return self._content
+        if name == 'stream_for_digest_check':
+            def _doit():
+                while True:
+                    piece = self.obj.content_stream().read(1024*1024)
+                    if len(piece) == 0:
+                        break
+            return _doit
         return getattr(self.__dict__['obj'], name)
 
 
@@ -117,7 +126,7 @@ def validate_warc_fields(record, commentary):
         first_line = False
 
     if not lines:
-        commentary.comment('warc-fields body present but empty')
+        commentary.comment('warc-fields block present but empty')
         return
 
     # check known fields
@@ -126,6 +135,7 @@ def validate_warc_fields(record, commentary):
 def validate_warcinfo(record, commentary, pending):
     content_type = record.rec_headers.get_header('Content-Type', 'none')
     if content_type.lower() != 'application/warc-fields':
+        # https://github.com/iipc/warc-specifications/issues/33 -- SHALL BE or recommended?
         commentary.recommendation('warcinfo Content-Type recommended to be application/warc-fields:', content_type)
     else:
         #   format: warc-fields
@@ -137,8 +147,8 @@ def validate_warcinfo(record, commentary, pending):
         validate_warc_fields(record, commentary)
 
     # whole-file tests:
-    # optional that warcinfo be first in file, still deserves a comment
-    # allowable for warcinfo to appear anywhere
+    # recommended that all files start with warcinfo
+    # elsewise allowable for warcinfo to appear anywhere
 
 
 def validate_response(record, commentary, pending):
@@ -152,10 +162,32 @@ def validate_response(record, commentary, pending):
         if record.rec_headers.get_header('WARC-IP-Address') is None:
             commentary.error('WARC-IP-Address should be used for http and https responses')
 
-        # error: http and https schemes should have http response headers
-        #   test by attempting to parse them?
+        if not record.http_headers:
+            commentary.error('http/https responses should have http headers')
+            return
 
-        # comment: verify http content-length, if present -- commoncrawl nutch bug
+        http_content_length = record.http_headers.get_header('Content-Length')
+        if http_content_length is None:
+            return
+
+        if not http_content_length.isdigit():
+            commentary.comment('http content length header is not an integer', str(http_content_length))
+            return
+
+        # We want to verify http_content_length, which is the size of the compressed payload
+        # Trying to catch that commoncrawl nutch bug that prefixed /r/n to the payload without changing http content-length
+
+        # this blecherous hack is because we need the length of the (possibly compressed) raw stream
+        # without reading any of it (so that it can be read elsewhere to check the payload digest)
+
+        # XXX fix me before shipping :-D
+
+        if hasattr(record, 'raw_stream'):
+            if hasattr(record.raw_stream, 'stream'):
+                if hasattr(record.raw_stream.stream, 'limit'):
+                    if int(http_content_length) != record.raw_stream.stream.limit:
+                        commentary.comment('Actual http payload length is different from http header Content-Length:',
+                                           str(record.raw_stream.stream.limit), http_content_length)
 
 
 def validate_resource(record, commentary, pending):
@@ -171,6 +203,7 @@ def validate_resource(record, commentary, pending):
             pass
 
     # should never have http headers
+    #   heuristic of looking for an http status line? and then a blank line?!
 
 
 def validate_request(record, commentary, pending):
@@ -193,6 +226,8 @@ def validate_request(record, commentary, pending):
 def validate_metadata(record, commentary, pending):
     content_type = record.rec_headers.get_header('Content-Type', 'none')
     if content_type.lower() == 'application/warc-fields':
+        # https://github.com/iipc/warc-specifications/issues/33 SHALL be or not?
+        #
         # dublin core plus via, hopsFromSeed, fetchTimeMs -- w1.1 section 6
         # via: uri -- example in Warc 1.1 section 10.5 does not have <> around it
         # hopsFromSeed: string
@@ -206,8 +241,11 @@ def validate_revisit(record, commentary, pending):
     if warc_profile.endswith('/revisit/identical-payload-digest') or warc_profile.endswith('/revisit/uri-agnostic-identical-payload-digest'):
         config = {
             'required': ['WARC-Payload-Digest'],
-            'recommended': ['WARC-Refers-To', 'WARC-Refers-To-Target-URI', 'WARC-Refers-To-Date'],
+            'recommended': ['WARC-Refers-To'],
         }
+        if '/1.1/' in warc_profile:
+            config['recommended'].extend(('WARC-Refers-To-Target-URI', 'WARC-Refers-To-Date'))
+
         validate_fields_against_rec_type('revisit', config, record.rec_headers, commentary, allow_all=True)
         # may have record block;
         #  if not, shall have Content-Length: 0,
@@ -282,7 +320,6 @@ def validate_bracketed_uri(field, value, record, version, commentary, pending):
 
 def validate_record_id(field, value, record, version, commentary, pending):
     validate_bracketed_uri(field, value, record, version, commentary, pending)
-    # TODO: should be "globally unique for its period of intended use"
 
 
 def validate_timestamp(field, value, record, version, commentary, pending):
@@ -328,8 +365,6 @@ def validate_content_type(field, value, record, version, commentary, pending):
     # at this point there can be multiple parameters,
     # some of which could have quoted string values with ; in them
 
-    # TODO: more checking
-
 
 def validate_digest(field, value, record, version, commentary, pending):
     if ':' not in value:
@@ -370,37 +405,45 @@ def validate_ip(field, value, record, version, commentary, pending):
 
 def validate_truncated(field, value, record, version, commentary, pending):
     if value.lower() not in {'length', 'time', 'disconnect', 'unspecified'}:
-        commentary.comment('extension seen:', field, value)
+        commentary.comment('unknown value, perhaps an extension:', field, value)
 
 
 def validate_warcinfo_id(field, value, record, version, commentary, pending):
     validate_bracketed_uri(field, value, record, version, commentary, pending)
-    # TODO: should point at a warcinfo record
 
 
 def validate_filename(field, value, record, version, commentary, pending):
-    # TODO: text or quoted-string
+    # text or quoted-string
+    # comment for dangerous utf-8 in filename?
     pass
 
 
 profiles = {
-    # XXX WARC/0.17 and WARC/0.18
+    '0.17': ['http://netpreserve.org/warc/0.17/revisit/identical-payload-digest',
+             'http://netpreserve.org/warc/0.17/revisit/server-not-modified'],
+    '0.18': ['http://netpreserve.org/warc/0.18/revisit/identical-payload-digest',
+             'http://netpreserve.org/warc/0.18/revisit/server-not-modified'],
     '1.0': ['http://netpreserve.org/warc/1.0/revisit/identical-payload-digest',
             'http://netpreserve.org/warc/1.0/revisit/server-not-modified',
-            # the following removed from iipc/webarchive-commons in may 2017; common in the wild TODO comment or not?
-            # https://github.com/iipc/webarchive-commons/commits/988bec707c27a01333becfc3bd502af4441ea1e1/src/main/java/org/archive/format/warc/WARCConstants.java
             'http://netpreserve.org/warc/1.0/revisit/uri-agnostic-identical-payload-digest'],
     '1.1': ['http://netpreserve.org/warc/1.1/revisit/identical-payload-digest',
             'http://netpreserve.org/warc/1.1/revisit/server-not-modified'],
 }
+profiles_rev = dict([(filename, version) for version, filenames in profiles.items() for filename in filenames])
 
 
 def validate_profile(field, value, record, version, commentary, pending):
     if version not in profiles:
-        commentary.comment('no profile check because unknown warc version:', field, value)
         return
-    if value not in profiles[version]:
-        commentary.comment('extension seen:', field, value)
+
+    if value in profiles_rev:
+        if profiles_rev[value] != version:
+            commentary.comment('WARC-Profile value is for a different version:', version, value)
+    else:
+        commentary.comment('unknown value, perhaps an extension:', field, value)
+
+    if '/revisit/uri-agnostic-identical-payload-digest' in value:
+        commentary.comment('This Heretrix extension never made it into the standard:', field, value)
 
 
 def validate_segment_number(field, value, record, version, commentary, pending):
@@ -425,6 +468,14 @@ def validate_segment_number(field, value, record, version, commentary, pending):
 def validate_segment_total_length(field, value, record, version, commentary, pending):
     if not value.isdigit():
         commentary.error('must be an integer:', field, value)
+
+
+def validate_refers_to_filename(field, value, record, version, commentary, pending):
+    commentary.comment('This Heretrix extension never made it into the standard:', field, value)
+
+
+def validate_refers_to_file_offset(field, value, record, version, commentary, pending):
+    commentary.comment('This Heretrix extension never made it into the standard:', field, value)
 
 
 warc_fields = {
@@ -492,6 +543,12 @@ warc_fields = {
     'WARC-Refers-To-Date': {
         'validate': validate_timestamp,
         'minver': '1.1',
+    },
+    'WARC-Refers-To-Filename': {
+        'validate': validate_refers_to_filename,
+    },
+    'WARC-Refers-To-File-Offset': {
+        'validate': validate_refers_to_file_offset,
     },
 }
 warc_fields = dict([(k.lower(), v) for k, v in warc_fields.items()])
@@ -579,13 +636,13 @@ def validate_fields_against_rec_type(rec_type, config, rec_headers, commentary, 
     allowed = make_header_set(config, ('required', 'optional', 'recommended', 'ignored'))
     prohibited = make_header_set(config, ('prohibited',))
 
-    for field, value in rec_headers.headers:
+    for field, value in rec_headers.headers:  # XXX not exported
         fl = field.lower()
         if fl in prohibited:
             commentary.error('field not allowed in record type:', rec_type, field)
         elif allow_all or fl in allowed:
             pass
-        elif fl in warc_fields:  # pragma: no cover (this is a configuration error, if it happens)
+        elif fl in warc_fields:  # pragma: no cover (this is a tester.py configuration omission)
             commentary.comment('Known field, but not expected for this record type:', rec_type, field)
         else:
             # an 'unknown field' comment has already been issued in validate_record
@@ -598,15 +655,15 @@ def validate_record_against_rec_type(config, record, commentary, pending):
 
 
 def validate_record(record):
-    version = record.rec_headers.protocol.split('/', 1)[1]  # XXX not exported?
+    version = record.rec_headers.protocol.split('/', 1)[1]  # XXX not exported
 
     record_id = record.rec_headers.get_header('WARC-Record-ID')
     rec_type = record.rec_headers.get_header('WARC-Type')
-    commentary = Commentary(record_id, rec_type)
+    commentary = Commentary(record_id=record_id, rec_type=rec_type)
     pending = None
 
     seen_fields = set()
-    for field, value in record.rec_headers.headers:
+    for field, value in record.rec_headers.headers:  # XXX not exported
         field_l = field.lower()
         if field_l != 'warc-concurrent-to' and field_l in seen_fields:
             commentary.error('duplicate field seen:', field, value)
@@ -617,13 +674,13 @@ def validate_record(record):
         config = warc_fields[field_l]
         if 'minver' in config:
             if version < config['minver']:
-                # unknown fields are extensions, so this is a comment and not an error
                 commentary.comment('field was introduced after this warc version:', version, field, value)
         if 'validate' in config:
             config['validate'](field, value, record, version, commentary, pending)
 
     if rec_type not in record_types:
-        pass  # we print a comment for this elsewhere
+        # we print a comment for this elsewhere
+        pass
     else:
         validate_fields_against_rec_type(rec_type, record_types[rec_type], record.rec_headers, commentary)
         validate_record_against_rec_type(record_types[rec_type], record, commentary, pending)
@@ -631,10 +688,149 @@ def validate_record(record):
     return commentary
 
 
-def _process_one(warc):
-    if warc.endswith('.arc') or warc.endswith('.arc.gz'):
+def save_global_info(record, warcfile, commentary, all_records, concurrent_to):
+    record_id = record.rec_headers.get_header('WARC-Record-ID')
+    if record_id is None:
         return
-    with open(warc, 'rb') as stream:
+
+    for field, value in record.rec_headers.headers:  # XXX not exported
+        if field.lower() == 'warc-concurrent-to':
+            if record_id is not None and value is not None:
+                concurrent_to[record_id].append(value)
+                concurrent_to[value].append(record_id)
+
+    save = {'warcfile': warcfile}
+
+    saved_fields = (
+        'WARC-Type', 'WARC-Warcinfo-ID', 'WARC-Date'
+        'WARC-Refers-To', 'WARC-Refers-To-Target-URI', 'WARC-Refers-To-Date', 'WARC-Payload-Digest', 'WARC-Target-URI',
+        'WARC-Segment-Number', 'WARC-Segment-Origin-ID', 'WARC-Segment-Total-Length', 'WARC-Truncated'
+    )
+    saved_fields = set([x.lower() for x in saved_fields])
+
+    for field, value in record.rec_headers.headers:  # XXX not exported
+        field_l = field.lower()
+        if field_l in saved_fields and value is not None:
+            save[field_l] = value
+        if field_l == 'warc-concurrent-to':
+            if 'warc-concurrent-to' not in save:
+                save['warc-concurrent-to'] = []
+            save['warc-concurrent-to'].append(value)
+
+    if record_id in all_records:
+        commentary.error('Duplicate WARC-Record-ID:', record_id, 'found in files', warcfile, all_records[record_id]['warcfile'])
+    else:
+        all_records[record_id] = save
+
+
+def check_global(all_records, concurrent_to):
+    check_global_warcinfo(all_records)
+    check_global_concurrent_to(all_records, concurrent_to)
+    check_global_refers_to(all_records)
+    check_global_segment(all_records)
+
+
+def _print_global(header, commentary):
+    if commentary.has_comments():
+        print(header)
+        for c in commentary.comments():
+            print(' ', c)
+
+
+def check_global_warcinfo(all_records):
+    commentary = Commentary()
+    for record_id, fields in all_records.items():
+        if 'warc-warcinfo-id' in fields:
+            wanted_id = fields['warc-warcinfo-id']
+            if wanted_id not in all_records or all_records[wanted_id]['warc-type'] != 'warcinfo':
+                commentary.comment('WARC-Warcinfo-ID not found:', record_id, 'WARC-Warcinfo-ID', wanted_id)
+
+    _print_global('global warcinfo checks', commentary)
+
+
+def check_global_concurrent_to(all_records, concurrent_to):
+    commentary = Commentary()
+    for record_id, fields in all_records.items():
+        if 'warc-concurrent-to' in fields:
+            whole_set = set(fields['warc-concurrent-to'])
+            del fields['warc-concurrent-to']
+            while True:
+                current_set = list(whole_set)
+                for c in current_set:
+                    if c in all_records and 'warc-concurrent-to' in all_records[c]:
+                        whole_set.update(set(all_records[c]['warc-concurrent-to']))
+                        del all_records[c]['warc-concurrent-to']
+                if len(whole_set) == len(current_set):
+                    break
+            warc_date = fields.get('warc-date')
+            for wanted_id in sorted(whole_set):
+                if wanted_id not in all_records:
+                    commentary.comment('WARC-Concurrent-To not found:', record_id, 'WARC-Concurrent-To', wanted_id)
+                else:
+                    new_date = all_records[wanted_id].get('warc-date')
+                    if warc_date != new_date:
+                        commentary.comment('WARC-Concurrent-To set has conflicting dates:',
+                                           record_id, warc_date, wanted_id, new_date)
+
+    _print_global('global Concurrent-To checks', commentary)
+
+
+def _revisit_compare(record_id, fields, source_field, wanted_id, all_records, target_field, commentary):
+    if source_field.lower() not in fields:
+        return
+
+    if target_field.lower() not in all_records[wanted_id]:
+        commentary.comment('revisit target lacks field:', wanted_id, target_field)
+        return
+
+    source_value = fields[source_field.lower()]
+    target_value = all_records[wanted_id][target_field.lower()]
+    if source_value != target_value:
+        commentary.comment('revisit and revisit target disagree:',
+                           record_id, source_field, source_value,
+                           wanted_id, target_field, target_value)
+
+
+def check_global_refers_to(all_records):
+    commentary = Commentary()
+    for record_id, fields in all_records.items():
+        if 'warc-refers-to' not in fields:
+            continue
+
+        wanted_id = fields['warc-refers-to']
+        if wanted_id not in all_records:
+            commentary.comment('WARC-Refers-To target not found:', record_id, 'Warc-Refers-To', wanted_id)
+            continue
+
+        rec_type = fields.get('warc-type')
+        if rec_type != 'revisit':
+            continue
+
+        _revisit_compare(record_id, fields, 'WARC-Refers-To-Target-URI',
+                         wanted_id, all_records, 'WARC-Target-URI', commentary)
+        _revisit_compare(record_id, fields, 'WARC-Refers-To-Date',
+                         wanted_id, all_records, 'WARC-Date', commentary)
+        _revisit_compare(record_id, fields, 'WARC-Payload-Digest',
+                         wanted_id, all_records, 'WARC-Payload-Digest', commentary)
+
+    _print_global('global Refers-To checks', commentary)
+
+
+def check_global_segment(all_records):
+    # warc-segment-origin-id :: exists, is warc-segment-number 1
+    #   all segments exist, and the last one has WARC-Segment-Total-Length
+    #   and only the last one has WARC-Truncated, if any
+
+    # Segmentation shall not be used if a record can be stored in an existing warc file
+    # The origin segment shall be placed in a new warc file preceded only by a warcinfo record (if any)
+
+    pass
+
+
+def _process_one(warcfile, all_records, concurrent_to):
+    if warcfile.endswith('.arc') or warcfile.endswith('.arc.gz'):
+        return
+    with open(warcfile, 'rb') as stream:
         for record in WARCIterator(stream, check_digests=True, fixup_bugs=False):
 
             record = WrapRecord(record)
@@ -642,10 +838,9 @@ def _process_one(warc):
                               record.rec_headers.get_header('WARC-Block-Digest'))
 
             commentary = validate_record(record)
+            save_global_info(record, warcfile, commentary, all_records, concurrent_to)
 
-            record.content  # make sure digests are checked
-            # XXX might need to read and digest the raw stream to check digests for chunked encoding?
-            # XXX chunked lacks Content-Length and presumably the digest needs to be computed on the non-chunked bytes
+            record.stream_for_digest_check()
 
             if commentary.has_comments() or record.digest_checker.passed is False:
                 print(' ', 'WARC-Record-ID', commentary.record_id())
@@ -671,16 +866,21 @@ class Tester(object):
     def __init__(self, cmd):
         self.inputs = cmd.inputs
         self.exit_value = 0
+        self.all_records = defaultdict(dict)
+        self.concurrent_to = defaultdict(list)
 
     def process_all(self):
-        for warc in self.inputs:
-            print(warc)
+        for warcfile in self.inputs:
+            print(warcfile)
             try:
-                self.process_one(warc)
+                self.process_one(warcfile)
             except ArchiveLoadFailed as e:
                 print('  saw exception ArchiveLoadFailed: '+str(e).rstrip(), file=sys.stderr)
                 print('  skipping rest of file', file=sys.stderr)
+
+        check_global(self.all_records, self.concurrent_to)
+
         return self.exit_value
 
-    def process_one(self, filename):
-        _process_one(filename)
+    def process_one(self, warcfile):
+        _process_one(warcfile, self.all_records, self.concurrent_to)
