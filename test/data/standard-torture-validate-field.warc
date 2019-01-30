@@ -33,6 +33,8 @@ WARC-Segment-Total-Length: 0
 WARC-Segment-Total-Length: not-an-integer
 WARC-Refers-To-Target-URI: http://example.com
 WARC-Refers-To-Date: not-a-date
+WARC-Refers-To-Filename: asdf
+WARC-Refers-To-File-Offset: 1234
 WARC-Unknown-Field: asdf
 Content-Length: 0
 
