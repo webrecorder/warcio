@@ -157,7 +157,7 @@ def validate_response(record, commentary, pending):
     if target_uri.startswith('http:') or target_uri.startswith('https:'):
         content_type = record.rec_headers.get_header('Content-Type', 'none')
         if canon_content_type(content_type) not in {'application/http; msgtype=response', 'application/http'}:
-            commentary.error('responses for http/https should have Content-Type of application/http; msgtype=response or application/http:', content_type)
+            commentary.error('Responses for http/https should have Content-Type of application/http; msgtype=response or application/http:', content_type)
 
         if record.rec_headers.get_header('WARC-IP-Address') is None:
             commentary.error('WARC-IP-Address should be used for http and https responses')
@@ -264,7 +264,7 @@ def validate_revisit(record, commentary, pending):
         #     if yes, should be like a response record, truncated if desired
         #   WARC-Refers-To-Date should be the same as WARC-Date in the original record if present
     else:
-        commentary.comment('no revisit details validation done due to unknown profile:', warc_profile)
+        commentary.comment('No revisit details validation done due to unknown profile:', warc_profile)
 
 
 def validate_conversion(record, commentary, pending):
@@ -291,14 +291,17 @@ def validate_unbracketed_uri(field, value, record, version, commentary, pending)
     if value.startswith('<') or value.endswith('>'):
         # wget 1.19 bug caused by WARC 1.0 spec error
         commentary.error('uri must not be within <>:', field, value)
-    if ':' not in value:
-        commentary.error('invalid uri, no scheme:', field, value)
-    if re.search(r'\s', value):
-        commentary.error('invalid uri, contains whitespace:', field, value)
+        value = value[1:-1]
+
     scheme = value.split(':', 1)[0]
-    if not re.search(r'\A[A-Za-z][A-Za-z0-9+\-\.]*\Z', scheme):
-        commentary.error('invalid uri scheme, bad character:', field, value)
-    # https://www.iana.org/assignments/uri-schemes/uri-schemes.xhtml
+    if ':' not in value:
+        commentary.error('Invalid uri, no scheme:', field, value)
+    elif not re.search(r'\A[A-Za-z][A-Za-z0-9+\-\.]*\Z', scheme):
+        commentary.error('Invalid uri scheme, bad character:', field, value)
+        # use https://www.iana.org/assignments/uri-schemes/uri-schemes.xhtml ??
+
+    if re.search(r'\s', value):
+        commentary.error('Invalid uri, contains whitespace:', field, value)
 
 
 def validate_warc_type(field, value, record, version, commentary, pending):
@@ -307,7 +310,7 @@ def validate_warc_type(field, value, record, version, commentary, pending):
         commentary.comment('WARC-Type is not lower-case:', field, value)
     if value.lower() not in record_types:
         # standard says readers should ignore unknown warc-types
-        commentary.comment('unknown WARC-Type:', field, value)
+        commentary.comment('Unknown WARC-Type:', field, value)
 
 
 def validate_bracketed_uri(field, value, record, version, commentary, pending):
@@ -337,7 +340,7 @@ def validate_timestamp(field, value, record, version, commentary, pending):
 
 def validate_content_length(field, value, record, version, commentary, pending):
     if not value.isdigit():
-        commentary.error('must be an integer:', field, value)
+        commentary.error('Must be an integer:', field, value)
 
 
 token_re = r'\A[!"#$%&\'()*+\-\.0-9A-Z\^_`a-z|~]+\Z'
@@ -346,7 +349,7 @@ digest_re = r'\A[A-Za-z0-9/+\-_=]+\Z'
 
 def validate_content_type(field, value, record, version, commentary, pending):
     if '/' not in value:
-        commentary.error('must contain a /:', field, value)
+        commentary.error('Must contain a /:', field, value)
     splits = value.split('/', 1)
     ctype = splits[0]
     if len(splits) > 1:
@@ -354,13 +357,13 @@ def validate_content_type(field, value, record, version, commentary, pending):
     else:
         rest = ''
     if not re.search(token_re, ctype):
-        commentary.error('invalid type:', field, value)
+        commentary.error('Invalid type:', field, value)
     if ';' in rest:
         subtype, rest = rest.split(';', 1)
     else:
         subtype = rest
     if not re.search(token_re, subtype):
-        commentary.error('invalid subtype:', field, value)
+        commentary.error('Invalid subtype:', field, value)
 
     # at this point there can be multiple parameters,
     # some of which could have quoted string values with ; in them
@@ -368,7 +371,7 @@ def validate_content_type(field, value, record, version, commentary, pending):
 
 def validate_digest(field, value, record, version, commentary, pending):
     if ':' not in value:
-        commentary.error('missing algorithm:', field, value)
+        commentary.error('Missing algorithm:', field, value)
     splits = value.split(':', 1)
     algorithm = splits[0]
     if len(splits) > 1:
@@ -376,12 +379,12 @@ def validate_digest(field, value, record, version, commentary, pending):
     else:
         digest = 'none'
     if not re.search(token_re, algorithm):
-        commentary.error('invalid algorithm:', field, value)
+        commentary.error('Invalid algorithm:', field, value)
     else:
         try:
             Digester(algorithm)
         except ValueError:
-            commentary.comment('unknown digest algorithm:', field, value)
+            commentary.comment('Unknown digest algorithm:', field, value)
     if not re.search(token_re, digest):
         # https://github.com/iipc/warc-specifications/issues/48
         # commentary.comment('spec incorrectly says this is an invalid digest', field, value)
@@ -398,14 +401,14 @@ def validate_ip(field, value, record, version, commentary, pending):
             value = unicode(value)
         ipaddress.ip_address(value)
     except ValueError:
-        commentary.error('invalid ip:', field, value)
+        commentary.error('Invalid ip:', field, value)
     except (ImportError, NameError):  # pragma: no cover
-        commentary.comment('did not check ip address format, install ipaddress module from pypi if you care')
+        commentary.comment('Did not check ip address format, install ipaddress module from pypi if you care')
 
 
 def validate_truncated(field, value, record, version, commentary, pending):
     if value.lower() not in {'length', 'time', 'disconnect', 'unspecified'}:
-        commentary.comment('unknown value, perhaps an extension:', field, value)
+        commentary.comment('Unknown value, perhaps an extension:', field, value)
 
 
 def validate_warcinfo_id(field, value, record, version, commentary, pending):
@@ -440,7 +443,7 @@ def validate_profile(field, value, record, version, commentary, pending):
         if profiles_rev[value] != version:
             commentary.comment('WARC-Profile value is for a different version:', version, value)
     else:
-        commentary.comment('unknown value, perhaps an extension:', field, value)
+        commentary.comment('Unknown value, perhaps an extension:', field, value)
 
     if '/revisit/uri-agnostic-identical-payload-digest' in value:
         commentary.comment('This Heretrix extension never made it into the standard:', field, value)
@@ -448,26 +451,26 @@ def validate_profile(field, value, record, version, commentary, pending):
 
 def validate_segment_number(field, value, record, version, commentary, pending):
     if not value.isdigit():
-        commentary.error('must be an integer:', field, value)
+        commentary.error('Must be an integer:', field, value)
         return
     iv = int(value)
     if iv == 0:
-        commentary.error('must be 1 or greater:', field, value)
+        commentary.error('Must be 1 or greater:', field, value)
 
     rec_type = record.rec_headers.get_header('WARC-Type', 'none')
     if rec_type != 'continuation':
         if iv != 1:
-            commentary.error('non-continuation records must always have WARC-Segment-Number: 1:', field, value)
+            commentary.error('Non-continuation records must always have WARC-Segment-Number: 1:', field, value)
         origin_id = record.rec_headers.get_header('WARC-Segment-Origin-ID')
         if origin_id is None:
-            commentary.error('segmented records must have both WARC-Segment-Number and WARC-Segment-Origin-ID')
+            commentary.error('Segmented records must have both WARC-Segment-Number and WARC-Segment-Origin-ID')
     if rec_type in {'warcinfo', 'request', 'metadata', 'revisit'}:
-        commentary.recommendation('do not segment WARC-Type', rec_type)
+        commentary.recommendation('Do not segment WARC-Type', rec_type)
 
 
 def validate_segment_total_length(field, value, record, version, commentary, pending):
     if not value.isdigit():
-        commentary.error('must be an integer:', field, value)
+        commentary.error('Must be an integer:', field, value)
 
 
 def validate_refers_to_filename(field, value, record, version, commentary, pending):
@@ -525,6 +528,7 @@ warc_fields = {
         'validate': validate_profile,
     },
     'WARC-Identified-Payload-Type': {
+        # see also https://github.com/iipc/warc-specifications/issues/49 -- odd that it's allowed for request, revisit, continuation
         'validate': validate_content_type,
     },
     'WARC-Segment-Origin-ID': {
@@ -565,7 +569,7 @@ record_types = {
         'required': ['WARC-Record-ID', 'Content-Length', 'WARC-Date', 'WARC-Type',
                      'Content-Type', 'WARC-Target-URI'],
         'optional': ['WARC-Block-Digest', 'WARC-Payload-Digest', 'WARC-IP-Address', 'WARC-Truncated',
-                     'WARC-Concurrent-To', 'WARC-Warcinfo-ID', 'WARC-IP-Address', 'WARC-Segment-Number', 'WARC-Segment-Origin-ID'],
+                     'WARC-Concurrent-To', 'WARC-Warcinfo-ID', 'WARC-IP-Address', 'WARC-Identified-Payload-Type', 'WARC-Segment-Number', 'WARC-Segment-Origin-ID'],
         'prohibited': ['WARC-Refers-To', 'WARC-Refers-To-Target-URI', 'WARC-Refers-To-Date', 'WARC-Filename', 'WARC-Profile'],
         'validate': validate_response,
     },
@@ -605,7 +609,7 @@ record_types = {
     },
     'conversion': {
         'required': ['WARC-Record-ID', 'Content-Length', 'WARC-Date', 'WARC-Type', 'WARC-Target-URI'],
-        'optional': ['WARC-Block-Digest', 'WARC-Payload-Digest', 'WARC-Truncated', 'WARC-Refers-To', 'WARC-Warcinfo-ID', 'WARC-Segment-Number', 'WARC-Segment-Origin-ID'],
+        'optional': ['WARC-Block-Digest', 'WARC-Payload-Digest', 'WARC-Truncated', 'WARC-Refers-To', 'WARC-Warcinfo-ID', 'WARC-Identified-Payload-Type', 'WARC-Segment-Number', 'WARC-Segment-Origin-ID'],
         'prohibited': ['WARC-Concurrent-To', 'WARC-IP-Address', 'WARC-Refers-To-Target-URI', 'WARC-Refers-To-Date', 'WARC-Filename', 'WARC-Profile'],
         'validate': validate_conversion,
     },
@@ -613,7 +617,7 @@ record_types = {
         'required': ['WARC-Record-ID', 'Content-Length', 'WARC-Date', 'WARC-Type',
                      'WARC-Segment-Number', 'WARC-Segment-Origin-ID', 'WARC-Target-URI'],
         'optional': ['WARC-Segment-Total-Length', 'WARC-Truncated'],
-        'prohibited': ['WARC-Block-Digest', 'WARC-Payload-Digest', 'WARC-Warcinfo-ID', 'WARC-IP-Address', 'WARC-Refers-To', 'WARC-Refers-To-Target-URI', 'WARC-Refers-To-Date', 'WARC-Filename', 'WARC-Profile'],
+        'prohibited': ['WARC-Block-Digest', 'WARC-Payload-Digest', 'WARC-Warcinfo-ID', 'WARC-IP-Address', 'WARC-Refers-To', 'WARC-Refers-To-Target-URI', 'WARC-Refers-To-Date', 'WARC-Filename', 'WARC-Profile', 'WARC-Identified-Payload-Type'],
         'validate': validate_continuation,
     },
 }
@@ -629,17 +633,17 @@ def make_header_set(config, kinds):
 def validate_fields_against_rec_type(rec_type, config, rec_headers, commentary, allow_all=False):
     for req in sorted(config.get('required', [])):
         if not rec_headers.get_header(req):
-            commentary.error('missing required header:', req)
+            commentary.error('Missing required header:', req)
     for rec in sorted(config.get('recommended', [])):
         if not rec_headers.get_header(rec):
-            commentary.recommendation('missing recommended header:', rec)
+            commentary.recommendation('Missing recommended header:', rec)
     allowed = make_header_set(config, ('required', 'optional', 'recommended', 'ignored'))
     prohibited = make_header_set(config, ('prohibited',))
 
     for field, value in rec_headers.headers:  # XXX not exported
         fl = field.lower()
         if fl in prohibited:
-            commentary.error('field not allowed in record type:', rec_type, field)
+            commentary.error('Field not allowed in record type:', rec_type, field)
         elif allow_all or fl in allowed:
             pass
         elif fl in warc_fields:  # pragma: no cover (this is a tester.py configuration omission)
@@ -666,15 +670,15 @@ def validate_record(record):
     for field, value in record.rec_headers.headers:  # XXX not exported
         field_l = field.lower()
         if field_l != 'warc-concurrent-to' and field_l in seen_fields:
-            commentary.error('duplicate field seen:', field, value)
+            commentary.error('Duplicate field seen:', field, value)
         seen_fields.add(field_l)
         if field_l not in warc_fields:
-            commentary.comment('unknown field, no validation performed:', field, value)
+            commentary.comment('Unknown field, no validation performed:', field, value)
             continue
         config = warc_fields[field_l]
         if 'minver' in config:
             if version < config['minver']:
-                commentary.comment('field was introduced after this warc version:', version, field, value)
+                commentary.comment('Field was introduced after this warc version:', version, field, value)
         if 'validate' in config:
             config['validate'](field, value, record, version, commentary, pending)
 
@@ -780,13 +784,13 @@ def _revisit_compare(record_id, fields, source_field, wanted_id, all_records, ta
         return
 
     if target_field.lower() not in all_records[wanted_id]:
-        commentary.comment('revisit target lacks field:', wanted_id, target_field)
+        commentary.comment('Revisit target lacks field:', wanted_id, target_field)
         return
 
     source_value = fields[source_field.lower()]
     target_value = all_records[wanted_id][target_field.lower()]
     if source_value != target_value:
-        commentary.comment('revisit and revisit target disagree:',
+        commentary.comment('Revisit and revisit target disagree:',
                            record_id, source_field, source_value,
                            wanted_id, target_field, target_value)
 
@@ -827,7 +831,7 @@ def check_global_segment(all_records):
     pass
 
 
-def _process_one(warcfile, all_records, concurrent_to):
+def _process_one(warcfile, all_records, concurrent_to, verbose):
     if warcfile.endswith('.arc') or warcfile.endswith('.arc.gz'):
         return
     with open(warcfile, 'rb') as stream:
@@ -842,7 +846,7 @@ def _process_one(warcfile, all_records, concurrent_to):
 
             record.stream_for_digest_check()
 
-            if commentary.has_comments() or record.digest_checker.passed is False:
+            if verbose or commentary.has_comments() or record.digest_checker.passed is False:
                 print(' ', 'WARC-Record-ID', commentary.record_id())
                 print('   ', 'WARC-Type', commentary.rec_type())
 
@@ -865,6 +869,7 @@ def _process_one(warcfile, all_records, concurrent_to):
 class Tester(object):
     def __init__(self, cmd):
         self.inputs = cmd.inputs
+        self.verbose = cmd.verbose
         self.exit_value = 0
         self.all_records = defaultdict(dict)
         self.concurrent_to = defaultdict(list)
@@ -875,12 +880,12 @@ class Tester(object):
             try:
                 self.process_one(warcfile)
             except ArchiveLoadFailed as e:
-                print('  saw exception ArchiveLoadFailed: '+str(e).rstrip(), file=sys.stderr)
-                print('  skipping rest of file', file=sys.stderr)
+                print('  saw exception ArchiveLoadFailed: '+str(e).rstrip())
+                print('  skipping rest of file')
 
         check_global(self.all_records, self.concurrent_to)
 
         return self.exit_value
 
     def process_one(self, warcfile):
-        _process_one(warcfile, self.all_records, self.concurrent_to)
+        _process_one(warcfile, self.all_records, self.concurrent_to, self.verbose)
