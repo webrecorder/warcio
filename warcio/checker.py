@@ -4,6 +4,13 @@ from warcio.archiveiterator import ArchiveIterator
 from warcio.exceptions import ArchiveLoadFailed
 
 
+def _read_entire_stream(stream):
+    while True:
+        piece = stream.read(1024*1024)
+        if len(piece) == 0:
+            break
+
+
 class Checker(object):
     def __init__(self, cmd):
         self.inputs = cmd.inputs
@@ -27,7 +34,7 @@ class Checker(object):
                 digest_present = (record.rec_headers.get_header('WARC-Payload-Digest') or
                                   record.rec_headers.get_header('WARC-Block-Digest'))
 
-                record.content_stream().read()  # make sure digests are checked
+                _read_entire_stream(record.content_stream())
 
                 d_msg = None
                 output = []
