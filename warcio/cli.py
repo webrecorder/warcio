@@ -55,6 +55,7 @@ def main(args=None):
 
     test = subparsers.add_parser('test', help='WARC standards tester')
     test.add_argument('inputs', nargs='+')
+    test.add_argument('-v', '--verbose', action='store_true')
     test.set_defaults(func=tester)
 
     cmd = parser.parse_args(args=args)
