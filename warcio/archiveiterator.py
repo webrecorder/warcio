@@ -43,13 +43,14 @@ class ArchiveIterator(six.Iterator):
     def __init__(self, fileobj, no_record_parse=False,
                  verify_http=False, arc2warc=False,
                  ensure_http_headers=False, block_size=BUFF_SIZE,
-                 check_digests=False, fixup_bugs=True):
+                 check_digests=False, fixup_bugs=True, raise_exceptions=False):
 
         self.fh = fileobj
 
         self.loader = ArcWarcRecordLoader(verify_http=verify_http,
                                           arc2warc=arc2warc,
-                                          fixup_bugs=fixup_bugs)
+                                          fixup_bugs=fixup_bugs,
+                                          raise_exceptions=raise_exceptions)
         self.known_format = None
 
         self.mixed_arc_warc = arc2warc

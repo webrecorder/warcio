@@ -37,6 +37,13 @@ def try_brotli_init():
 
 
 #=================================================================
+class DecompressionException(Exception):
+    def __init__(self, msg, data=b''):
+        Exception.__init__(self, msg)
+        self.data = data
+
+
+#=================================================================
 class BufferedReader(object):
     """
     A wrapping line reader which wraps an existing reader.
@@ -64,7 +71,8 @@ class BufferedReader(object):
     def __init__(self, stream, block_size=BUFF_SIZE,
                  decomp_type=None,
                  starting_data=None,
-                 read_all_members=False):
+                 read_all_members=False,
+                 raise_exceptions=False):
 
         self.stream = stream
         self.block_size = block_size
@@ -77,6 +85,7 @@ class BufferedReader(object):
         self.buff_size = 0
 
         self.read_all_members = read_all_members
+        self.raise_exceptions = raise_exceptions
 
     def set_decomp(self, decomp_type):
         self._init_decomp(decomp_type)
@@ -142,6 +151,8 @@ class BufferedReader(object):
                         self._init_decomp('deflate_alt')
                         data = self._decompress(data)
                     else:
+                        if self.raise_exceptions:
+                            raise DecompressionException(str(e))
                         self.decompressor = None
                 # otherwise (partly decompressed), something is wrong
                 else:
@@ -280,13 +291,13 @@ class ChunkedDataReader(BufferedReader):
     If at any point the chunked header is not available, the stream is
     assumed to not be chunked and no more dechunking occurs.
     """
-    def __init__(self, stream, raise_exceptions=False, **kwargs):
+    def __init__(self, stream, **kwargs):
         super(ChunkedDataReader, self).__init__(stream, **kwargs)
         self.all_chunks_read = False
         self.not_chunked = False
 
         # if False, we'll use best-guess fallback for parse errors
-        self.raise_chunked_data_exceptions = raise_exceptions
+        self.raise_chunked_data_exceptions = kwargs.get('raise_exceptions')
 
     def _fillbuff(self, block_size=None):
         if self.not_chunked:
