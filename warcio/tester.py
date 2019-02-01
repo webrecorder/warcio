@@ -722,7 +722,10 @@ def save_global_info(record, warcfile, commentary, all_records, concurrent_to):
             save['warc-concurrent-to'].append(value)
 
     if record_id in all_records:
-        commentary.error('Duplicate WARC-Record-ID:', record_id, 'found in files', warcfile, all_records[record_id]['warcfile'])
+        if warcfile != all_records[record_id]['warcfile']:
+            commentary.error('Duplicate WARC-Record-ID:', record_id, 'found in files', warcfile, all_records[record_id]['warcfile'])
+        else:
+            commentary.error('Duplicate WARC-Record-ID:', record_id)
     else:
         all_records[record_id] = save
 
@@ -853,9 +856,12 @@ def _process_one(warcfile, all_records, concurrent_to, verbose):
                 if record.digest_checker.passed is True:
                     print('    digest pass')
                 elif record.digest_checker.passed is None:
-                    if digest_present:  # pragma: no cover
-                        # WARC record missing Content-Length: header, which is verboten
-                        print('    digest present but not checked')
+                    if digest_present:
+                        if commentary.rec_type() == 'revisit':
+                            print('    digest present but not checked (revisit)')
+                        else:  # pragma: no cover
+                            # WARC record missing Content-Length: header, which is verboten
+                            print('    digest present but not checked')
                     else:
                         print('    digest not present')
                 for p in record.digest_checker.problems:
