@@ -40,20 +40,24 @@ class Checker(object):
                 d_msg = None
                 output = []
 
+                rec_id = record.rec_headers.get_header('WARC-Record-ID')
+                rec_type = record.rec_headers.get_header('WARC-Type')
+
                 if record.digest_checker.passed is False:
                     self.exit_value = 1
                     output = list(record.digest_checker.problems) 
                 elif record.digest_checker.passed is True and self.verbose:
                     d_msg = 'digest pass'
                 elif record.digest_checker.passed is None and self.verbose:
-                    if digest_present:
+                    if digest_present and rec_type == 'revisit':
+                        d_msg = 'digest present but not checked (revisit)'
+                    elif digest_present:  # pragma: no cover
+                        # should not happen
                         d_msg = 'digest present but not checked'
                     else:
                         d_msg = 'no digest to check'
 
                 if d_msg or output:
-                    rec_id = record.rec_headers.get_header('WARC-Record-ID')
-                    rec_type = record.rec_headers.get_header('WARC-Type')
                     if not printed_filename:
                         print(filename)
                         printed_filename = True
