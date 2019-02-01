@@ -29,6 +29,7 @@ class Checker(object):
         return self.exit_value
 
     def process_one(self, filename):
+        printed_filename = False
         with open(filename, 'rb') as stream:
             for record in ArchiveIterator(stream, check_digests=True):
                 digest_present = (record.rec_headers.get_header('WARC-Payload-Digest') or
@@ -53,7 +54,9 @@ class Checker(object):
                 if d_msg or output:
                     rec_id = record.rec_headers.get_header('WARC-Record-ID')
                     rec_type = record.rec_headers.get_header('WARC-Type')
-                    print(filename)
+                    if not printed_filename:
+                        print(filename)
+                        printed_filename = True
                     print(' ', 'WARC-Record-ID', rec_id, rec_type)
                     if d_msg:
                         print('   ', d_msg)
