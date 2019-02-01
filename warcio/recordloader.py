@@ -23,6 +23,7 @@ class ArcWarcRecord(object):
          self.http_headers, self.content_type, self.length) = args
         self.payload_length = -1
         self.digest_checker = kwargs.get('digest_checker')
+        self.raise_exceptions = kwargs.get('raise_exceptions')
 
     def content_stream(self):
         if not self.http_headers:
@@ -37,9 +38,9 @@ class ArcWarcRecord(object):
                 encoding = None
 
         if self.http_headers.get_header('transfer-encoding') == 'chunked':
-            return ChunkedDataReader(self.raw_stream, decomp_type=encoding)
+            return ChunkedDataReader(self.raw_stream, decomp_type=encoding, raise_exceptions=self.raise_exceptions)
         elif encoding:
-            return BufferedReader(self.raw_stream, decomp_type=encoding)
+            return BufferedReader(self.raw_stream, decomp_type=encoding, raise_exceptions=self.raise_exceptions)
         else:
             return self.raw_stream
 
@@ -58,7 +59,7 @@ class ArcWarcRecordLoader(object):
     NON_HTTP_SCHEMES = ('dns:', 'whois:', 'ntp:')
     HTTP_SCHEMES = ('http:', 'https:')
 
-    def __init__(self, verify_http=True, arc2warc=True, fixup_bugs=True):
+    def __init__(self, verify_http=True, arc2warc=True, fixup_bugs=True, raise_exceptions=False):
         if arc2warc:
             self.arc_parser = ARC2WARCHeadersParser()
         else:
@@ -69,6 +70,7 @@ class ArcWarcRecordLoader(object):
 
         self.http_req_parser = StatusAndHeadersParser(self.HTTP_VERBS, verify_http)
         self.fixup_bugs = fixup_bugs
+        self.raise_exceptions = raise_exceptions
 
     def parse_record_stream(self, stream,
                             statusline=None,
@@ -150,7 +152,7 @@ class ArcWarcRecordLoader(object):
 
         return ArcWarcRecord(the_format, rec_type,
                              rec_headers, stream, http_headers,
-                             content_type, length, digest_checker=digest_checker)
+                             content_type, length, digest_checker=digest_checker, raise_exceptions=self.raise_exceptions)
 
     def wrap_digest_verifying_stream(self, stream, rec_type, rec_headers, digest_checker, length=None):
         payload_digest = rec_headers.get_header('WARC-Payload-Digest')

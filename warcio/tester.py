@@ -8,6 +8,7 @@ from collections import defaultdict
 from warcio.archiveiterator import WARCIterator
 from warcio.utils import to_native_str, Digester
 from warcio.exceptions import ArchiveLoadFailed
+from warcio.bufferedreaders import ChunkedDataException, DecompressionException
 
 
 class Commentary(object):
@@ -838,7 +839,7 @@ def _process_one(warcfile, all_records, concurrent_to, verbose):
     if warcfile.endswith('.arc') or warcfile.endswith('.arc.gz'):
         return
     with open(warcfile, 'rb') as stream:
-        for record in WARCIterator(stream, check_digests=True, fixup_bugs=False):
+        for record in WARCIterator(stream, check_digests=True, fixup_bugs=False, raise_exceptions=True):
 
             record = WrapRecord(record)
             digest_present = (record.rec_headers.get_header('WARC-Payload-Digest') or
@@ -847,7 +848,14 @@ def _process_one(warcfile, all_records, concurrent_to, verbose):
             commentary = validate_record(record)
             save_global_info(record, warcfile, commentary, all_records, concurrent_to)
 
-            record.stream_for_digest_check()
+            try:
+                record.stream_for_digest_check()
+            except ChunkedDataException:
+                commentary.error('Transfer-Encoding: chunked, saw an error attempting to unchunk')
+                pass
+            except DecompressionException as e:
+                commentary.error('Content-Encoding indicates compression, saw an error attempting to decompress: '+str(e))
+                pass
 
             if verbose or commentary.has_comments() or record.digest_checker.passed is False:
                 print(' ', 'WARC-Record-ID', commentary.record_id())

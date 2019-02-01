@@ -297,17 +297,17 @@ test/data/example-digest-bad.warc
     WARC-Type request
     digest pass
     error: WARC-IP-Address should be used for http and https requests
-    error: Duplicate WARC-Record-ID: <urn:uuid:a9c5c23a-0221-11e7-8fe3-0242ac120007> found in files test/data/example-digest-bad.warc test/data/example-digest-bad.warc
+    error: Duplicate WARC-Record-ID: <urn:uuid:a9c5c23a-0221-11e7-8fe3-0242ac120007>
   WARC-Record-ID <urn:uuid:a9c5c23a-0221-11e7-8fe3-0242ac120007>
     WARC-Type request
     digest pass
     error: WARC-IP-Address should be used for http and https requests
-    error: Duplicate WARC-Record-ID: <urn:uuid:a9c5c23a-0221-11e7-8fe3-0242ac120007> found in files test/data/example-digest-bad.warc test/data/example-digest-bad.warc
+    error: Duplicate WARC-Record-ID: <urn:uuid:a9c5c23a-0221-11e7-8fe3-0242ac120007>
   WARC-Record-ID <urn:uuid:a9c5c23a-0221-11e7-8fe3-0242ac120007>
     WARC-Type request
     digest pass
     error: WARC-IP-Address should be used for http and https requests
-    error: Duplicate WARC-Record-ID: <urn:uuid:a9c5c23a-0221-11e7-8fe3-0242ac120007> found in files test/data/example-digest-bad.warc test/data/example-digest-bad.warc
+    error: Duplicate WARC-Record-ID: <urn:uuid:a9c5c23a-0221-11e7-8fe3-0242ac120007>
 test/data/example.warc
   WARC-Record-ID <urn:uuid:a9c5c23a-0221-11e7-8fe3-0242ac120007>
     WARC-Type request
@@ -316,11 +316,11 @@ test/data/example.warc
     error: Duplicate WARC-Record-ID: <urn:uuid:a9c5c23a-0221-11e7-8fe3-0242ac120007> found in files test/data/example.warc test/data/example-digest-bad.warc
   WARC-Record-ID <urn:uuid:e6e395ca-0221-11e7-a18d-0242ac120005>
     WARC-Type revisit
-    digest present but not checked
-    recommendation: missing recommended header: WARC-Refers-To
+    digest present but not checked (revisit)
+    recommendation: Missing recommended header: WARC-Refers-To
     comment: This Heretrix extension never made it into the standard: WARC-Profile http://netpreserve.org/warc/1.0/revisit/uri-agnostic-identical-payload-digest
-    comment: field was introduced after this warc version: 1.0 WARC-Refers-To-Target-URI http://example.com/
-    comment: field was introduced after this warc version: 1.0 WARC-Refers-To-Date 2017-03-06T04:02:06Z
+    comment: Field was introduced after this warc version: 1.0 WARC-Refers-To-Target-URI http://example.com/
+    comment: Field was introduced after this warc version: 1.0 WARC-Refers-To-Date 2017-03-06T04:02:06Z
   WARC-Record-ID <urn:uuid:e6e41fea-0221-11e7-8fe3-0242ac120007>
     WARC-Type request
     digest not present
