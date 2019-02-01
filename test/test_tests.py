@@ -342,7 +342,7 @@ def test_leftovers():
     warcio.tester.validate_profile('blah', 'blah', None, '999', commentary, None)
 
     expected = '''\
-error: must be an integer: Content-Length not-an-integer
+error: Must be an integer: Content-Length not-an-integer
 '''
 
     assert '\n'.join(commentary.comments())+'\n' == expected
