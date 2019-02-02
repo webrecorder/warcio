@@ -38,9 +38,8 @@ def try_brotli_init():
 
 #=================================================================
 class DecompressionException(Exception):
-    def __init__(self, msg, data=b''):
+    def __init__(self, msg):
         Exception.__init__(self, msg)
-        self.data = data
 
 
 #=================================================================
@@ -144,7 +143,7 @@ class BufferedReader(object):
         if self.decompressor and data:
             try:
                 data = self.decompressor.decompress(data)
-            except Exception as e:
+            except zlib.error as e:
                 # if first read attempt, assume non-gzipped stream
                 if self.num_block_read == 0:
                     if self.decomp_type == 'deflate':
