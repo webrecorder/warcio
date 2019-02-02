@@ -840,6 +840,7 @@ def _process_one(warcfile, all_records, concurrent_to, verbose):
         return
     with open(warcfile, 'rb') as stream:
         for record in WARCIterator(stream, check_digests=True, fixup_bugs=False, raise_exceptions=True):
+        #for record in WARCIterator(stream, check_digests=True, fixup_bugs=False):
 
             record = WrapRecord(record)
             digest_present = (record.rec_headers.get_header('WARC-Payload-Digest') or
@@ -850,11 +851,11 @@ def _process_one(warcfile, all_records, concurrent_to, verbose):
 
             try:
                 record.stream_for_digest_check()
-            except ChunkedDataException:
-                commentary.error('Transfer-Encoding: chunked, saw an error attempting to unchunk')
+            except ChunkedDataException as e:
+                commentary.comment('Transfer-Encoding: chunked, saw exception: '+str(e))
                 pass
             except DecompressionException as e:
-                commentary.error('Content-Encoding indicates compression, saw an error attempting to decompress: '+str(e))
+                commentary.comment('Content-Encoding indicates compression, saw: '+str(e))
                 pass
 
             if verbose or commentary.has_comments() or record.digest_checker.passed is False:
