@@ -21,10 +21,14 @@ class ArcWarcRecord(object):
         self.payload_length = -1
         self.digest_checker = kwargs.get('digest_checker')
         self.raise_exceptions = kwargs.get('raise_exceptions')
+        self._content_stream = None
 
     def content_stream(self):
         if not self.http_headers:
             return self.raw_stream
+
+        if self._content_stream:
+            return self._content_stream
 
         encoding = self.http_headers.get_header('content-encoding')
 
@@ -35,11 +39,13 @@ class ArcWarcRecord(object):
                 encoding = None
 
         if self.http_headers.get_header('transfer-encoding') == 'chunked':
-            return ChunkedDataReader(self.raw_stream, decomp_type=encoding, raise_exceptions=self.raise_exceptions)
+            self._content_stream = ChunkedDataReader(self.raw_stream, decomp_type=encoding, raise_exceptions=self.raise_exceptions)
         elif encoding:
-            return BufferedReader(self.raw_stream, decomp_type=encoding, raise_exceptions=self.raise_exceptions)
+            self._content_stream = BufferedReader(self.raw_stream, decomp_type=encoding, raise_exceptions=self.raise_exceptions)
         else:
-            return self.raw_stream
+            self._content_stream = self.raw_stream
+
+        return self._content_stream
 
 
 #=================================================================
