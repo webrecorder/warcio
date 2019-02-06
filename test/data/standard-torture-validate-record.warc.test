@@ -1,0 +1,112 @@
+test/data/standard-torture-validate-record.warc
+  WARC-Record-ID None
+    WARC-Type warcinfo
+    digest not present
+    error: uri must be within <>: WARC-Refers-To probhibited
+    error: Missing required header: WARC-Date
+    error: Missing required header: WARC-Record-ID
+    error: Field not allowed in record type: warcinfo WARC-Refers-To
+    error: warc-fields contains invalid utf-8: 'utf-8' codec can't decode byte 0xc3 in position 57: invalid continuation byte
+    comment: The first line of warc-fields cannot start with whitespace
+    comment: warc-fields lines must end with \r\n: test: lines should end with \r\n
+    comment: Missing colon in warc-fields line: no colon
+    comment: Invalid warc-fields name: token cannot have a space
+  WARC-Record-ID <uri:uuid:test-empty-warc-fields>
+    WARC-Type warcinfo
+    digest not present
+    error: Missing required header: WARC-Date
+    comment: warc-fields block present but empty
+  WARC-Record-ID <uri:uuid:test-warcinfo-non-recommended-content-type>
+    WARC-Type warcinfo
+    digest not present
+    error: Missing required header: WARC-Date
+    recommendation: warcinfo Content-Type recommended to be application/warc-fields: not-application/warc-fields
+  WARC-Record-ID <uri:uuid:test-response-content-type>
+    WARC-Type response
+    digest not present
+    error: Missing required header: WARC-Date
+    error: Responses for http/https should have Content-Type of application/http; msgtype=response or application/http: text/plain
+    error: WARC-IP-Address should be used for http and https responses
+    error: http/https responses should have http headers
+  WARC-Record-ID <uri:uuid:test-resource-dns-content-type>
+    WARC-Type resource
+    digest not present
+    error: Missing required header: WARC-Date
+    error: resource records for dns shall have Content-Type of text/dns: text/plain
+  WARC-Record-ID <uri:uuid:test-resource-dns-empty>
+    WARC-Type resource
+    digest not present
+    error: Missing required header: WARC-Date
+    comment: Unknown field, no validation performed: WARC-Test-TODO add another with valid block
+  WARC-Record-ID <uri:uuid:test-resource-not-dns>
+    WARC-Type resource
+    digest not present
+    error: Missing required header: Content-Type
+    error: Missing required header: WARC-Date
+  WARC-Record-ID <uri:uuid:test-request-content-type>
+    WARC-Type request
+    digest not present
+    error: Missing required header: WARC-Date
+    error: requests for http/https should have Content-Type of application/http; msgtype=request or application/http: text/plain
+    error: WARC-IP-Address should be used for http and https requests
+  WARC-Record-ID <uri:uuid:test-request-content-type-with-ip>
+    WARC-Type request
+    digest not present
+    error: Missing required header: WARC-Date
+    error: requests for http/https should have Content-Type of application/http; msgtype=request or application/http: text/plain
+  WARC-Record-ID <uri:uuid:test-metadata-warc-fields-empty>
+    WARC-Type metadata
+    digest not present
+    error: Missing required header: WARC-Date
+    comment: warc-fields block present but empty
+  WARC-Record-ID <uri:uuid:test-metadata-not-warc-fields>
+    WARC-Type metadata
+    digest not present
+    error: Missing required header: WARC-Date
+  WARC-Record-ID <uri:uuid:test-revisit-profile-unknown>
+    WARC-Type revisit
+    digest not present
+    error: Missing required header: Content-Type
+    error: Missing required header: WARC-Date
+    error: Missing required header: WARC-Target-URI
+    comment: Unknown value, perhaps an extension: WARC-Profile none
+    comment: No revisit details validation done due to unknown profile: none
+  WARC-Record-ID <uri:uuid:test-revisit-profile-future>
+    WARC-Type revisit
+    digest not present
+    error: Missing required header: Content-Type
+    error: Missing required header: WARC-Date
+    error: Missing required header: WARC-Target-URI
+    error: Missing required header: WARC-Payload-Digest
+    recommendation: Missing recommended header: WARC-Refers-To
+    recommendation: Missing recommended header: WARC-Refers-To-Date
+    recommendation: Missing recommended header: WARC-Refers-To-Target-URI
+    comment: WARC-Profile value is for a different version: 1.0 http://netpreserve.org/warc/1.1/revisit/identical-payload-digest
+  WARC-Record-ID <uri:uuid:test-revisit-profile-good>
+    WARC-Type revisit
+    digest not present
+    error: Missing required header: Content-Type
+    error: Missing required header: WARC-Date
+    error: Missing required header: WARC-Target-URI
+    recommendation: Missing recommended header: WARC-Refers-To
+    recommendation: Missing recommended header: WARC-Refers-To-Date
+  WARC-Record-ID <uri:uuid:test-conversion>
+    WARC-Type conversion
+    digest not present
+    error: Missing required header: WARC-Date
+    error: Missing required header: WARC-Target-URI
+  WARC-Record-ID <uri:uuid:test-continuation-segment-1>
+    WARC-Type continuation
+    digest not present
+    error: Missing required header: WARC-Date
+    error: Missing required header: WARC-Segment-Origin-ID
+    error: Missing required header: WARC-Target-URI
+    error: continuation record must have WARC-Segment-Number > 1: 1
+    comment: warcio test continuation code has not been tested, expect bugs
+  WARC-Record-ID <uri:uuid:test-continuation-segment-valid>
+    WARC-Type continuation
+    digest not present
+    error: Missing required header: WARC-Date
+    error: Missing required header: WARC-Segment-Origin-ID
+    error: Missing required header: WARC-Target-URI
+    comment: warcio test continuation code has not been tested, expect bugs
