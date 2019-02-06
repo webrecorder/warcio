@@ -1,0 +1,80 @@
+test/data/standard-torture-validate-field.warc
+  WARC-Record-ID <urn:uuid:torture-validate-field>
+    WARC-Type does-not-exist
+    unknown hash algorithm name in block digest
+    error: uri must not be within <>: WARC-Target-URI <http://example.com/>
+    error: Duplicate field seen: WARC-Target-URI example.com
+    error: Invalid uri, no scheme: WARC-Target-URI example.com
+    error: Duplicate field seen: WARC-Target-URI ex ample.com
+    error: Invalid uri, no scheme: WARC-Target-URI ex ample.com
+    error: Invalid uri, contains whitespace: WARC-Target-URI ex ample.com
+    error: Duplicate field seen: WARC-Target-URI h<>ttp://example.com/
+    error: Invalid uri scheme, bad character: WARC-Target-URI h<>ttp://example.com/
+    error: Duplicate field seen: WARC-Type CAPITALIZED
+    error: uri must be within <>: WARC-Concurrent-To http://example.com/
+    error: Duplicate field seen: WARC-Date 2017-03-06T04:03:53.Z
+    error: Invalid timestamp: WARC-Date 2017-03-06T04:03:53.Z
+    error: WARC versions <= 1.0 may not have timestamps with fractional seconds: WARC-Date 2017-03-06T04:03:53.Z
+    error: Must contain a /: Content-Type asdf
+    error: Invalid subtype: Content-Type asdf
+    error: Duplicate field seen: Content-Type has space/asdf
+    error: Invalid type: Content-Type has space/asdf
+    error: Duplicate field seen: Content-Type asdf/has space
+    error: Invalid subtype: Content-Type asdf/has space
+    error: Duplicate field seen: Content-Type asdf/has space;asdf
+    error: Invalid subtype: Content-Type asdf/has space;asdf
+    error: Missing algorithm: WARC-Block-Digest asdf
+    error: Duplicate field seen: WARC-Block-Digest has space:asdf
+    error: Invalid algorithm: WARC-Block-Digest has space:asdf
+    error: Duplicate field seen: WARC-Block-Digest sha1:&$*^&*^#*&^
+    error: Invalid ip: WARC-IP-Address 1.2.3.4.5
+    error: uri must be within <>: WARC-Warcinfo-ID asdf:asdf
+    error: Duplicate field seen: WARC-Profile http://netpreserve.org/warc/1.0/revisit/identical-payload-digest
+    error: Must contain a /: WARC-Identified-Payload-Type asdf
+    error: Invalid subtype: WARC-Identified-Payload-Type asdf
+    error: uri must be within <>: WARC-Segment-Origin-ID http://example.com
+    error: Must be an integer: WARC-Segment-Number not-an-integer
+    error: Duplicate field seen: WARC-Segment-Number 0
+    error: Must be 1 or greater: WARC-Segment-Number 0
+    error: Non-continuation records must always have WARC-Segment-Number: 1: WARC-Segment-Number 0
+    error: Duplicate field seen: WARC-Segment-Number 1
+    error: Duplicate field seen: WARC-Segment-Number 2
+    error: Non-continuation records must always have WARC-Segment-Number: 1: WARC-Segment-Number 2
+    error: Duplicate field seen: WARC-Segment-Total-Length not-an-integer
+    error: Must be an integer: WARC-Segment-Total-Length not-an-integer
+    error: Invalid timestamp: WARC-Refers-To-Date not-a-date
+    comment: Unknown WARC-Type: WARC-Type does-not-exist
+    comment: WARC-Type is not lower-case: WARC-Type CAPITALIZED
+    comment: Unknown WARC-Type: WARC-Type CAPITALIZED
+    comment: Unknown digest algorithm: WARC-Block-Digest asdf
+    comment: Invalid-looking digest value: WARC-Block-Digest sha1:&$*^&*^#*&^
+    comment: Unknown value, perhaps an extension: WARC-Truncated invalid
+    comment: Unknown value, perhaps an extension: WARC-Profile asdf
+    comment: Field was introduced after this warc version: 1.0 WARC-Refers-To-Target-URI http://example.com
+    comment: Field was introduced after this warc version: 1.0 WARC-Refers-To-Date not-a-date
+    comment: This Heretrix extension never made it into the standard: WARC-Refers-To-Filename asdf
+    comment: This Heretrix extension never made it into the standard: WARC-Refers-To-File-Offset 1234
+    comment: Unknown field, no validation performed: WARC-Unknown-Field asdf
+  WARC-Record-ID None
+    WARC-Type invalid
+    digest not present
+    error: Duplicate field seen: WARC-Date 2017-03-06T04:03:53.Z
+    error: Invalid timestamp: WARC-Date 2017-03-06T04:03:53.Z
+    error: Duplicate field seen: WARC-Date 2017-03-06T04:03:53.0Z
+    comment: Unknown WARC-Type: WARC-Type invalid
+  WARC-Record-ID None
+    WARC-Type request
+    digest not present
+    error: Segmented records must have both WARC-Segment-Number and WARC-Segment-Origin-ID
+    error: Missing required header: Content-Type
+    error: Missing required header: WARC-Date
+    error: Missing required header: WARC-Record-ID
+    error: Missing required header: WARC-Target-URI
+    recommendation: Do not segment WARC-Type request
+  saw exception ArchiveLoadFailed: Invalid WARC record, first line: WARC/invalid
+  skipping rest of file
+global warcinfo checks
+  comment: WARC-Warcinfo-ID not found: <urn:uuid:torture-validate-field> WARC-Warcinfo-ID asdf:asdf
+global Concurrent-To checks
+  comment: WARC-Concurrent-To not found: <urn:uuid:torture-validate-field> WARC-Concurrent-To <uri:urn:asdf-asdf-asdf>
+  comment: WARC-Concurrent-To not found: <urn:uuid:torture-validate-field> WARC-Concurrent-To http://example.com/
