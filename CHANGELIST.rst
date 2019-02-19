@@ -1,3 +1,16 @@
+1.7.0
+~~~~~
+
+- Support the ability to optionally check ARC/WARC record's block and payload digests `#54 <https://github.com/webrecorder/warcio/pull/54>`_, `#58 <https://github.com/webrecorder/warcio/pull/58>`_, `#68 <https://github.com/webrecorder/warcio/pull/68>`_
+    - Creation of ``ArchiveIterator`` and ``ArcWarcRecordLoader`` now accept an ``check_digests`` boolean keyword argument indicating if each records digest should be checked, defaults to ``False``
+    - Core digest checking functionality is provided by ``DigestChecker`` and ``DigestVerifyingReader`` importable from `warcio.digestverifyingreader <https://github.com/webrecorder/warcio/blob/master/warcio/digestverifyingreader.py>`_
+    - New block and payload digest checking utility class, ``Checker``, has been added and is importable from `warcio.checker <https://github.com/webrecorder/warcio/blob/master/warcio/checker.py>`_
+    - The CLI has been updated to provide ``warcio check``, a command for performing block and payload digest checking
+- Ensured that ARCHeadersParser's splitting on spaces does not split any spaces in uri's `#62 <https://github.com/webrecorder/warcio/pull/62>`_
+- Added the ``compute_headers_buffer`` method to the StatusAndHeaders class provided by warcio that sets the StatusAndHeaders instance's ``headers_buff`` property  `#67 <https://github.com/webrecorder/warcio/pull/67>`_
+- Ensured that the ``BaseWARCWriter`` does not use a mutable default value for the ``warc_header_dict`` keyword argument `#70 <https://github.com/webrecorder/warcio/pull/70>`_
+
+
 1.6.3
 ~~~~~
 
