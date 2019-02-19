@@ -167,9 +167,11 @@ class BaseWARCWriter(object):
                                        length=length)
 
     def create_revisit_record(self, uri, digest, refers_to_uri, refers_to_date,
-                              http_headers=None, warc_headers_dict={}):
+                              http_headers=None, warc_headers_dict=None):
 
         assert digest, 'Digest can not be empty'
+        if warc_headers_dict is None:
+            warc_headers_dict = dict()
 
         record = self.create_warc_record(uri, 'revisit', http_headers=http_headers,
                                                          warc_headers_dict=warc_headers_dict)
@@ -187,9 +189,11 @@ class BaseWARCWriter(object):
                            payload=None,
                            length=None,
                            warc_content_type='',
-                           warc_headers_dict={},
+                           warc_headers_dict=None,
                            warc_headers=None,
                            http_headers=None):
+        if warc_headers_dict is None:
+            warc_headers_dict = dict()
 
         if payload and not http_headers:
             loader = ArcWarcRecordLoader()
