@@ -32,7 +32,7 @@ def try_brotli_init():
             return decomp
 
         BufferedReader.DECOMPRESSORS['br'] = brotli_decompressor
-    except ImportError:  #pragma: no cover
+    except Exception:  # pragma: no cover
         pass
 
 
@@ -157,20 +157,19 @@ class BufferedReader(object):
         if at buffer boundary, will attempt to read again until
         specified length is read
         """
-        all_buffs = []
+        # bytes are immutable, in-place concatenation via bytearray avoids the quadratic runtime cost
+        all_buffs = bytearray()
         while length is None or length > 0:
             self._fillbuff()
             if self.empty():
                 break
 
             buff = self.buff.read(length)
-            all_buffs.append(buff)
+            all_buffs += buff
             if length:
                 length -= len(buff)
 
-        return b''.join(all_buffs)
-
-
+        return bytes(all_buffs)
 
     def readline(self, length=None):
         """
@@ -187,10 +186,12 @@ class BufferedReader(object):
         if self.empty():
             return b''
 
-        linebuff = self.buff.readline(length)
+        # bytes are immutable, in-place concatenation via bytearray avoids the quadratic runtime cost
+        linebuff = bytearray(self.buff.readline(length))
+        newline_b = b'\n'
 
         # we may be at a boundary
-        while not linebuff.endswith(b'\n'):
+        while not linebuff.endswith(newline_b):
             if length:
                 length -= len(linebuff)
                 if length <= 0:
@@ -203,7 +204,7 @@ class BufferedReader(object):
 
             linebuff += self.buff.readline(length)
 
-        return linebuff
+        return bytes(linebuff)
 
     def empty(self):
         if not self.buff or self.buff.tell() >= self.buff_size:
@@ -336,7 +337,8 @@ class ChunkedDataReader(BufferedReader):
             return
 
         data_len = 0
-        data = b''
+        # bytes are immutable, in-place concatenation via bytearray avoids the quadratic runtime cost
+        data = bytearray()
 
         # read chunk
         while data_len < chunk_size:
@@ -348,7 +350,7 @@ class ChunkedDataReader(BufferedReader):
             if not new_data:
                 if self.raise_chunked_data_exceptions:
                     msg = 'Ran out of data before end of chunk'
-                    raise ChunkedDataException(msg, data)
+                    raise ChunkedDataException(msg, bytes(data))
                 else:
                     chunk_size = data_len
                     self.all_chunks_read = True
@@ -362,10 +364,10 @@ class ChunkedDataReader(BufferedReader):
             clrf = self.stream.read(2)
             if clrf != b'\r\n':
                 raise ChunkedDataException(b"Chunk terminator not found.",
-                                           data)
+                                           bytes(data))
 
         # hand to base class for further processing
-        self._process_read(data)
+        self._process_read(bytes(data))
 
 
 #=================================================================

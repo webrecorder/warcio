@@ -129,12 +129,14 @@ class RecordingHTTPConnection(httplib.HTTPConnection):
         path = line.split(' ', 2)[1]
 
         scheme = 'https' if self.default_port == 443 else 'http'
-        url = scheme + '://' + self.host
+        # string are immutable, in-place concatenation via list avoids the quadratic runtime cost
+        url = [scheme, '://', self.host]
         if self.port != self.default_port:
-            url += ':' + str(self.port)
+            url.append(':')
+            url.append(str(self.port))
 
-        url += path
-        return url
+        url.append(path)
+        return ''.join(url)
 
 
 # ============================================================================

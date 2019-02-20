@@ -134,26 +134,28 @@ headers = {2})".format(self.protocol, self.statusline, self.headers)
     __nonzero__ = __bool__
 
     def to_str(self, filter_func=None):
-        string = self.protocol
+        # strings are immutable, in-place concatenation via list avoids the quadratic runtime cost
+        crlf = '\r\n'
+        string = [self.protocol]
 
-        if string and self.statusline:
-            string += ' '
+        if self.protocol and self.statusline:
+            string.append(' ')
 
         if self.statusline:
-            string += self.statusline
+            string.append(self.statusline)
 
-        if string:
-            string += '\r\n'
+        if self.protocol or self.statusline:
+            string.append(crlf)
 
         for h in self.headers:
             if filter_func:
                 h = filter_func(h)
                 if not h:
                     continue
+            string.append(': '.join(h))
+            string.append(crlf)
 
-            string += ': '.join(h) + '\r\n'
-
-        return string
+        return ''.join(string)
 
     def to_bytes(self, filter_func=None, encoding='utf-8'):
         return self.to_str(filter_func).encode(encoding) + b'\r\n'
@@ -247,6 +249,14 @@ class StatusAndHeadersParser(object):
                                     protocol='',
                                     total_len=total_read)
 
+        # strings and tuples are immutable, create these objects before the loop
+        # in order to only create them once per parse invocation
+        spacestr = ' '
+        tabstr = '\t'
+        strip_space_tab = spacestr + tabstr
+        colonstr = ':'
+        split_on_space_or_tab = (spacestr, tabstr)
+
         # validate only if verify is set
         if self.verify:
             protocol_status = self.split_prefix(statusline, self.statuslist)
@@ -256,14 +266,15 @@ class StatusAndHeadersParser(object):
                 msg = msg.format(self.statuslist, statusline)
                 raise StatusAndHeadersParserException(msg, full_statusline)
         else:
-            protocol_status = statusline.split(' ', 1)
+            protocol_status = statusline.split(spacestr, 1)
 
         line, total_read = _strip_count(self.decode_header(stream.readline()), total_read)
         while line:
-            result = line.split(':', 1)
+            result = line.split(colonstr, 1)
             if len(result) == 2:
-                name = result[0].rstrip(' \t')
-                value = result[1].lstrip()
+                name = result[0].rstrip(strip_space_tab)
+                # string are immutable, in-place concatenation via list avoids the quadratic runtime cost
+                value = [result[1].lstrip()]
             else:
                 name = result[0]
                 value = None
@@ -272,14 +283,14 @@ class StatusAndHeadersParser(object):
                                                  total_read)
 
             # append continuation lines, if any
-            while next_line and next_line.startswith((' ', '\t')):
+            while next_line and next_line.startswith(split_on_space_or_tab):
                 if value is not None:
-                    value += next_line
+                    value.append(next_line)
                 next_line, total_read = _strip_count(self.decode_header(stream.readline()),
                                                      total_read)
 
             if value is not None:
-                header = (name, value)
+                header = (name, ''.join(value))
                 headers.append(header)
 
             line = next_line
