@@ -110,6 +110,13 @@ class StatusAndHeaders(object):
         self.replace_header('Accept-Ranges', 'bytes')
         return self
 
+    def compute_headers_buffer(self, header_filter=None):
+        """
+        Set buffer representing headers
+        """
+        # HTTP headers %-encoded as ascii (see to_ascii_bytes for more info)
+        self.headers_buff = self.to_ascii_bytes(header_filter)
+
     def __repr__(self):
         return "StatusAndHeaders(protocol = '{0}', statusline = '{1}', \
 headers = {2})".format(self.protocol, self.statusline, self.headers)
