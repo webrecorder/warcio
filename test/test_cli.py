@@ -24,9 +24,9 @@ def test_index():
 {"length": "353", "offset": "0", "warc-type": "warcinfo", "warc-filename": "temp-20170306040353.warc.gz"}
 {"length": "431", "offset": "353", "warc-type": "warcinfo", "warc-filename": "temp-20170306040353.warc.gz"}
 {"length": "1228", "offset": "784", "warc-type": "response", "warc-target-uri": "http://example.com/", "http:content-type": "text/html"}
-{"length": "526", "offset": "2012", "warc-type": "request", "warc-target-uri": "http://example.com/"}
-{"length": "585", "offset": "2538", "warc-type": "revisit", "warc-target-uri": "http://example.com/", "http:content-type": "text/html"}
-{"length": "526", "offset": "3123", "warc-type": "request", "warc-target-uri": "http://example.com/"}
+{"length": "609", "offset": "2012", "warc-type": "request", "warc-target-uri": "http://example.com/"}
+{"length": "586", "offset": "2621", "warc-type": "revisit", "warc-target-uri": "http://example.com/", "http:content-type": "text/html"}
+{"length": "609", "offset": "3207", "warc-type": "request", "warc-target-uri": "http://example.com/"}
 {"length": "484", "offset": "0", "warc-type": "warcinfo", "warc-filename": "temp-20170306040353.warc.gz"}
 {"length": "705", "offset": "488", "warc-type": "warcinfo", "warc-filename": "temp-20170306040353.warc.gz"}
 {"length": "1365", "offset": "1197", "warc-type": "response", "warc-target-uri": "http://example.com/", "http:content-type": "text/html"}
@@ -54,9 +54,9 @@ def test_index_2():
 {"offset": "0", "length": "353", "warc-type": "warcinfo", "filename": "example.warc.gz"}
 {"offset": "353", "length": "431", "warc-type": "warcinfo", "filename": "example.warc.gz"}
 {"offset": "784", "length": "1228", "http:status": "200", "warc-type": "response", "filename": "example.warc.gz"}
-{"offset": "2012", "length": "526", "warc-type": "request", "filename": "example.warc.gz"}
-{"offset": "2538", "length": "585", "http:status": "200", "warc-type": "revisit", "filename": "example.warc.gz"}
-{"offset": "3123", "length": "526", "warc-type": "request", "filename": "example.warc.gz"}
+{"offset": "2012", "length": "609", "warc-type": "request", "filename": "example.warc.gz"}
+{"offset": "2621", "length": "586", "http:status": "200", "warc-type": "revisit", "filename": "example.warc.gz"}
+{"offset": "3207", "length": "609", "warc-type": "request", "filename": "example.warc.gz"}
 """
     with patch_stdout() as buff:
         res = main(args=args)
