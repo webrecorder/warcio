@@ -14,13 +14,43 @@ from six.moves import zip
 
 
 #=================================================================
+class Commentary(object):
+    def __init__(self):
+        self.errors = []
+        self.recommendations = []
+        self._comments = []
+
+    def error(self, *args):
+        self.errors.append(args)
+
+    def recommendation(self, *args):
+        self.recommendations.append(args)
+
+    def comment(self, *args):
+        self._comments.append(args)
+
+    def has_comments(self):
+        if self.errors or self.recommendations or self._comments:
+            return True
+
+    def comments(self):
+        # XXX str() all of these, in case an int or other thing slips in?
+        for e in self.errors:
+            yield 'error: ' + ' '.join(e)
+        for r in self.recommendations:
+            yield 'recommendation: ' + ' '.join(r)
+        for c in self._comments:
+            yield 'comment: ' + ' '.join(c)
+
+
+#=================================================================
 class ArcWarcRecord(object):
     def __init__(self, *args, **kwargs):
         (self.format, self.rec_type, self.rec_headers, self.raw_stream,
          self.http_headers, self.content_type, self.length) = args
         self.payload_length = -1
         self.digest_checker = kwargs.get('digest_checker')
-        self.raise_exceptions = kwargs.get('raise_exceptions')
+        self.commentary = kwargs.get('commentary')
         self._content_stream = None
 
     def content_stream(self):
@@ -39,9 +69,9 @@ class ArcWarcRecord(object):
                 encoding = None
 
         if self.http_headers.get_header('transfer-encoding') == 'chunked':
-            self._content_stream = ChunkedDataReader(self.raw_stream, decomp_type=encoding, raise_exceptions=self.raise_exceptions)
+            self._content_stream = ChunkedDataReader(self.raw_stream, decomp_type=encoding, commentary=self.commentary)
         elif encoding:
-            self._content_stream = BufferedReader(self.raw_stream, decomp_type=encoding, raise_exceptions=self.raise_exceptions)
+            self._content_stream = BufferedReader(self.raw_stream, decomp_type=encoding, commentary=self.commentary)
         else:
             self._content_stream = self.raw_stream
 
@@ -62,7 +92,7 @@ class ArcWarcRecordLoader(object):
     NON_HTTP_SCHEMES = ('dns:', 'whois:', 'ntp:')
     HTTP_SCHEMES = ('http:', 'https:')
 
-    def __init__(self, verify_http=True, arc2warc=True, fixup_bugs=True, raise_exceptions=False):
+    def __init__(self, verify_http=True, arc2warc=True, fixup_bugs=True):
         if arc2warc:
             self.arc_parser = ARC2WARCHeadersParser()
         else:
@@ -73,7 +103,6 @@ class ArcWarcRecordLoader(object):
 
         self.http_req_parser = StatusAndHeadersParser(self.HTTP_VERBS, verify_http)
         self.fixup_bugs = fixup_bugs
-        self.raise_exceptions = raise_exceptions
 
     def parse_record_stream(self, stream,
                             statusline=None,
@@ -131,6 +160,7 @@ class ArcWarcRecordLoader(object):
 
         is_verifying = False
         digest_checker = DigestChecker(check_digests)
+        commentary = Commentary()
 
         # limit stream to the length for all valid records
         if length is not None and length >= 0:
@@ -155,7 +185,8 @@ class ArcWarcRecordLoader(object):
 
         return ArcWarcRecord(the_format, rec_type,
                              rec_headers, stream, http_headers,
-                             content_type, length, digest_checker=digest_checker, raise_exceptions=self.raise_exceptions)
+                             content_type, length, digest_checker=digest_checker,
+                             commentary=commentary)
 
     def wrap_digest_verifying_stream(self, stream, rec_type, rec_headers, digest_checker, length=None):
         payload_digest = rec_headers.get_header('WARC-Payload-Digest')

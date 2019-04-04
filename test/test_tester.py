@@ -80,7 +80,7 @@ def test_digests():
 
 
 def test_leftovers():
-    commentary = warcio.tester.Commentary('id', 'type')
+    commentary = warcio.recordloader.Commentary()
     assert not commentary.has_comments()
 
     # hard to test because invalid WARC Content-Length raises in archiveiterator

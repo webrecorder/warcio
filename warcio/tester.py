@@ -8,45 +8,8 @@ from collections import defaultdict
 from warcio.archiveiterator import WARCIterator
 from warcio.utils import to_native_str, Digester
 from warcio.exceptions import ArchiveLoadFailed
-from warcio.bufferedreaders import ChunkedDataException, DecompressionException
-
-
-class Commentary(object):
-    def __init__(self, record_id=None, rec_type=None):
-        self._record_id = record_id
-        self._rec_type = rec_type
-        self.errors = []
-        self.recommendations = []
-        self._comments = []
-
-    def record_id(self):
-        return self._record_id
-
-    def rec_type(self):
-        return self._rec_type
-
-    def error(self, *args):
-        self.errors.append(args)
-
-    def recommendation(self, *args):
-        self.recommendations.append(args)
-
-    def comment(self, *args):
-        self._comments.append(args)
-
-    def has_comments(self):
-        if self.errors or self.recommendations or self._comments:
-            return True
-
-    def comments(self):
-        # XXX str() all of these, in case an int or other thing slips in?
-        for e in self.errors:
-            yield 'error: ' + ' '.join(e)
-        for r in self.recommendations:
-            yield 'recommendation: ' + ' '.join(r)
-        for c in self._comments:
-            yield 'comment: ' + ' '.join(c)
-
+from warcio.bufferedreaders import ChunkedDataException
+from warcio.recordloader import Commentary
 
 class WrapRecord(object):
     def __init__(self, obj):
@@ -662,9 +625,7 @@ def validate_record_against_rec_type(config, record, commentary, pending):
 def validate_record(record):
     version = record.rec_headers.protocol.split('/', 1)[1]  # XXX not exported
 
-    record_id = record.rec_headers.get_header('WARC-Record-ID')
-    rec_type = record.rec_headers.get_header('WARC-Type')
-    commentary = Commentary(record_id=record_id, rec_type=rec_type)
+    commentary = record.commentary
     pending = None
 
     seen_fields = set()
@@ -683,6 +644,7 @@ def validate_record(record):
         if 'validate' in config:
             config['validate'](field, value, record, version, commentary, pending)
 
+    rec_type = record.rec_headers.get_header('WARC-Type')
     if rec_type not in record_types:
         # we print a comment for this elsewhere
         pass
@@ -839,37 +801,31 @@ def _process_one(warcfile, all_records, concurrent_to, verbose):
     if warcfile.endswith('.arc') or warcfile.endswith('.arc.gz'):
         return
     with open(warcfile, 'rb') as stream:
-        for record in WARCIterator(stream, check_digests=True, fixup_bugs=False, raise_exceptions=True):
-        #for record in WARCIterator(stream, check_digests=True, fixup_bugs=False):
-
+        for record in WARCIterator(stream, check_digests=True, fixup_bugs=False):
             record = WrapRecord(record)
             digest_present = (record.rec_headers.get_header('WARC-Payload-Digest') or
                               record.rec_headers.get_header('WARC-Block-Digest'))
+            record_id = record.rec_headers.get_header('WARC-Record-ID')
+            rec_type = record.rec_headers.get_header('WARC-Type')
 
-            commentary = validate_record(record)
+            validate_record(record)
+            record.stream_for_digest_check()
+
+            commentary = record.commentary
             save_global_info(record, warcfile, commentary, all_records, concurrent_to)
 
-            try:
-                record.stream_for_digest_check()
-            except ChunkedDataException as e:
-                commentary.comment('Transfer-Encoding: chunked, saw exception: '+str(e))
-                pass
-            except DecompressionException as e:
-                commentary.comment('Content-Encoding indicates compression, saw: '+str(e))
-                pass
-
             if verbose or commentary.has_comments() or record.digest_checker.passed is False:
-                print(' ', 'WARC-Record-ID', commentary.record_id())
-                print('   ', 'WARC-Type', commentary.rec_type())
-
+                print(' ', 'WARC-Record-ID', record_id)
+                print('   ', 'WARC-Type', rec_type)
                 if record.digest_checker.passed is True:
                     print('    digest pass')
                 elif record.digest_checker.passed is None:
                     if digest_present:
-                        if commentary.rec_type() == 'revisit':
+                        if rec_type == 'revisit':
                             print('    digest present but not checked (revisit)')
                         else:  # pragma: no cover
-                            # WARC record missing Content-Length: header, which is verboten
+                            # should not ever happen
+                            # example reason: WARC record missing Content-Length: header, but that case raises
                             print('    digest present but not checked')
                     else:
                         print('    digest not present')
