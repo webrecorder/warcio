@@ -85,7 +85,7 @@ def test_check_valid():
 
     args = ['check', '-v'] + filenames
     value = check_helper(args, 0)
-    assert value.count(b'digest pass') == 2
+    assert value.count(b'digest pass') == 4
     assert value.count(b'WARC-Record-ID') == 12
 
 
