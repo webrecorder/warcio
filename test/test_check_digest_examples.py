@@ -31,7 +31,7 @@ class TestExamplesDigest(object):
         finally:
             assert exit_value == expected_exit_value
 
-        return capsys.readouterr().out
+        return capsys.readouterr()[0]  # list for py33 support
 
     def test_check_invalid(self, capsys):
         filenames = [get_test_file('example-digest.warc')]

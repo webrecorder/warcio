@@ -195,13 +195,13 @@ Content-Length: 1303\r\n'
             assert self._load_archive_memory(BytesIO(contents), check_digests='raise', full_read=full_read) == expected_t
         capsys.readouterr()
         assert self._load_archive_memory(BytesIO(contents), check_digests='log', full_read=full_read) == expected_t
-        [out, err] = capsys.readouterr()
+        out, err = capsys.readouterr()
         assert err
         assert self._load_archive_memory(BytesIO(contents), check_digests=True, full_read=full_read) == expected_t
-        [out, err] = capsys.readouterr()
+        out, err = capsys.readouterr()
         assert not err
         assert self._load_archive_memory(BytesIO(contents), check_digests=False, full_read=full_read) == expected_f
-        [out, err] = capsys.readouterr()
+        out, err = capsys.readouterr()
         assert not err
 
     def test_digests_mutilate(self, capsys):

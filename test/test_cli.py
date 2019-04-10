@@ -63,6 +63,54 @@ def test_index_2():
         assert buff.getvalue() == expected
 
 
+def check_helper(args, expected_exit_value):
+    with patch_stdout() as buff:
+        exit_value = None
+        try:
+            main(args=args)
+        except SystemExit as e:
+            exit_value = e.code
+        finally:
+            assert exit_value == expected_exit_value
+
+        return buff.getvalue()
+
+
+def test_check_valid():
+    filenames = [get_test_file('example.warc'), get_test_file('example.warc.gz')]
+
+    args = ['check'] + filenames
+    expected = b''
+    assert check_helper(args, 0) == expected
+
+    args = ['check', '-v'] + filenames
+    value = check_helper(args, 0)
+    assert value.count(b'digest pass') == 4
+    assert value.count(b'WARC-Record-ID') == 12
+
+
+def test_check_invalid():
+    filenames = [get_test_file('example-digest.warc')]
+
+    args = ['check'] + filenames
+    value = check_helper(args, 1)
+    assert value.count(b'payload digest failed') == 1
+    assert value.count(b'WARC-Record-ID') == 1
+
+    args = ['check', '-v'] + filenames
+    value = check_helper(args, 1)
+    assert value.count(b'payload digest failed') == 1
+    assert value.count(b'digest pass') == 3
+    assert value.count(b'WARC-Record-ID') == 4
+
+    files = ['example-bad-non-chunked.warc.gz', 'example-digest.warc']
+    filenames = [get_test_file(filename) for filename in files]
+    args = ['check'] + filenames
+    value = check_helper(args, 1)
+    assert value.count(b'ArchiveLoadFailed') == 1
+    assert value.count(b'payload digest failed') == 1
+    assert value.count(b'WARC-Record-ID') == 1
+
 
 def test_recompress_non_chunked():
     with named_temp() as temp:
