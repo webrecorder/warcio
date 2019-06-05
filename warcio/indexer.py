@@ -24,7 +24,11 @@ class Indexer(object):
     def process_all(self):
         with open_or_default(self.output, 'wt', sys.stdout) as out:
             for filename in self.inputs:
-                with open_or_default(filename, 'rb', sys.stdin) as fh:
+                try:
+                    stdin = sys.stdin.buffer
+                except AttributeError:  # py2
+                    stdin = sys.stdin
+                with open_or_default(filename, 'rb', stdin) as fh:
                     self.process_one(fh, out, filename)
 
     def process_one(self, input_, output, filename):
