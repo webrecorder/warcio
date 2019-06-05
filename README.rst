@@ -260,7 +260,7 @@ instead of a response), or to skip writing altogether by returning nothing, as s
 
     def filter_records(warc_writer, request, response):
         # return None, None to indicate records should be skipped
-        if response.http_headers.get_statuscode() != 200:
+        if response.http_headers.get_statuscode() != '200':
             return None, None
             
         # the response record can be replaced with a revisit record
