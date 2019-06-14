@@ -25,9 +25,13 @@ def main(args=None):
     subparsers.required = True
 
     index = subparsers.add_parser('index', help='WARC/ARC Indexer')
-    index.add_argument('inputs', nargs='+')
-    index.add_argument('-f', '--fields', default='offset,warc-type,warc-target-uri')
-    index.add_argument('-o', '--output')
+    index.add_argument('inputs', nargs='*', help='input file(s); default is stdin')
+    index.add_argument('-f', '--fields', default='offset,warc-type,warc-target-uri',
+            help='fields to include in json output; supported values are "offset", '
+                 '"length", "filename", "http:status", "http:{http-header}" '
+                 '(arbitrary http header), and "{warc-header}" (arbitrary warc '
+                 'record header)')
+    index.add_argument('-o', '--output', help='output file; default is stdout')
     index.set_defaults(func=indexer)
 
     recompress = subparsers.add_parser('recompress', help='Recompress an existing WARC or ARC',
@@ -90,7 +94,8 @@ def get_version():
 
 # ============================================================================
 def indexer(cmd):
-    indexer = Indexer(cmd.fields, cmd.inputs, cmd.output)
+    inputs = cmd.inputs or ('-',)  # default to stdin
+    indexer = Indexer(cmd.fields, inputs, cmd.output)
     indexer.process_all()
 
 
