@@ -190,6 +190,10 @@ Content-Length: 1303\r\n'
         with self._find_first_by_type('example-wget-bad-target-uri.warc.gz', 'response') as record:
             assert record.rec_headers.get('WARC-Target-URI') == 'http://example.com/'
 
+    def test_corrects_space_in_target_uri(self):
+        with self._find_first_by_type('example-space-in-target-uri.warc.gz', 'resource') as record:
+            assert record.rec_headers.get('WARC-Target-URI') == 'file:///example%20with%20spaces.png'
+
     def _digests_mutilate_helper(self, contents, expected_t, expected_f, capsys, full_read=False):
         with pytest.raises(ArchiveLoadFailed):
             assert self._load_archive_memory(BytesIO(contents), check_digests='raise', full_read=full_read) == expected_t
