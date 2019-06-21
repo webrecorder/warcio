@@ -3,6 +3,7 @@
 
 from warcio.statusandheaders import StatusAndHeaders
 from warcio.warcwriter import BufferWARCWriter, GzippingWrapper
+from warcio.recordbuilder import RecordBuilder
 from warcio.recordloader import ArcWarcRecordLoader
 from warcio.archiveiterator import ArchiveIterator
 from warcio.bufferedreaders import DecompressingBufferedReader
@@ -18,7 +19,7 @@ import pytest
 
 
 # ============================================================================
-class FixedTestWARCWriter(BufferWARCWriter):
+class FixedTestRecordMixin:
     @classmethod
     def _make_warc_id(cls, id_=None):
         return '<urn:uuid:12345678-feb0-11e6-8f83-68a86d1772ce>'
@@ -30,6 +31,11 @@ class FixedTestWARCWriter(BufferWARCWriter):
         else:
             return '2000-01-01T00:00:00.123456Z'
 
+class FixedTestRecordBuilder(FixedTestRecordMixin, RecordBuilder):
+    pass
+
+class FixedTestWARCWriter(FixedTestRecordMixin, BufferWARCWriter):
+    pass
 
 # ============================================================================
 WARCINFO_RECORD = '\
@@ -301,18 +307,18 @@ def sample_record(name, record_string):
 # Sample Record Functions
 # ============================================================================
 @sample_record('warcinfo', WARCINFO_RECORD)
-def sample_warcinfo(writer):
+def sample_warcinfo(builder):
     params = OrderedDict([('software', 'recorder test'),
                           ('format', 'WARC File Format 1.0'),
                           ('invalid', ''),
                           ('json-metadata', json.dumps({'foo': 'bar'}))])
 
-    return writer.create_warcinfo_record('testfile.warc.gz', params)
+    return builder.create_warcinfo_record('testfile.warc.gz', params)
 
 
 # ============================================================================
 @sample_record('response_1', RESPONSE_RECORD)
-def sample_response(writer):
+def sample_response(builder):
     headers_list = [('Content-Type', 'text/plain; charset="UTF-8"'),
                     ('Custom-Header', 'somevalue')
                    ]
@@ -321,7 +327,7 @@ def sample_response(writer):
 
     http_headers = StatusAndHeaders('200 OK', headers_list, protocol='HTTP/1.0')
 
-    return writer.create_warc_record('http://example.com/', 'response',
+    return builder.create_warc_record('http://example.com/', 'response',
                                      payload=BytesIO(payload),
                                      length=len(payload),
                                      http_headers=http_headers)
@@ -329,7 +335,7 @@ def sample_response(writer):
 
 # ============================================================================
 @sample_record('response_1-buff', RESPONSE_RECORD)
-def sample_response_from_buff(writer):
+def sample_response_from_buff(builder):
     payload = '\
 HTTP/1.0 200 OK\r\n\
 Content-Type: text/plain; charset="UTF-8"\r\n\
@@ -337,14 +343,14 @@ Custom-Header: somevalue\r\n\
 \r\n\
 some\ntext'.encode('utf-8')
 
-    return writer.create_warc_record('http://example.com/', 'response',
+    return builder.create_warc_record('http://example.com/', 'response',
                                      payload=BytesIO(payload),
                                      length=len(payload))
 
 
 # ============================================================================
 @sample_record('response-unicode-header', RESPONSE_RECORD_UNICODE_HEADERS)
-def sample_response_unicode(writer):
+def sample_response_unicode(builder):
     headers_list = [('Content-Type', 'text/plain; charset="UTF-8"'),
                     ('Content-Disposition', u'attachment; filename="испытание.txt"'),
                     ('Custom-Header', 'somevalue'),
@@ -355,7 +361,7 @@ def sample_response_unicode(writer):
 
     http_headers = StatusAndHeaders('200 OK', headers_list, protocol='HTTP/1.0')
 
-    return writer.create_warc_record('http://example.com/', 'response',
+    return builder.create_warc_record('http://example.com/', 'response',
                                      payload=BytesIO(payload),
                                      length=len(payload),
                                      http_headers=http_headers)
@@ -363,7 +369,7 @@ def sample_response_unicode(writer):
 
 # ============================================================================
 @sample_record('response_2', RESPONSE_RECORD_2)
-def sample_response_2(writer):
+def sample_response_2(builder):
     payload = b'some\ntext'
 
     headers_list = [('Content-Type', 'text/plain; charset="UTF-8"'),
@@ -374,7 +380,7 @@ def sample_response_2(writer):
 
     http_headers = StatusAndHeaders('200 OK', headers_list, protocol='HTTP/1.0')
 
-    return writer.create_warc_record('http://example.com/', 'response',
+    return builder.create_warc_record('http://example.com/', 'response',
                                      payload=BytesIO(payload),
                                      length=len(payload),
                                      http_headers=http_headers)
@@ -382,7 +388,7 @@ def sample_response_2(writer):
 
 # ============================================================================
 @sample_record('response_dns', DNS_RESPONSE_RECORD)
-def sample_response_dns(writer):
+def sample_response_dns(builder):
     payload = b'''\
 20170509000739
 google.com.     185 IN  A   209.148.113.239
@@ -390,13 +396,13 @@ google.com.     185 IN  A   209.148.113.238
 google.com.     185 IN  A   209.148.113.250
 '''
 
-    return writer.create_warc_record('dns:google.com', 'response',
+    return builder.create_warc_record('dns:google.com', 'response',
                                      payload=BytesIO(payload))
 
 
 # ============================================================================
 @sample_record('resource_dns', DNS_RESOURCE_RECORD)
-def sample_resource_dns(writer):
+def sample_resource_dns(builder):
     payload = b'''\
 20170509000739
 google.com.     185 IN  A   209.148.113.239
@@ -404,25 +410,25 @@ google.com.     185 IN  A   209.148.113.238
 google.com.     185 IN  A   209.148.113.250
 '''
 
-    return writer.create_warc_record('dns:google.com', 'resource',
+    return builder.create_warc_record('dns:google.com', 'resource',
                                      payload=BytesIO(payload))
 
 
 # ============================================================================
 @sample_record('request_1', REQUEST_RECORD)
-def sample_request(writer):
+def sample_request(builder):
     headers_list = [('User-Agent', 'foo'),
                     ('Host', 'example.com')]
 
     http_headers = StatusAndHeaders('GET / HTTP/1.0', headers_list, is_http_request=True)
 
-    return writer.create_warc_record('http://example.com/', 'request',
+    return builder.create_warc_record('http://example.com/', 'request',
                                      http_headers=http_headers)
 
 
 # ============================================================================
 @sample_record('request_2', REQUEST_RECORD_2)
-def sample_request_from_buff(writer):
+def sample_request_from_buff(builder):
     payload = '\
 POST /path HTTP/1.0\r\n\
 Content-Type: application/json\r\n\
@@ -430,17 +436,17 @@ Content-Length: 17\r\n\
 \r\n\
 {"some": "value"}'.encode('utf-8')
 
-    return writer.create_warc_record('http://example.com/', 'request',
+    return builder.create_warc_record('http://example.com/', 'request',
                                      payload=BytesIO(payload),
                                      length=len(payload))
 
 
 # ============================================================================
 @sample_record('resource', RESOURCE_RECORD)
-def sample_resource(writer):
+def sample_resource(builder):
     payload = b'some\ntext'
 
-    return writer.create_warc_record('ftp://example.com/', 'resource',
+    return builder.create_warc_record('ftp://example.com/', 'resource',
                                       payload=BytesIO(payload),
                                       length=len(payload),
                                       warc_content_type='text/plain')
@@ -448,10 +454,10 @@ def sample_resource(writer):
 
 # ============================================================================
 @sample_record('resource_no_ct', RESOURCE_RECORD_NO_CONTENT_TYPE)
-def sample_resource_no_content_type(writer):
+def sample_resource_no_content_type(builder):
     payload = b'some\ntext'
 
-    rec = writer.create_warc_record('ftp://example.com/', 'resource',
+    rec = builder.create_warc_record('ftp://example.com/', 'resource',
                                     payload=BytesIO(payload),
                                     length=len(payload))
 
@@ -464,7 +470,7 @@ def sample_resource_no_content_type(writer):
 
 # ============================================================================
 @sample_record('metadata', METADATA_RECORD)
-def sample_metadata(writer):
+def sample_metadata(builder):
 
     payload_dict = {"metadata": OrderedDict([("nested", "obj"),
                                              ("list", [1, 2, 3]),
@@ -472,7 +478,7 @@ def sample_metadata(writer):
 
     payload = json.dumps(payload_dict).encode('utf-8')
 
-    return writer.create_warc_record('http://example.com/', 'metadata',
+    return builder.create_warc_record('http://example.com/', 'metadata',
                                       payload=BytesIO(payload),
                                       length=len(payload),
                                       warc_content_type='application/json')
@@ -480,8 +486,8 @@ def sample_metadata(writer):
 
 # ============================================================================
 @sample_record('revisit_1', REVISIT_RECORD_1)
-def sample_revisit_1(writer):
-    return writer.create_revisit_record('http://example.com/',
+def sample_revisit_1(builder):
+    return builder.create_revisit_record('http://example.com/',
                                          digest='sha1:B6QJ6BNJ3R4B23XXMRKZKHLPGJY2VE4O',
                                          refers_to_uri='http://example.com/foo',
                                          refers_to_date='1999-01-01T00:00:00Z')
@@ -489,10 +495,10 @@ def sample_revisit_1(writer):
 
 # ============================================================================
 @sample_record('revisit_2', REVISIT_RECORD_2)
-def sample_revisit_2(writer):
-    resp = sample_response(writer)
+def sample_revisit_2(builder):
+    resp = sample_response(builder)
 
-    return writer.create_revisit_record('http://example.com/',
+    return builder.create_revisit_record('http://example.com/',
                                         digest='sha1:B6QJ6BNJ3R4B23XXMRKZKHLPGJY2VE4O',
                                         refers_to_uri='http://example.com/foo',
                                         refers_to_date='1999-01-01T00:00:00Z',
@@ -505,6 +511,14 @@ def sample_revisit_2(writer):
 @pytest.fixture(params=['gzip', 'plain'])
 def is_gzip(request):
     return request.param == 'gzip'
+
+@pytest.fixture(params=['writer', 'builder'])
+def builder_factory(request):
+    def factory(writer, builder_cls=FixedTestRecordBuilder, **kwargs):
+        if request.param == 'writer':
+            return writer
+        return builder_cls(**kwargs)
+    return factory
 
 
 @pytest.fixture(params=all_sample_records.keys())
@@ -521,11 +535,12 @@ class TestWarcWriter(object):
             assert int(record.rec_headers.get_header('Content-Length')) == record.length
             assert record.length == len(record.raw_stream.read())
 
-    def test_generate_record(self, record_sampler, is_gzip):
+    def test_generate_record(self, record_sampler, is_gzip, builder_factory):
         writer = FixedTestWARCWriter(gzip=is_gzip)
 
+        builder = builder_factory(writer)
         record_maker, record_string = record_sampler
-        record = record_maker(writer)
+        record = record_maker(builder)
 
         writer.write_record(record)
 
@@ -574,10 +589,11 @@ class TestWarcWriter(object):
             else:
                 assert len(content_buff) == parsed_record.length
 
-    def test_warcinfo_record(self, is_gzip):
+    def test_warcinfo_record(self, is_gzip, builder_factory):
         writer = FixedTestWARCWriter(gzip=is_gzip)
+        builder = builder_factory(writer)
 
-        record = sample_warcinfo(writer)
+        record = sample_warcinfo(builder)
 
         writer.write_record(record)
         reader = DecompressingBufferedReader(writer.get_stream())
@@ -593,12 +609,13 @@ class TestWarcWriter(object):
         assert 'json-metadata: {"foo": "bar"}\r\n' in buff
         assert 'format: WARC File Format 1.0\r\n' in buff
 
-    def test_request_response_concur(self, is_gzip):
+    def test_request_response_concur(self, is_gzip, builder_factory):
         writer = BufferWARCWriter(gzip=is_gzip)
+        builder = builder_factory(writer, builder_cls=RecordBuilder)
 
-        resp = sample_response(writer)
+        resp = sample_response(builder)
 
-        req = sample_request(writer)
+        req = sample_request(builder)
 
         writer.write_request_response_pair(req, resp)
 
@@ -613,10 +630,11 @@ class TestWarcWriter(object):
         assert resp_id != req_id
         assert resp_id == req.rec_headers.get_header('WARC-Concurrent-To')
 
-    def test_response_warc_1_1(self, is_gzip):
+    def test_response_warc_1_1(self, is_gzip, builder_factory):
         writer = BufferWARCWriter(gzip=is_gzip, warc_version='WARC/1.1')
 
-        resp = sample_response(writer)
+        builder = builder_factory(writer, warc_version='WARC/1.1')
+        resp = sample_response(builder)
 
         writer.write_record(resp)
 
@@ -648,11 +666,12 @@ class TestWarcWriter(object):
 
         return record_buff
 
-    def test_read_from_stream_no_content_length(self, record_sampler, is_gzip):
+    def test_read_from_stream_no_content_length(self, record_sampler, is_gzip, builder_factory):
         writer = FixedTestWARCWriter(gzip=is_gzip)
+        builder = builder_factory(writer)
 
         record_maker, record_string = record_sampler
-        full_record = record_maker(writer)
+        full_record = record_maker(builder)
 
         stream = BytesIO()
         record_no_cl = self._conv_to_streaming_record(record_string, full_record.rec_type)

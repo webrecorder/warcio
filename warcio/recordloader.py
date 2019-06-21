@@ -1,8 +1,10 @@
 from warcio.statusandheaders import StatusAndHeaders
 from warcio.statusandheaders import StatusAndHeadersParser
 from warcio.statusandheaders import StatusAndHeadersParserException
+from warcio.exceptions import ArchiveLoadFailed
 
 from warcio.limitreader import LimitReader
+from warcio.digestverifyingreader import DigestVerifyingReader, DigestChecker
 
 from warcio.bufferedreaders import BufferedReader, ChunkedDataReader
 
@@ -13,10 +15,11 @@ from six.moves import zip
 
 #=================================================================
 class ArcWarcRecord(object):
-    def __init__(self, *args):
+    def __init__(self, *args, **kwargs):
         (self.format, self.rec_type, self.rec_headers, self.raw_stream,
          self.http_headers, self.content_type, self.length) = args
         self.payload_length = -1
+        self.digest_checker = kwargs.get('digest_checker')
 
     def content_stream(self):
         if not self.http_headers:
@@ -36,13 +39,6 @@ class ArcWarcRecord(object):
             return BufferedReader(self.raw_stream, decomp_type=encoding)
         else:
             return self.raw_stream
-
-
-#=================================================================
-class ArchiveLoadFailed(Exception):
-    def __init__(self, reason):
-        self.msg = str(reason)
-        super(ArchiveLoadFailed, self).__init__(self.msg)
 
 
 #=================================================================
@@ -74,7 +70,8 @@ class ArcWarcRecordLoader(object):
                             statusline=None,
                             known_format=None,
                             no_record_parse=False,
-                            ensure_http_headers=False):
+                            ensure_http_headers=False,
+                            check_digests=False):
         """ Parse file-like stream and return an ArcWarcRecord
         encapsulating the record headers, http headers (if any),
         and a stream limited to the remainder of the record.
@@ -123,10 +120,16 @@ class ArcWarcRecordLoader(object):
         if is_err:
             length = 0
 
+        is_verifying = False
+        digest_checker = DigestChecker(check_digests)
+
         # limit stream to the length for all valid records
         if length is not None and length >= 0:
             stream = LimitReader.wrap_stream(stream, length)
-
+            if check_digests:
+                stream, is_verifying = self.wrap_digest_verifying_stream(stream, rec_type,
+                                                                         rec_headers, digest_checker,
+                                                                         length=length)
 
         http_headers = None
 
@@ -138,9 +141,27 @@ class ArcWarcRecordLoader(object):
         if not http_headers and ensure_http_headers:
             http_headers = self.default_http_headers(length, content_type)
 
+        if is_verifying:
+            stream.begin_payload()
+
         return ArcWarcRecord(the_format, rec_type,
                              rec_headers, stream, http_headers,
-                             content_type, length)
+                             content_type, length, digest_checker=digest_checker)
+
+    def wrap_digest_verifying_stream(self, stream, rec_type, rec_headers, digest_checker, length=None):
+        payload_digest = rec_headers.get_header('WARC-Payload-Digest')
+        block_digest = rec_headers.get_header('WARC-Block-Digest')
+        segment_number = rec_headers.get_header('WARC-Segment-Number')
+
+        if not payload_digest and not block_digest:
+            return stream, False
+
+        stream = DigestVerifyingReader(stream, length, digest_checker,
+                                       record_type=rec_type,
+                                       payload_digest=payload_digest,
+                                       block_digest=block_digest,
+                                       segment_number=segment_number)
+        return stream, True
 
     def load_http_headers(self, rec_type, uri, stream, length):
         # only if length == 0 don't parse
@@ -267,7 +288,7 @@ class ARCHeadersParser(object):
             total_read += len(version)
             total_read += len(spec)
 
-        parts = headerline.split(' ')
+        parts = headerline.rsplit(' ', len(headernames)-1)
 
         if len(parts) != len(headernames):
             msg = 'Wrong # of headers, expected arc headers {0}, Found {1}'

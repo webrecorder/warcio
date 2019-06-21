@@ -1,6 +1,8 @@
 import six
 import os
 from contextlib import contextmanager
+import base64
+import hashlib
 
 try:
     import collections.abc as collections_abc  # only works on python 3.3+
@@ -62,6 +64,19 @@ def headers_to_str_headers(headers):
             v = v.decode('iso-8859-1')
         ret.append((k, v))
     return ret
+
+
+# ============================================================================
+class Digester(object):
+    def __init__(self, type_='sha1'):
+        self.type_ = type_
+        self.digester = hashlib.new(type_)
+
+    def update(self, buff):
+        self.digester.update(buff)
+
+    def __str__(self):
+        return self.type_ + ':' + to_native_str(base64.b32encode(self.digester.digest()))
 
 
 #=============================================================================

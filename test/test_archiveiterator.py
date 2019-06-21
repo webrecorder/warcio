@@ -1,9 +1,11 @@
 from warcio.archiveiterator import ArchiveIterator, WARCIterator, ARCIterator
-from warcio.recordloader import ArchiveLoadFailed
+from warcio.exceptions import ArchiveLoadFailed
+from warcio.bufferedreaders import DecompressingBufferedReader
 
 from warcio.warcwriter import BufferWARCWriter
 
 import pytest
+from io import BytesIO
 
 from . import get_test_file
 from contextlib import closing, contextmanager
@@ -18,7 +20,22 @@ class TestArchiveIterator(object):
         with open(get_test_file(filename), 'rb') as fh:
             fh.seek(offset)
             iter_ = cls(fh, **kwargs)
-            rec_types = [record.rec_type for record in iter_]
+            rec_types = [record.rec_type for record in iter_ if record.digest_checker.passed is not False]
+
+        assert iter_.err_count == errs_expected
+
+        return rec_types
+
+    def _load_archive_memory(self, stream, offset=0, cls=ArchiveIterator,
+                             errs_expected=0, full_read=False, **kwargs):
+
+        stream.seek(offset)
+        iter_ = cls(stream, **kwargs)
+        if full_read:
+            rec_types = [record.rec_type for record in iter_
+                         if (record.content_stream().read() or True) and record.digest_checker.passed is not False]
+        else:
+            rec_types = [record.rec_type for record in iter_ if record.digest_checker.passed is not False]
 
         assert iter_.err_count == errs_expected
 
@@ -58,15 +75,21 @@ class TestArchiveIterator(object):
                 for record in a:
                     assert record.rec_type == 'warcinfo'
                     assert a.get_record_offset() == 0
+                    assert record.digest_checker.passed is None
+                    assert len(record.digest_checker.problems) == 0
                     break
 
                 record = next(a)
                 assert record.rec_type == 'response'
                 assert a.get_record_offset() == 405
+                assert record.digest_checker.passed is None
+                assert len(record.digest_checker.problems) == 0
 
                 for record in a:
                     assert record.rec_type == 'request'
                     assert a.get_record_offset() == 8379
+                    assert record.digest_checker.passed is None
+                    assert len(record.digest_checker.problems) == 0
                     break
 
                 with pytest.raises(StopIteration):
@@ -143,9 +166,19 @@ class TestArchiveIterator(object):
         expected = ['warcinfo', 'warcinfo', 'response', 'request']
         assert self._load_archive('example-trunc.warc', errs_expected=1) == expected
 
+        assert self._load_archive('example-trunc.warc', errs_expected=1,
+                                  check_digests=True) == expected
+        with pytest.raises(ArchiveLoadFailed):
+            assert self._load_archive('example-trunc.warc', errs_expected=1,
+                                      check_digests='raise') == expected
+
     def test_example_arc_gz(self):
         expected = ['arc_header', 'response']
         assert self._load_archive('example.arc.gz') == expected
+
+    def test_example_space_in_url_arc(self):
+        expected = ['arc_header', 'response']
+        assert self._load_archive('example-space-in-url.arc') == expected
 
     def test_example_arc(self):
         expected = ['arc_header', 'response']
@@ -221,4 +254,66 @@ Content-Length: 1303\r\n'
         with self._find_first_by_type('example-wget-bad-target-uri.warc.gz', 'response') as record:
             assert record.rec_headers.get('WARC-Target-URI') == 'http://example.com/'
 
+    def _digests_mutilate_helper(self, contents, expected_t, expected_f, capsys, full_read=False):
+        with pytest.raises(ArchiveLoadFailed):
+            assert self._load_archive_memory(BytesIO(contents), check_digests='raise', full_read=full_read) == expected_t
+        capsys.readouterr()
+        assert self._load_archive_memory(BytesIO(contents), check_digests='log', full_read=full_read) == expected_t
+        out, err = capsys.readouterr()
+        assert err
+        assert self._load_archive_memory(BytesIO(contents), check_digests=True, full_read=full_read) == expected_t
+        out, err = capsys.readouterr()
+        assert not err
+        assert self._load_archive_memory(BytesIO(contents), check_digests=False, full_read=full_read) == expected_f
+        out, err = capsys.readouterr()
+        assert not err
 
+    def test_digests_mutilate(self, capsys):
+        expected_f = ['warcinfo', 'warcinfo', 'response', 'request', 'revisit', 'request']
+        expected_t = ['warcinfo', 'warcinfo', 'request', 'revisit', 'request']
+
+        with open(get_test_file('example.warc'), 'rb') as fh:
+            contents = fh.read()
+
+        contents_sha = contents.replace(b'WARC-Block-Digest: sha1:', b'WARC-Block-Digest: xxx:', 1)
+        assert contents != contents_sha, 'a replace happened'
+        self._digests_mutilate_helper(contents_sha, expected_t, expected_f, capsys)
+
+        contents_sha = contents.replace(b'WARC-Payload-Digest: sha1:', b'WARC-Payload-Digest: xxx:', 1)
+        assert contents != contents_sha, 'a replace happened'
+        self._digests_mutilate_helper(contents_sha, expected_t, expected_f, capsys)
+
+        contents_block = contents
+        thing = b'WARC-Block-Digest: sha1:'
+        index = contents_block.find(thing)
+        index += len(thing)
+        b = contents_block[index:index+3]
+        contents_block = contents_block.replace(thing+b, thing+b'111')
+        assert contents != contents_block, 'a replace happened'
+        '''
+        If we don't read the stream, the digest check will not happen & all recs will be seen
+        '''
+        self._digests_mutilate_helper(contents_block, expected_f, expected_f, capsys)
+        self._digests_mutilate_helper(contents_block, expected_t, expected_f, capsys, full_read=True)
+
+        contents_payload = contents
+        thing = b'WARC-Payload-Digest: sha1:'
+        index = contents_payload.find(thing)
+        index += len(thing)
+        b = contents_payload[index:index+3]
+        contents_payload = contents_payload.replace(thing+b, thing+b'111')
+        assert contents != contents_payload, 'a replace happened'
+        self._digests_mutilate_helper(contents_payload, expected_f, expected_f, capsys)
+        self._digests_mutilate_helper(contents_payload, expected_t, expected_f, capsys, full_read=True)
+
+    def test_digests_file(self):
+        expected_f = ['request', 'request', 'request', 'request']
+        expected_t = ['request', 'request', 'request']
+
+        # record 1: invalid payload digest
+        assert self._load_archive('example-digest.warc', check_digests=True) == expected_t
+        assert self._load_archive('example-digest.warc', check_digests=False) == expected_f
+
+        # record 2: b64 digest; record 3: b64 filename safe digest
+        assert self._load_archive('example-digest.warc', offset=922, check_digests=True) == expected_t
+        assert self._load_archive('example-digest.warc', offset=922, check_digests=False) == expected_t

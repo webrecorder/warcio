@@ -1,12 +1,13 @@
 from argparse import ArgumentParser, RawTextHelpFormatter
 
 from warcio.archiveiterator import ArchiveIterator
-from warcio.recordloader import ArchiveLoadFailed
+from warcio.exceptions import ArchiveLoadFailed
 
 from warcio.warcwriter import WARCWriter
 from warcio.bufferedreaders import DecompressingBufferedReader
 
 from warcio.indexer import Indexer
+from warcio.checker import Checker
 from warcio.utils import BUFF_SIZE
 
 import tempfile
@@ -52,6 +53,11 @@ def main(args=None):
 
     extract.set_defaults(func=extract_record)
 
+    check = subparsers.add_parser('check', help='WARC digest checker')
+    check.add_argument('inputs', nargs='+')
+    check.add_argument('-v', '--verbose', action='store_true')
+    check.set_defaults(func=checker)
+
     cmd = parser.parse_args(args=args)
     cmd.func(cmd)
 
@@ -95,8 +101,14 @@ def get_version():
 # ============================================================================
 def indexer(cmd):
     inputs = cmd.inputs or ('-',)  # default to stdin
-    indexer = Indexer(cmd.fields, inputs, cmd.output)
-    indexer.process_all()
+    _indexer = Indexer(cmd.fields, inputs, cmd.output)
+    _indexer.process_all()
+
+
+# ============================================================================
+def checker(cmd):
+    _checker = Checker(cmd)
+    sys.exit(_checker.process_all())
 
 
 # ============================================================================
