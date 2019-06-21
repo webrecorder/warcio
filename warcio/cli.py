@@ -1,17 +1,10 @@
 from argparse import ArgumentParser, RawTextHelpFormatter
 
-from warcio.archiveiterator import ArchiveIterator
-from warcio.exceptions import ArchiveLoadFailed
-
-from warcio.warcwriter import WARCWriter
-from warcio.bufferedreaders import DecompressingBufferedReader
-
 from warcio.indexer import Indexer
 from warcio.checker import Checker
-from warcio.utils import BUFF_SIZE
+from warcio.extractor import Extractor
+from warcio.recompressor import Recompressor
 
-import tempfile
-import shutil
 import sys
 
 
@@ -42,7 +35,7 @@ def main(args=None):
     recompress.add_argument('filename')
     recompress.add_argument('output')
     recompress.add_argument('-v', '--verbose', action='store_true')
-    recompress.set_defaults(func=Recompressor())
+    recompress.set_defaults(func=recompressor)
 
     extract = subparsers.add_parser('extract', help='Extract WARC/ARC Record')
     extract.add_argument('filename')
@@ -51,7 +44,7 @@ def main(args=None):
     group.add_argument('--payload', action='store_true', help='output only record payload (after content and transfer decoding, if applicable)')
     group.add_argument('--headers', action='store_true', help='output only record headers (and http headers, if applicable)')
 
-    extract.set_defaults(func=extract_record)
+    extract.set_defaults(func=extractor)
 
     check = subparsers.add_parser('check', help='WARC digest checker')
     check.add_argument('inputs', nargs='+')
@@ -60,36 +53,6 @@ def main(args=None):
 
     cmd = parser.parse_args(args=args)
     cmd.func(cmd)
-
-# ============================================================================
-def extract_record(cmd):
-    READ_SIZE = BUFF_SIZE * 4
-
-    with open(cmd.filename, 'rb') as fh:
-        fh.seek(int(cmd.offset))
-        it = iter(ArchiveIterator(fh))
-        record = next(it)
-
-        try:
-            stdout_raw = sys.stdout.buffer
-        except AttributeError:  #pragma: no cover
-            stdout_raw = sys.stdout
-
-        if cmd.payload:
-            stream = record.content_stream()
-            buf = stream.read(READ_SIZE)
-            while buf:
-                stdout_raw.write(buf)
-                buf = stream.read(READ_SIZE)
-        else:
-            stdout_raw.write(record.rec_headers.to_bytes())
-            if record.http_headers:
-                stdout_raw.write(record.http_headers.to_bytes())
-            if not cmd.headers:
-                buf = record.raw_stream.read(READ_SIZE)
-                while buf:
-                    stdout_raw.write(buf)
-                    buf = record.raw_stream.read(READ_SIZE)
 
 
 # ============================================================================
@@ -112,69 +75,15 @@ def checker(cmd):
 
 
 # ============================================================================
-class Recompressor(object):
-    def __call__(self, cmd):
-        try:
-            count = 0
-            msg = ''
-            with open(cmd.filename, 'rb') as stream:
-                try:
-                    count = self.load_and_write(stream, cmd.output)
-                    msg = 'No Errors Found!'
-                except Exception as e:
-                    if cmd.verbose:
-                        print('Parsing Error(s) Found:')
-                        print(str(e) if isinstance(e, ArchiveLoadFailed) else repr(e))
-                        print()
-
-                    count = self.decompress_and_recompress(stream, cmd.output)
-                    msg = 'Compression Errors Found and Fixed!'
-
-                if cmd.verbose:
-                    print('Records successfully read and compressed:')
-                    main(['index', cmd.output])
-                    print('')
-
-                print('{0} records read and recompressed to file: {1}'.format(count, cmd.output))
-                print(msg)
-
-        except:
-            if cmd.verbose:
-                print('Exception Details:')
-                import traceback
-                traceback.print_exc()
-                print('')
-
-            print('Recompress Failed: {0} could not be read as a WARC or ARC'.format(cmd.filename))
-            sys.exit(1)
+def extractor(cmd):
+    _extractor = Extractor(cmd.filename, cmd.offset)
+    _extractor.extract(cmd.payload, cmd.headers)
 
 
-    def load_and_write(self, stream, output):
-        count = 0
-        with open(output, 'wb') as out:
-            writer = WARCWriter(filebuf=out, gzip=True)
-
-            for record in ArchiveIterator(stream,
-                                          no_record_parse=False,
-                                          arc2warc=True,
-                                          verify_http=False):
-
-                writer.write_record(record)
-                count += 1
-
-            return count
-
-    def decompress_and_recompress(self, stream, output):
-        with tempfile.TemporaryFile() as tout:
-            decomp = DecompressingBufferedReader(stream, read_all_members=True)
-
-            # decompress entire file to temp file
-            stream.seek(0)
-            shutil.copyfileobj(decomp, tout)
-
-            # attempt to compress and write temp
-            tout.seek(0)
-            return self.load_and_write(tout, output)
+# ============================================================================
+def recompressor(cmd):
+    _recompressor = Recompressor(cmd.filename, cmd.output, cmd.verbose)
+    _recompressor.recompress()
 
 
 # ============================================================================
