@@ -8,6 +8,19 @@ from warcio.utils import BUFF_SIZE
 import sys
 import six
 
+# ============================================================================
+class UnseekableYetTellable:
+    def __init__(self, fh):
+        self.fh = fh
+        self.offset = 0
+
+    def tell(self):
+        return self.offset
+
+    def read(self, size=-1):
+        result = self.fh.read(size)
+        self.offset += len(result)
+        return result
 
 # ============================================================================
 class ArchiveIterator(six.Iterator):
@@ -57,9 +70,15 @@ class ArchiveIterator(six.Iterator):
         self.no_record_parse = no_record_parse
         self.ensure_http_headers = ensure_http_headers
 
+        try:
+            self.offset = self.fh.tell()
+        except:
+            self.fh = UnseekableYetTellable(self.fh)
+            self.offset = self.fh.tell()
+
         self.reader = DecompressingBufferedReader(self.fh,
                                                   block_size=block_size)
-        self.offset = self.fh.tell()
+
         self.next_line = None
 
         self.check_digests = check_digests

@@ -9,6 +9,7 @@ from io import BytesIO
 
 from . import get_test_file
 from contextlib import closing, contextmanager
+import subprocess
 
 
 #==============================================================================
@@ -73,17 +74,20 @@ class TestArchiveIterator(object):
             with closing(ArchiveIterator(fh)) as a:
                 for record in a:
                     assert record.rec_type == 'warcinfo'
+                    assert a.get_record_offset() == 0
                     assert record.digest_checker.passed is None
                     assert len(record.digest_checker.problems) == 0
                     break
 
                 record = next(a)
                 assert record.rec_type == 'response'
+                assert a.get_record_offset() == 405
                 assert record.digest_checker.passed is None
                 assert len(record.digest_checker.problems) == 0
 
                 for record in a:
                     assert record.rec_type == 'request'
+                    assert a.get_record_offset() == 8379
                     assert record.digest_checker.passed is None
                     assert len(record.digest_checker.problems) == 0
                     break
@@ -94,6 +98,66 @@ class TestArchiveIterator(object):
         assert a.record == None
         assert a.reader == None
         assert a.read_to_end() == None
+
+    def test_unseekable(self):
+        """ Test iterator on unseekable 3 record uncompressed WARC input
+        """
+        proc = subprocess.Popen(['cat', get_test_file('example-iana.org-chunked.warc')],
+                                stdout=subprocess.PIPE)
+        with closing(ArchiveIterator(proc.stdout)) as a:
+            for record in a:
+                assert record.rec_type == 'warcinfo'
+                assert a.get_record_offset() == 0
+                break
+
+            record = next(a)
+            assert record.rec_type == 'response'
+            assert a.get_record_offset() == 405
+
+            for record in a:
+                assert record.rec_type == 'request'
+                assert a.get_record_offset() == 8379
+                break
+
+            with pytest.raises(StopIteration):
+                record = next(a)
+
+        assert a.record == None
+        assert a.reader == None
+        assert a.read_to_end() == None
+
+        proc.stdout.close()
+        proc.wait()
+
+    def test_unseekable_gz(self):
+        """ Test iterator on unseekable 3 record uncompressed gzipped WARC input
+        """
+        proc = subprocess.Popen(['cat', get_test_file('example-resource.warc.gz')],
+                                stdout=subprocess.PIPE)
+        with closing(ArchiveIterator(proc.stdout)) as a:
+            for record in a:
+                assert record.rec_type == 'warcinfo'
+                assert a.get_record_offset() == 0
+                break
+
+            record = next(a)
+            assert record.rec_type == 'warcinfo'
+            assert a.get_record_offset() == 361
+
+            for record in a:
+                assert record.rec_type == 'resource'
+                assert a.get_record_offset() == 802
+                break
+
+            with pytest.raises(StopIteration):
+                record = next(a)
+
+        assert a.record == None
+        assert a.reader == None
+        assert a.read_to_end() == None
+
+        proc.stdout.close()
+        proc.wait()
 
     def test_example_warc_trunc(self):
         """ WARC file with content-length truncated on a response record
