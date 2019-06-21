@@ -392,11 +392,11 @@ a WARC compressed entirely instead of by record)
 Extract
 ~~~~~~~
 
-The  ``extract`` command provides a way to extract either the HTTP headers and/or payload of a WARC record
+The  ``extract`` command provides a way to extract either the WARC and HTTP headers and/or payload of a WARC record
 to stdout. Given a WARC filename and an offset, ``extract`` will print the (decompressed) record at that offset
 in the file to stdout
 
-Specifying --payload or --headers will output only the payload or only the HTTP headers, respectively.
+Specifying --payload or --headers will output only the payload or only the WARC + HTTP headers (if any), respectively.
 
 ::
 
