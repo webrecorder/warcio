@@ -1,9 +1,9 @@
 from argparse import ArgumentParser, RawTextHelpFormatter
 
-from warcio.cli.indexer import Indexer
-from warcio.cli.checker import Checker
-from warcio.cli.extractor import Extractor
-from warcio.cli.recompressor import Recompressor
+from warcio.indexer import Indexer
+from warcio.checker import Checker
+from warcio.extractor import Extractor
+from warcio.recompressor import Recompressor
 
 import sys
 
