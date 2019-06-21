@@ -388,6 +388,21 @@ a WARC compressed entirely instead of by record)
 
     warcio recompress ./input.arc.gz ./output.warc.gz
 
+
+Extract
+~~~~~~~
+
+The  ``extract`` command provides a way to extract either the HTTP headers and/or payload of a WARC record
+to stdout. Given a WARC filename and an offset, ``extract`` will print the (decompressed) record at that offset
+in the file to stdout
+
+Specifying --payload or --headers will output only the payload or only the HTTP headers, respectively.
+
+::
+
+    warcio extract [--payload | --headers] filename offset
+
+
 License
 ~~~~~~~
 
