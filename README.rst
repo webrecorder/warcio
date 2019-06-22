@@ -11,7 +11,7 @@ Background
 
 This library provides a fast, standalone way to read and write `WARC
 Format <https://en.wikipedia.org/wiki/Web_ARChive>`__ commonly used in
-web archives. Supports Python 2.7+ and Python 3.3+ (using
+web archives. Supports Python 2.7+ and Python 3.4+ (using
 `six <https://pythonhosted.org/six/>`__, the only external dependency)
 
 warcio supports reading and writing of WARC files compliant with both the `WARC 1.0 <http://bibnum.bnf.fr/WARC/WARC_ISO_28500_version1_latestdraft.pdf>`__
