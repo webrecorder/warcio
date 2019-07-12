@@ -30,8 +30,10 @@ class RecordBuilder(object):
     NO_BLOCK_DIGEST_TYPES = ('warcinfo')
 
 
-    def __init__(self, warc_version=None):
+    def __init__(self, warc_version=None, header_filter=None):
         self.warc_version = self._parse_warc_version(warc_version)
+
+        self.header_filter = header_filter
 
     def create_warcinfo_record(self, filename, info):
         warc_headers = StatusAndHeaders(self.warc_version, [])
@@ -152,20 +154,19 @@ class RecordBuilder(object):
     def _make_warc_date(cls, use_micros=False):
         return datetime_to_iso_date(datetime.datetime.utcnow(), use_micros=use_micros)
 
-    @classmethod
-    def ensure_digest(cls, record, block=True, payload=True):
+    def ensure_digest(self, record, block=True, payload=True):
         if block:
             if (record.rec_headers.get_header('WARC-Block-Digest') or
-                (record.rec_type in cls.NO_BLOCK_DIGEST_TYPES)):
+                (record.rec_type in self.NO_BLOCK_DIGEST_TYPES)):
                 block = False
 
         if payload:
             if (record.rec_headers.get_header('WARC-Payload-Digest') or
-                (record.rec_type in cls.NO_PAYLOAD_DIGEST_TYPES)):
+                (record.rec_type in self.NO_PAYLOAD_DIGEST_TYPES)):
                 payload = False
 
-        block_digester = cls._create_digester() if block else None
-        payload_digester = cls._create_digester() if payload else None
+        block_digester = self._create_digester() if block else None
+        payload_digester = self._create_digester() if payload else None
 
         has_length = (record.length is not None)
 
@@ -180,14 +181,14 @@ class RecordBuilder(object):
             record.raw_stream.seek(pos)
         except:
             pos = 0
-            temp_file = cls._create_temp_file()
+            temp_file = self._create_temp_file()
 
         if block_digester and record.http_headers:
             if not record.http_headers.headers_buff:
                 record.http_headers.compute_headers_buffer(self.header_filter)
             block_digester.update(record.http_headers.headers_buff)
 
-        for buf in cls._iter_stream(record.raw_stream):
+        for buf in self._iter_stream(record.raw_stream):
             if block_digester:
                 block_digester.update(buf)
 

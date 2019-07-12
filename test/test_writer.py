@@ -617,6 +617,9 @@ class TestWarcWriter(object):
 
         req = sample_request(builder)
 
+        # test explicitly calling ensure_digest with block digest enabled on a record
+        writer.ensure_digest(resp, block=True, payload=True)
+
         writer.write_request_response_pair(req, resp)
 
         stream = writer.get_stream()

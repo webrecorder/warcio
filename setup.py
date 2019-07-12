@@ -5,7 +5,7 @@ from setuptools import setup, find_packages
 from setuptools.command.test import test as TestCommand
 import glob
 
-__version__ = '1.7.0'
+__version__ = '1.7.1'
 
 
 class PyTest(TestCommand):
@@ -18,7 +18,7 @@ class PyTest(TestCommand):
         import pytest
         import sys
         import os
-        errcode = pytest.main(['--doctest-module', './warcio', '--cov', 'warcio', '-v', 'test/'])
+        errcode = pytest.main(['--doctest-modules', './warcio', '--cov', 'warcio', '-v', 'test/'])
         sys.exit(errcode)
 
 setup(
