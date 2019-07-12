@@ -5,6 +5,7 @@ from warcio.recordloader import ArcWarcRecordLoader
 
 from warcio.utils import BUFF_SIZE
 
+import os
 import sys
 import six
 
