@@ -5,7 +5,6 @@ from warcio.recordloader import ArcWarcRecordLoader
 
 from warcio.utils import BUFF_SIZE
 
-import os
 import sys
 import six
 
@@ -73,9 +72,6 @@ class ArchiveIterator(six.Iterator):
 
         try:
             self.offset = self.fh.tell()
-            # on windows, tell() on certain streams (eg. stdin) always return 0
-            # to be safe, always override
-            assert(os.name != 'nt')
         except:
             self.fh = UnseekableYetTellable(self.fh)
             self.offset = self.fh.tell()

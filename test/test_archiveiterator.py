@@ -7,6 +7,8 @@ from warcio.warcwriter import BufferWARCWriter
 import pytest
 from io import BytesIO
 
+import os
+
 from . import get_test_file
 from contextlib import closing, contextmanager
 import subprocess
@@ -104,6 +106,15 @@ class TestArchiveIterator(object):
         """
         proc = subprocess.Popen(['cat', get_test_file('example-iana.org-chunked.warc')],
                                 stdout=subprocess.PIPE)
+
+        def raise_tell(x):
+            raise Exception()
+
+        # on windows, this tell() exists but doesn't work correctly, so just override
+        # this is designed to emulated stdin, which does not have a tell(), as expected
+        if os.name == 'nt' and hasattr(proc.stdout, 'tell'):
+            proc.stdout.tell = raise_tell
+
         with closing(ArchiveIterator(proc.stdout)) as a:
             for record in a:
                 assert record.rec_type == 'warcinfo'
@@ -134,6 +145,15 @@ class TestArchiveIterator(object):
         """
         proc = subprocess.Popen(['cat', get_test_file('example-resource.warc.gz')],
                                 stdout=subprocess.PIPE)
+
+        def raise_tell(x):
+            raise Exception()
+
+        # on windows, this tell() exists but doesn't work correctly, so just override
+        # this is designed to emulated stdin, which does not have a tell(), as expected
+        if os.name == 'nt' and hasattr(proc.stdout, 'tell'):
+            proc.stdout.tell = raise_tell
+
         with closing(ArchiveIterator(proc.stdout)) as a:
             for record in a:
                 assert record.rec_type == 'warcinfo'
