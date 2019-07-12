@@ -1,11 +1,12 @@
 from warcio.archiveiterator import ArchiveIterator, WARCIterator, ARCIterator
 from warcio.exceptions import ArchiveLoadFailed
-from warcio.bufferedreaders import DecompressingBufferedReader
+from warcio.bufferedreaders import DecompressingBufferedReader, BufferedReader
 
 from warcio.warcwriter import BufferWARCWriter
 
 import pytest
 from io import BytesIO
+import sys
 
 import os
 
@@ -110,12 +111,16 @@ class TestArchiveIterator(object):
         def raise_tell(x):
             raise Exception()
 
-        # on windows, this tell() exists but doesn't work correctly, so just override
+        # on windows, this tell() exists but doesn't work correctly, so just override (in py3)
         # this is designed to emulated stdin, which does not have a tell(), as expected
+        stdout = proc.stdout
         if os.name == 'nt' and hasattr(proc.stdout, 'tell'):
-            proc.stdout.tell = raise_tell
+            if sys.version_info < (3, 0):
+                stdout = BufferedReader(stdout)
+            else:
+                stdout.tell = raise_tell
 
-        with closing(ArchiveIterator(proc.stdout)) as a:
+        with closing(ArchiveIterator(stdout)) as a:
             for record in a:
                 assert record.rec_type == 'warcinfo'
                 assert a.get_record_offset() == 0
@@ -149,12 +154,17 @@ class TestArchiveIterator(object):
         def raise_tell(x):
             raise Exception()
 
-        # on windows, this tell() exists but doesn't work correctly, so just override
+        # on windows, this tell() exists but doesn't work correctly, so just override (in py3)
         # this is designed to emulated stdin, which does not have a tell(), as expected
+        stdout = proc.stdout
         if os.name == 'nt' and hasattr(proc.stdout, 'tell'):
-            proc.stdout.tell = raise_tell
+            #can't override tell() in py2
+            if sys.version_info < (3, 0):
+                stdout = BufferedReader(stdout)
+            else:
+                stdout.tell = raise_tell
 
-        with closing(ArchiveIterator(proc.stdout)) as a:
+        with closing(ArchiveIterator(stdout)) as a:
             for record in a:
                 assert record.rec_type == 'warcinfo'
                 assert a.get_record_offset() == 0
