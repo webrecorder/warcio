@@ -18,7 +18,7 @@ class PyTest(TestCommand):
         import pytest
         import sys
         import os
-        errcode = pytest.main(['--doctest-module', './warcio', '--cov', 'warcio', '-v', 'test/'])
+        errcode = pytest.main(['--doctest-modules', './warcio', '--cov', 'warcio', '-v', 'test/'])
         sys.exit(errcode)
 
 setup(
