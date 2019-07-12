@@ -12,13 +12,12 @@ from warcio.statusandheaders import StatusAndHeadersParser
 class BaseWARCWriter(RecordBuilder):
 
     def __init__(self, gzip=True, *args, **kwargs):
-        super(BaseWARCWriter, self).__init__(warc_version=kwargs.get('warc_version'))
+        super(BaseWARCWriter, self).__init__(warc_version=kwargs.get('warc_version'),
+                                             header_filter=kwargs.get('header_filter'))
         self.gzip = gzip
         self.hostname = gethostname()
 
         self.parser = StatusAndHeadersParser([], verify=False)
-
-        self.header_filter = kwargs.get('header_filter')
 
     def write_request_response_pair(self, req, resp, params=None):
         url = resp.rec_headers.get_header('WARC-Target-URI')
