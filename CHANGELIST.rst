@@ -1,3 +1,11 @@
+1.7.1
+~~~~~
+
+- Windows fixes: Fix reading from stdin, ensure all WARCs/ARCs are treated as binary `#86 <https://github.com/webrecorder/warcio/pull/86>`_
+
+- Fix ``ensure_digest(block=True)`` breaking on an existing record, RecordBuilder supports ``header_filter`` `#85 <https://github.com/webrecorder/warcio/pull/85>`_
+
+
 1.7.0
 ~~~~~
 
