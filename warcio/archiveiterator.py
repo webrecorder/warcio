@@ -72,6 +72,9 @@ class ArchiveIterator(six.Iterator):
 
         try:
             self.offset = self.fh.tell()
+            # on windows stdin, tell() exists but always return
+            # detect and replace also
+            assert(os.name != 'nt' and self.fh.name != 3)
         except:
             self.fh = UnseekableYetTellable(self.fh)
             self.offset = self.fh.tell()
