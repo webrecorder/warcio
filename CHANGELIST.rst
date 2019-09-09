@@ -1,3 +1,32 @@
+1.7.1
+~~~~~
+
+- Windows fixes: Fix reading from stdin, ensure all WARCs/ARCs are treated as binary `#86 <https://github.com/webrecorder/warcio/pull/86>`_
+
+- Fix ``ensure_digest(block=True)`` breaking on an existing record, RecordBuilder supports ``header_filter`` `#85 <https://github.com/webrecorder/warcio/pull/85>`_
+
+
+1.7.0
+~~~~~
+
+- Docs and Misc Cleanup: add docs for ``extract`` tool, correct doc for ``get_statuscode()``, move all CLI tools to separate modules for better reusability.
+
+- Support indexing a WARC read from stdin `#79 <https://github.com/webrecorder/warcio/pull/79>`_
+
+- Automatically %-encode urls that have a space in ``WARC-Target-URI`` `#80 <https://github.com/webrecorder/warcio/pull/80>`_
+
+- Separate record creation into ``RecordBuilder`` class to allow building WARC records without a ``WARCWriter``, which now derives from ``RecordBuilder`` `#63 <https://github.com/webrecorder/warcio/pull/63>`_
+
+- Support the ability to optionally check ARC/WARC record's block and payload digests `#54 <https://github.com/webrecorder/warcio/pull/54>`_, `#58 <https://github.com/webrecorder/warcio/pull/58>`_, `#68 <https://github.com/webrecorder/warcio/pull/68>`_, `#77 <https://github.com/webrecorder/warcio/pull/77>`_
+    - Creation of ``ArchiveIterator`` and ``ArcWarcRecordLoader`` now accept an ``check_digests`` boolean keyword argument indicating if each records digest should be checked, defaults to ``False``
+    - Core digest checking functionality is provided by ``DigestChecker`` and ``DigestVerifyingReader`` importable from `warcio.digestverifyingreader <digestverifyingreader.py>`_
+    - New block and payload digest checking utility class, ``Checker``, has been added and is importable from `warcio.checker <checker.py>`_
+    - The CLI has been updated to provide ``warcio check``, a command for performing block and payload digest checking
+- Ensured that ARCHeadersParser's splitting on spaces does not split any spaces in uri's `#62 <https://github.com/webrecorder/warcio/pull/62>`_
+- Move the ``compute_headers_buffer`` method and ``headers_buff`` property to the StatusAndHeaders and fix incorrect digests in some test WARCs `#67 <https://github.com/webrecorder/warcio/pull/67>`_
+- Ensured that the ``BaseWARCWriter`` does not use a mutable default value for the ``warc_header_dict`` keyword argument `#70 <https://github.com/webrecorder/warcio/pull/70>`_
+
+
 1.6.3
 ~~~~~
 

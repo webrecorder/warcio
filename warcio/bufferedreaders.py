@@ -341,9 +341,12 @@ class ChunkedDataReader(BufferedReader):
                                        length_header)
 
         if not chunk_size:
-            # chunk_size 0 indicates end of file
+            # chunk_size 0 indicates end of file. read final bytes to compute digest.
             final_data = self.stream.read(2)
-            assert(final_data == b'\r\n')
+            try:
+                assert(final_data == b'\r\n')
+            except AssertionError:
+                raise ChunkedDataException(b"Incorrect \r\n after length header of 0")
             self.all_chunks_read = True
             self._process_read(b'')
             return

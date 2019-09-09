@@ -1,14 +1,18 @@
 from warcio.archiveiterator import ArchiveIterator, WARCIterator, ARCIterator
 from warcio.exceptions import ArchiveLoadFailed
-from warcio.bufferedreaders import DecompressingBufferedReader
+from warcio.bufferedreaders import DecompressingBufferedReader, BufferedReader
 
 from warcio.warcwriter import BufferWARCWriter
 
 import pytest
 from io import BytesIO
+import sys
+
+import os
 
 from . import get_test_file
 from contextlib import closing, contextmanager
+import subprocess
 
 
 #==============================================================================
@@ -73,17 +77,20 @@ class TestArchiveIterator(object):
             with closing(ArchiveIterator(fh)) as a:
                 for record in a:
                     assert record.rec_type == 'warcinfo'
+                    assert a.get_record_offset() == 0
                     assert record.digest_checker.passed is None
                     assert len(record.digest_checker.problems) == 0
                     break
 
                 record = next(a)
                 assert record.rec_type == 'response'
+                assert a.get_record_offset() == 405
                 assert record.digest_checker.passed is None
                 assert len(record.digest_checker.problems) == 0
 
                 for record in a:
                     assert record.rec_type == 'request'
+                    assert a.get_record_offset() == 8379
                     assert record.digest_checker.passed is None
                     assert len(record.digest_checker.problems) == 0
                     break
@@ -94,6 +101,93 @@ class TestArchiveIterator(object):
         assert a.record == None
         assert a.reader == None
         assert a.read_to_end() == None
+
+    def test_unseekable(self):
+        """ Test iterator on unseekable 3 record uncompressed WARC input
+        """
+        proc = subprocess.Popen(['cat', get_test_file('example-iana.org-chunked.warc')],
+                                stdout=subprocess.PIPE)
+
+        def raise_tell(x):
+            raise Exception()
+
+        # on windows, this tell() exists but doesn't work correctly, so just override (in py3)
+        # this is designed to emulated stdin, which does not have a tell(), as expected
+        stdout = proc.stdout
+        if os.name == 'nt' and hasattr(proc.stdout, 'tell'):
+            if sys.version_info < (3, 0):
+                stdout = BufferedReader(stdout)
+            else:
+                stdout.tell = raise_tell
+
+        with closing(ArchiveIterator(stdout)) as a:
+            for record in a:
+                assert record.rec_type == 'warcinfo'
+                assert a.get_record_offset() == 0
+                break
+
+            record = next(a)
+            assert record.rec_type == 'response'
+            assert a.get_record_offset() == 405
+
+            for record in a:
+                assert record.rec_type == 'request'
+                assert a.get_record_offset() == 8379
+                break
+
+            with pytest.raises(StopIteration):
+                record = next(a)
+
+        assert a.record == None
+        assert a.reader == None
+        assert a.read_to_end() == None
+
+        proc.stdout.close()
+        proc.wait()
+
+    def test_unseekable_gz(self):
+        """ Test iterator on unseekable 3 record uncompressed gzipped WARC input
+        """
+        proc = subprocess.Popen(['cat', get_test_file('example-resource.warc.gz')],
+                                stdout=subprocess.PIPE)
+
+        def raise_tell(x):
+            raise Exception()
+
+        # on windows, this tell() exists but doesn't work correctly, so just override (in py3)
+        # this is designed to emulated stdin, which does not have a tell(), as expected
+        stdout = proc.stdout
+        if os.name == 'nt' and hasattr(proc.stdout, 'tell'):
+            #can't override tell() in py2
+            if sys.version_info < (3, 0):
+                stdout = BufferedReader(stdout)
+            else:
+                stdout.tell = raise_tell
+
+        with closing(ArchiveIterator(stdout)) as a:
+            for record in a:
+                assert record.rec_type == 'warcinfo'
+                assert a.get_record_offset() == 0
+                break
+
+            record = next(a)
+            assert record.rec_type == 'warcinfo'
+            assert a.get_record_offset() == 361
+
+            for record in a:
+                assert record.rec_type == 'resource'
+                assert a.get_record_offset() == 802
+                break
+
+            with pytest.raises(StopIteration):
+                record = next(a)
+
+        assert a.record == None
+        assert a.reader == None
+        assert a.read_to_end() == None
+
+        proc.stdout.close()
+        proc.wait()
 
     def test_example_warc_trunc(self):
         """ WARC file with content-length truncated on a response record
@@ -192,18 +286,22 @@ Content-Length: 1303\r\n'
         with self._find_first_by_type('example-wget-bad-target-uri.warc.gz', 'response', fixup_bugs=False) as record:
             assert record.rec_headers.get('WARC-Target-URI') == '<http://example.com/>'
 
+    def test_corrects_space_in_target_uri(self):
+        with self._find_first_by_type('example-space-in-target-uri.warc.gz', 'resource') as record:
+            assert record.rec_headers.get('WARC-Target-URI') == 'file:///example%20with%20spaces.png'
+
     def _digests_mutilate_helper(self, contents, expected_t, expected_f, capsys, full_read=False):
         with pytest.raises(ArchiveLoadFailed):
             assert self._load_archive_memory(BytesIO(contents), check_digests='raise', full_read=full_read) == expected_t
         capsys.readouterr()
         assert self._load_archive_memory(BytesIO(contents), check_digests='log', full_read=full_read) == expected_t
-        [out, err] = capsys.readouterr()
+        out, err = capsys.readouterr()
         assert err
         assert self._load_archive_memory(BytesIO(contents), check_digests=True, full_read=full_read) == expected_t
-        [out, err] = capsys.readouterr()
+        out, err = capsys.readouterr()
         assert not err
         assert self._load_archive_memory(BytesIO(contents), check_digests=False, full_read=full_read) == expected_f
-        [out, err] = capsys.readouterr()
+        out, err = capsys.readouterr()
         assert not err
 
     def test_digests_mutilate(self, capsys):

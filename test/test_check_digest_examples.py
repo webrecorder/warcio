@@ -31,7 +31,7 @@ class TestExamplesDigest(object):
         finally:
             assert exit_value == expected_exit_value
 
-        return capsys.readouterr().out
+        return capsys.readouterr()[0]  # list for py33 support
 
     def test_check_invalid(self, capsys):
         filenames = [get_test_file('example-digest.warc')]
@@ -59,6 +59,20 @@ class TestExamplesDigest(object):
         # two digests per file (payload and block)
         assert value.count('digest pass') == 4
         assert value.count('WARC-Record-ID') == 12
+
+    def test_check_valid_chunked(self, capsys):
+        filenames = [get_test_file('example-iana.org-chunked.warc')]
+
+        args = ['check'] + filenames
+        expected = ''
+        assert self.check_helper(args, 0, capsys) == expected
+
+        args = ['check', '-v'] + filenames
+        value = self.check_helper(args, 0, capsys)
+        # two digests per file (payload and block)
+        assert value.count('no digest to check') == 1
+        assert value.count('digest pass') == 2
+        assert value.count('WARC-Record-ID') == 3
 
     def test_check_no_invalid_files(self, test_filename, capsys):
         args = ['check', '-v', get_test_file(test_filename)]

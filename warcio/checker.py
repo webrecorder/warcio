@@ -1,6 +1,14 @@
 from __future__ import print_function
 
 from warcio.archiveiterator import ArchiveIterator
+from warcio.exceptions import ArchiveLoadFailed
+
+
+def _read_entire_stream(stream):
+    while True:
+        piece = stream.read(1024*1024)
+        if len(piece) == 0:
+            break
 
 
 class Checker(object):
@@ -11,34 +19,50 @@ class Checker(object):
 
     def process_all(self):
         for filename in self.inputs:
-            self.process_one(filename)
+            try:
+                self.process_one(filename)
+            except ArchiveLoadFailed as e:
+                print(filename)
+                print('  saw exception ArchiveLoadFailed: '+str(e).rstrip())
+                print('  skipping rest of file')
+                self.exit_value = 1
         return self.exit_value
 
     def process_one(self, filename):
+        printed_filename = False
         with open(filename, 'rb') as stream:
-            file_printed = False
-            filename = filename
             for record in ArchiveIterator(stream, check_digests=True):
-                record.content_stream().read()  # make sure digests are checked
+                digest_present = (record.rec_headers.get_header('WARC-Payload-Digest') or
+                                  record.rec_headers.get_header('WARC-Block-Digest'))
+
+                _read_entire_stream(record.content_stream())
+
+                d_msg = None
+                output = []
+
                 rec_id = record.rec_headers.get_header('WARC-Record-ID')
                 rec_type = record.rec_headers.get_header('WARC-Type')
+
                 if record.digest_checker.passed is False:
                     self.exit_value = 1
-                    file_printed = _fprint(filename, file_printed)
-                    print(' ', 'WARC-Record-ID', rec_id, rec_type)
-                    for p in record.digest_checker.problems:
-                        print('  ', p)
+                    output = list(record.digest_checker.problems) 
                 elif record.digest_checker.passed is True and self.verbose:
-                    file_printed = _fprint(filename, file_printed)
-                    print(' ', 'WARC-Record-ID', rec_id, rec_type)
-                    print('   digest pass')
+                    d_msg = 'digest pass'
                 elif record.digest_checker.passed is None and self.verbose:
-                    file_printed = _fprint(filename, file_printed)
+                    if digest_present and rec_type == 'revisit':
+                        d_msg = 'digest present but not checked (revisit)'
+                    elif digest_present:  # pragma: no cover
+                        # should not happen
+                        d_msg = 'digest present but not checked'
+                    else:
+                        d_msg = 'no digest to check'
+
+                if d_msg or output:
+                    if not printed_filename:
+                        print(filename)
+                        printed_filename = True
                     print(' ', 'WARC-Record-ID', rec_id, rec_type)
-                    print('   digest not checked')
-
-
-def _fprint(filename, file_printed):
-    if not file_printed:
-        print(filename)
-    return True
+                    if d_msg:
+                        print('   ', d_msg)
+                    for o in output:
+                        print('   ', o)

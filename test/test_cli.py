@@ -103,6 +103,14 @@ def test_check_invalid():
     assert value.count(b'digest pass') == 3
     assert value.count(b'WARC-Record-ID') == 4
 
+    files = ['example-bad-non-chunked.warc.gz', 'example-digest-bad.warc']
+    filenames = [get_test_file(filename) for filename in files]
+    args = ['check'] + filenames
+    value = check_helper(args, 1)
+    assert value.count(b'ArchiveLoadFailed') == 1
+    assert value.count(b'payload digest failed') == 1
+    assert value.count(b'WARC-Record-ID') == 1
+
 
 def test_recompress_non_chunked():
     with named_temp() as temp:

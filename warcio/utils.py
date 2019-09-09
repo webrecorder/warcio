@@ -28,7 +28,9 @@ def to_native_str(value, encoding='utf-8', errors='strict'):
 # #===========================================================================
 @contextmanager
 def open_or_default(filename, mod, default_fh):
-    if filename and isinstance(filename, str):
+    if filename == '-' or filename == b'-':
+        yield default_fh
+    elif filename and isinstance(filename, str):
         res = open(filename, mod)
         yield res
         res.close()

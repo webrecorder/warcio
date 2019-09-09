@@ -11,7 +11,7 @@ Background
 
 This library provides a fast, standalone way to read and write `WARC
 Format <https://en.wikipedia.org/wiki/Web_ARChive>`__ commonly used in
-web archives. Supports Python 2.7+ and Python 3.3+ (using
+web archives. Supports Python 2.7+ and Python 3.4+ (using
 `six <https://pythonhosted.org/six/>`__, the only external dependency)
 
 warcio supports reading and writing of WARC files compliant with both the `WARC 1.0 <http://bibnum.bnf.fr/WARC/WARC_ISO_28500_version1_latestdraft.pdf>`__
@@ -260,7 +260,7 @@ instead of a response), or to skip writing altogether by returning nothing, as s
 
     def filter_records(warc_writer, request, response):
         # return None, None to indicate records should be skipped
-        if response.http_headers.get_statuscode() != 200:
+        if response.http_headers.get_statuscode() != '200':
             return None, None
             
         # the response record can be replaced with a revisit record
@@ -395,6 +395,21 @@ a WARC compressed entirely instead of by record)
 ::
 
     warcio recompress ./input.arc.gz ./output.warc.gz
+
+
+Extract
+~~~~~~~
+
+The  ``extract`` command provides a way to extract either the WARC and HTTP headers and/or payload of a WARC record
+to stdout. Given a WARC filename and an offset, ``extract`` will print the (decompressed) record at that offset
+in the file to stdout
+
+Specifying --payload or --headers will output only the payload or only the WARC + HTTP headers (if any), respectively.
+
+::
+
+    warcio extract [--payload | --headers] filename offset
+
 
 License
 ~~~~~~~

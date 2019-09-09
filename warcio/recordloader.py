@@ -12,6 +12,9 @@ from warcio.timeutils import timestamp_to_iso_date
 
 from six.moves import zip
 
+import logging
+logger = logging.getLogger(__name__)
+
 
 #=================================================================
 class Commentary(object):
@@ -279,16 +282,25 @@ class ArcWarcRecordLoader(object):
         """Checks the value for the WARC-Target-URI header field to see if it starts
         with '<' and ends with '>' (Wget 1.19 bug) and if '<' and '>' are present,
         corrects and updates the field returning the corrected value for the field
-        otherwise just returns the fields value.
+        otherwise just returns the fields value. Also checks for the presence of
+        spaces and percent-encodes them if present, for more reliable parsing
+        downstream.
 
         :param StatusAndHeaders rec_headers: The parsed WARC headers
         :return: The value for the WARC-Target-URI field
         :rtype: str | None
         """
         uri = rec_headers.get_header('WARC-Target-URI')
+
         if fixup_bugs and uri is not None and uri.startswith('<') and uri.endswith('>'):
             uri = uri[1:-1]
             rec_headers.replace_header('WARC-Target-URI', uri)
+
+        if uri is not None and " " in uri:
+            logger.warning("Replacing spaces in invalid WARC-Target-URI: {}".format(uri))
+            uri = uri.replace(" ", "%20")
+            rec_headers.replace_header('WARC-Target-URI', uri)
+
         return uri
 
 

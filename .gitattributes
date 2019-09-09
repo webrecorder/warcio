@@ -1,0 +1,3 @@
+*.arc  -text
+*.warc -text
+*.gz   -text
