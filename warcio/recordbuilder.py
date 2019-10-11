@@ -12,6 +12,7 @@ from warcio.utils import to_native_str, BUFF_SIZE, Digester
 #=================================================================
 class RecordBuilder(object):
     REVISIT_PROFILE = 'http://netpreserve.org/warc/1.0/revisit/identical-payload-digest'
+    REVISIT_PROFILE_1_1 = 'http://netpreserve.org/warc/1.1/revisit/identical-payload-digest'
 
     WARC_1_0 = 'WARC/1.0'
     WARC_1_1 = 'WARC/1.1'
@@ -69,7 +70,8 @@ class RecordBuilder(object):
         record = self.create_warc_record(uri, 'revisit', http_headers=http_headers,
                                                          warc_headers_dict=warc_headers_dict)
 
-        record.rec_headers.add_header('WARC-Profile', self.REVISIT_PROFILE)
+        revisit_profile = self.REVISIT_PROFILE_1_1 if self.warc_version == self.WARC_1_1 else self.REVISIT_PROFILE
+        record.rec_headers.add_header('WARC-Profile', revisit_profile)
 
         record.rec_headers.add_header('WARC-Refers-To-Target-URI', refers_to_uri)
         record.rec_headers.add_header('WARC-Refers-To-Date', refers_to_date)

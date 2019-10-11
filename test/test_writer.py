@@ -203,6 +203,25 @@ Custom-Header: somevalue\r\n\
 '
 
 
+REVISIT_RECORD_3 = '\
+WARC/1.1\r\n\
+WARC-Type: revisit\r\n\
+WARC-Record-ID: <urn:uuid:12345678-feb0-11e6-8f83-68a86d1772ce>\r\n\
+WARC-Target-URI: http://example.com/\r\n\
+WARC-Date: 2000-01-01T00:00:00.123456Z\r\n\
+WARC-Profile: http://netpreserve.org/warc/1.1/revisit/identical-payload-digest\r\n\
+WARC-Refers-To-Target-URI: http://example.com/foo\r\n\
+WARC-Refers-To-Date: 1999-01-01T00:00:00Z\r\n\
+WARC-Payload-Digest: sha1:B6QJ6BNJ3R4B23XXMRKZKHLPGJY2VE4O\r\n\
+WARC-Block-Digest: sha1:3I42H3S6NNFQ2MSVX7XZKYAYSCX5QBYJ\r\n\
+Content-Type: application/http; msgtype=response\r\n\
+Content-Length: 0\r\n\
+\r\n\
+\r\n\
+\r\n\
+'
+
+
 RESOURCE_RECORD = '\
 WARC/1.0\r\n\
 WARC-Type: resource\r\n\
@@ -503,6 +522,19 @@ def sample_revisit_2(builder):
                                         refers_to_uri='http://example.com/foo',
                                         refers_to_date='1999-01-01T00:00:00Z',
                                         http_headers=resp.http_headers)
+
+
+# ============================================================================
+@sample_record('revisit_warc_1_1', REVISIT_RECORD_3)
+def sample_revisit_1_1(builder):
+    builder.warc_version = 'WARC/1.1'
+    res = builder.create_revisit_record('http://example.com/',
+                                         digest='sha1:B6QJ6BNJ3R4B23XXMRKZKHLPGJY2VE4O',
+                                         refers_to_uri='http://example.com/foo',
+                                         refers_to_date='1999-01-01T00:00:00Z')
+
+    builder.warc_version = 'WARC/1.0'
+    return res
 
 
 # ============================================================================
