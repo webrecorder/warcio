@@ -31,7 +31,8 @@ class Checker(object):
     def process_one(self, filename):
         printed_filename = False
         with open(filename, 'rb') as stream:
-            for record in ArchiveIterator(stream, check_digests=True):
+            it = ArchiveIterator(stream, check_digests=True)
+            for record in it:
                 digest_present = (record.rec_headers.get_header('WARC-Payload-Digest') or
                                   record.rec_headers.get_header('WARC-Block-Digest'))
 
@@ -42,6 +43,7 @@ class Checker(object):
 
                 rec_id = record.rec_headers.get_header('WARC-Record-ID')
                 rec_type = record.rec_headers.get_header('WARC-Type')
+                rec_offset = it.get_record_offset()
 
                 if record.digest_checker.passed is False:
                     self.exit_value = 1
@@ -61,7 +63,7 @@ class Checker(object):
                     if not printed_filename:
                         print(filename)
                         printed_filename = True
-                    print(' ', 'WARC-Record-ID', rec_id, rec_type)
+                    print(' ', 'offset', rec_offset, 'WARC-Record-ID', rec_id, rec_type)
                     if d_msg:
                         print('   ', d_msg)
                     for o in output:
