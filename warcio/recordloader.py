@@ -291,6 +291,7 @@ class ArcWarcRecordLoader(object):
         :rtype: str | None
         """
         uri = rec_headers.get_header('WARC-Target-URI')
+
         if fixup_bugs and uri is not None and uri.startswith('<') and uri.endswith('>'):
             uri = uri[1:-1]
             rec_headers.replace_header('WARC-Target-URI', uri)
