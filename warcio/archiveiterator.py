@@ -56,6 +56,7 @@ class ArchiveIterator(six.Iterator):
     def __init__(self, fileobj, no_record_parse=False,
                  verify_http=False, arc2warc=False,
                  ensure_http_headers=False, block_size=BUFF_SIZE,
+                 skip_bad_records=False,
                  check_digests=False):
 
         self.fh = fileobj
@@ -65,6 +66,8 @@ class ArchiveIterator(six.Iterator):
         self.known_format = None
 
         self.mixed_arc_warc = arc2warc
+
+        self.skip_bad_records = skip_bad_records
 
         self.member_info = None
         self.no_record_parse = no_record_parse
@@ -115,6 +118,12 @@ class ArchiveIterator(six.Iterator):
 
             except EOFError:
                 empty_record = True
+
+            except ArchiveLoadFailed as e:
+                if self.skip_bad_records:
+                    continue
+                else:
+                    raise e
 
             self.read_to_end()
 
