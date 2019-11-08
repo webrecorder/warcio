@@ -121,7 +121,11 @@ class ArchiveIterator(six.Iterator):
 
             except ArchiveLoadFailed as e:
                 if self.skip_bad_records:
-                    continue
+                    trash = self.reader.readline()
+                    if trash:
+                        continue
+                    else:
+                        empty_record = True
                 else:
                     raise e
 
