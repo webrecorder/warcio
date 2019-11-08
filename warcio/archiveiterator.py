@@ -1,6 +1,7 @@
 from warcio.bufferedreaders import DecompressingBufferedReader
 
 from warcio.exceptions import ArchiveLoadFailed
+from warcio.statusandheaders import StatusAndHeadersParserException
 from warcio.recordloader import ArcWarcRecordLoader
 
 from warcio.utils import BUFF_SIZE
@@ -119,7 +120,7 @@ class ArchiveIterator(six.Iterator):
             except EOFError:
                 empty_record = True
 
-            except ArchiveLoadFailed as e:
+            except (ArchiveLoadFailed, StatusAndHeadersParserException) as e:
                 if self.skip_bad_records:
                     trash = self.reader.readline()
                     if trash:
