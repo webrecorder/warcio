@@ -1,0 +1,56 @@
+WARC/1.0
+WARC-Target-URI: <http://example.com/>
+WARC-Target-URI: example.com
+WARC-Target-URI: ex ample.com
+WARC-Target-URI: h<>ttp://example.com/
+WARC-Type: does-not-exist
+WARC-Type: CAPITALIZED
+WARC-Concurrent-To: http://example.com/
+WARC-Concurrent-To: <uri:urn:asdf-asdf-asdf>
+WARC-Record-ID: <urn:uuid:torture-validate-field>
+WARC-Date: 2017-03-06T04:03:53Z
+WARC-Date: 2017-03-06T04:03:53.Z
+Content-Type: asdf
+Content-Type: has space/asdf
+Content-Type: asdf/has space
+Content-Type: asdf/has space;asdf
+WARC-Block-Digest: asdf
+WARC-Block-Digest: has space:asdf
+WARC-Block-Digest: sha1:&$*^&*^#*&^
+WARC-IP-Address: 1.2.3.4.5
+WARC-Truncated: invalid
+WARC-Warcinfo-ID: asdf:asdf
+WARC-Filename: not-yet-tested
+WARC-Profile: asdf
+WARC-Profile: http://netpreserve.org/warc/1.0/revisit/identical-payload-digest
+WARC-Identified-Payload-Type: asdf
+WARC-Segment-Origin-ID: http://example.com
+WARC-Segment-Number: not-an-integer
+WARC-Segment-Number: 0
+WARC-Segment-Number: 1
+WARC-Segment-Number: 2
+WARC-Segment-Total-Length: 0
+WARC-Segment-Total-Length: not-an-integer
+WARC-Refers-To-Target-URI: http://example.com
+WARC-Refers-To-Date: not-a-date
+WARC-Refers-To-Filename: asdf
+WARC-Refers-To-File-Offset: 1234
+WARC-Unknown-Field: asdf
+Content-Length: 0
+
+
+WARC/1.1
+WARC-Date: 2017-03-06T04:03:53Z
+WARC-Date: 2017-03-06T04:03:53.Z
+WARC-Date: 2017-03-06T04:03:53.0Z
+WARC-Type: invalid
+Content-Length: 0
+
+
+WARC/1.1
+WARC-Type: request
+WARC-Segment-Number: 1
+Content-Length: 0
+
+
+WARC/invalid

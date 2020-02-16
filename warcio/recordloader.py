@@ -17,16 +17,51 @@ logger = logging.getLogger(__name__)
 
 
 #=================================================================
+class Commentary(object):
+    def __init__(self):
+        self.errors = []
+        self.recommendations = []
+        self._comments = []
+
+    def error(self, *args):
+        self.errors.append(args)
+
+    def recommendation(self, *args):
+        self.recommendations.append(args)
+
+    def comment(self, *args):
+        self._comments.append(args)
+
+    def has_comments(self):
+        if self.errors or self.recommendations or self._comments:
+            return True
+
+    def comments(self):
+        # XXX str() all of these, in case an int or other thing slips in?
+        for e in self.errors:
+            yield 'error: ' + ' '.join(e)
+        for r in self.recommendations:
+            yield 'recommendation: ' + ' '.join(r)
+        for c in self._comments:
+            yield 'comment: ' + ' '.join(c)
+
+
+#=================================================================
 class ArcWarcRecord(object):
     def __init__(self, *args, **kwargs):
         (self.format, self.rec_type, self.rec_headers, self.raw_stream,
          self.http_headers, self.content_type, self.length) = args
         self.payload_length = -1
         self.digest_checker = kwargs.get('digest_checker')
+        self.commentary = kwargs.get('commentary')
+        self._content_stream = None
 
     def content_stream(self):
         if not self.http_headers:
             return self.raw_stream
+
+        if self._content_stream:
+            return self._content_stream
 
         encoding = self.http_headers.get_header('content-encoding')
 
@@ -37,11 +72,13 @@ class ArcWarcRecord(object):
                 encoding = None
 
         if self.http_headers.get_header('transfer-encoding') == 'chunked':
-            return ChunkedDataReader(self.raw_stream, decomp_type=encoding)
+            self._content_stream = ChunkedDataReader(self.raw_stream, decomp_type=encoding, commentary=self.commentary)
         elif encoding:
-            return BufferedReader(self.raw_stream, decomp_type=encoding)
+            self._content_stream = BufferedReader(self.raw_stream, decomp_type=encoding, commentary=self.commentary)
         else:
-            return self.raw_stream
+            self._content_stream = self.raw_stream
+
+        return self._content_stream
 
 
 #=================================================================
@@ -58,7 +95,7 @@ class ArcWarcRecordLoader(object):
     NON_HTTP_SCHEMES = ('dns:', 'whois:', 'ntp:')
     HTTP_SCHEMES = ('http:', 'https:')
 
-    def __init__(self, verify_http=True, arc2warc=True):
+    def __init__(self, verify_http=True, arc2warc=True, fixup_bugs=True):
         if arc2warc:
             self.arc_parser = ARC2WARCHeadersParser()
         else:
@@ -68,6 +105,7 @@ class ArcWarcRecordLoader(object):
         self.http_parser = StatusAndHeadersParser(self.HTTP_TYPES, verify_http)
 
         self.http_req_parser = StatusAndHeadersParser(self.HTTP_VERBS, verify_http)
+        self.fixup_bugs = fixup_bugs
 
     def parse_record_stream(self, stream,
                             statusline=None,
@@ -99,7 +137,7 @@ class ArcWarcRecordLoader(object):
 
         elif the_format in ('warc', 'arc2warc'):
             rec_type = rec_headers.get_header('WARC-Type')
-            uri = self._ensure_target_uri_format(rec_headers)
+            uri = self._ensure_target_uri_format(rec_headers, fixup_bugs=self.fixup_bugs)
             length = rec_headers.get_header('Content-Length')
             content_type = rec_headers.get_header('Content-Type')
             if the_format == 'warc':
@@ -125,6 +163,7 @@ class ArcWarcRecordLoader(object):
 
         is_verifying = False
         digest_checker = DigestChecker(check_digests)
+        commentary = Commentary()
 
         # limit stream to the length for all valid records
         if length is not None and length >= 0:
@@ -149,7 +188,8 @@ class ArcWarcRecordLoader(object):
 
         return ArcWarcRecord(the_format, rec_type,
                              rec_headers, stream, http_headers,
-                             content_type, length, digest_checker=digest_checker)
+                             content_type, length, digest_checker=digest_checker,
+                             commentary=commentary)
 
     def wrap_digest_verifying_stream(self, stream, rec_type, rec_headers, digest_checker, length=None):
         payload_digest = rec_headers.get_header('WARC-Payload-Digest')
@@ -238,7 +278,7 @@ class ArcWarcRecordLoader(object):
                 msg = 'Unknown archive format, first line: '
             raise ArchiveLoadFailed(msg + str(se.statusline))
 
-    def _ensure_target_uri_format(self, rec_headers):
+    def _ensure_target_uri_format(self, rec_headers, fixup_bugs=True):
         """Checks the value for the WARC-Target-URI header field to see if it starts
         with '<' and ends with '>' (Wget 1.19 bug) and if '<' and '>' are present,
         corrects and updates the field returning the corrected value for the field
@@ -252,7 +292,7 @@ class ArcWarcRecordLoader(object):
         """
         uri = rec_headers.get_header('WARC-Target-URI')
 
-        if uri is not None and uri.startswith('<') and uri.endswith('>'):
+        if fixup_bugs and uri is not None and uri.startswith('<') and uri.endswith('>'):
             uri = uri[1:-1]
             rec_headers.replace_header('WARC-Target-URI', uri)
 

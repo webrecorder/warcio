@@ -1,0 +1,136 @@
+WARC/1.0
+WARC-Type: warcinfo
+Content-Type: application/warc-fields
+WARC-Refers-To: probhibited
+Content-Length: 146
+
+ first line can't start with a space
+test: invalid utf8 Ã(
+test: lines should end with \r\n
+foo:
+ bar
+
+no colon
+token cannot have a space:
+
+
+WARC/1.0
+WARC-Record-ID: <uri:uuid:test-empty-warc-fields>
+WARC-Type: warcinfo
+Content-Type: application/warc-fields
+Content-Length: 0
+
+
+WARC/1.0
+WARC-Type: warcinfo
+WARC-Record-ID: <uri:uuid:test-warcinfo-non-recommended-content-type>
+Content-Type: not-application/warc-fields
+Content-Length: 5
+
+foo
+
+
+WARC/1.0
+WARC-Type: response
+WARC-Record-ID: <uri:uuid:test-response-content-type>
+WARC-Target-URI: HtTp://example.com/
+Content-Type: text/plain
+Content-Length: 0
+
+
+WARC/1.0
+WARC-Type: resource
+WARC-Record-ID: <uri:uuid:test-resource-dns-content-type>
+WARC-Target-URI: DnS:asdfasdf
+Content-Type: text/plain
+Content-Length: 0
+
+
+WARC/1.0
+WARC-Type: resource
+WARC-Record-ID: <uri:uuid:test-resource-dns-empty>
+WARC-Test-TODO: add another with valid block
+WARC-Target-URI: DnS:asdfasdf
+Content-Type: text/dns
+Content-Length: 0
+
+
+WARC/1.0
+WARC-Type: resource
+WARC-Record-ID: <uri:uuid:test-resource-not-dns>
+WARC-Target-URI: foo:bar
+Content-Length: 0
+
+
+WARC/1.0
+WARC-Type: request
+WARC-Record-ID: <uri:uuid:test-request-content-type>
+WARC-Target-URI: hTtP://example.com/
+Content-Type: text/plain
+Content-Length: 0
+
+
+WARC/1.0
+WARC-Type: request
+WARC-Record-ID: <uri:uuid:test-request-content-type-with-ip>
+WARC-Target-URI: hTtP://example.com/
+WARC-IP-Address: 1.2.3.4
+Content-Type: text/plain
+Content-Length: 0
+
+
+WARC/1.0
+WARC-Type: metadata
+WARC-Record-ID: <uri:uuid:test-metadata-warc-fields-empty>
+Content-Type: application/warc-fields
+Content-Length: 0
+
+
+WARC/1.0
+WARC-Type: metadata
+WARC-Record-ID: <uri:uuid:test-metadata-not-warc-fields>
+Content-Type: not-application/warc-fields
+Content-Length: 0
+
+
+WARC/1.0
+WARC-Type: revisit
+WARC-Record-ID: <uri:uuid:test-revisit-profile-unknown>
+WARC-Profile: none
+Content-Length: 0
+
+
+WARC/1.0
+WARC-Type: revisit
+WARC-Record-ID: <uri:uuid:test-revisit-profile-future>
+WARC-Profile: http://netpreserve.org/warc/1.1/revisit/identical-payload-digest
+Content-Length: 0
+
+
+WARC/1.0
+WARC-Type: revisit
+WARC-Record-ID: <uri:uuid:test-revisit-profile-good>
+WARC-Profile: http://netpreserve.org/warc/1.0/revisit/server-not-modified
+Content-Length: 0
+
+
+WARC/1.0
+WARC-Type: conversion
+WARC-Record-ID: <uri:uuid:test-conversion>
+Content-Length: 0
+
+
+WARC/1.0
+WARC-Type: continuation
+WARC-Record-ID: <uri:uuid:test-continuation-segment-1>
+WARC-Segment-Number: 1
+Content-Length: 0
+
+
+WARC/1.0
+WARC-Type: continuation
+WARC-Record-ID: <uri:uuid:test-continuation-segment-valid>
+WARC-Segment-Number: 2
+Content-Length: 0
+
+

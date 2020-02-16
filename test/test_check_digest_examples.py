@@ -9,7 +9,8 @@ SKIP = ['example-trunc.warc',
         'example-iana.org-chunked.warc',
         'example-wrong-chunks.warc.gz',
         'example-bad-non-chunked.warc.gz',
-        'example-digest.warc'
+        'example-digest-bad.warc',
+        'standard-torture-validate-field.warc',
        ]
 
 
@@ -34,7 +35,7 @@ class TestExamplesDigest(object):
         return capsys.readouterr()[0]  # list for py33 support
 
     def test_check_invalid(self, capsys):
-        filenames = [get_test_file('example-digest.warc')]
+        filenames = [get_test_file('example-digest-bad.warc')]
 
         args = ['check'] + filenames
         value = self.check_helper(args, 1, capsys)

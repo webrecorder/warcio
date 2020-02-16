@@ -64,7 +64,8 @@ class BufferedReader(object):
     def __init__(self, stream, block_size=BUFF_SIZE,
                  decomp_type=None,
                  starting_data=None,
-                 read_all_members=False):
+                 read_all_members=False,
+                 commentary=None):
 
         self.stream = stream
         self.block_size = block_size
@@ -77,6 +78,7 @@ class BufferedReader(object):
         self.buff_size = 0
 
         self.read_all_members = read_all_members
+        self.commentary = commentary
 
     def set_decomp(self, decomp_type):
         self._init_decomp(decomp_type)
@@ -88,6 +90,10 @@ class BufferedReader(object):
                 self.decomp_type = decomp_type
                 self.decompressor = self.DECOMPRESSORS[decomp_type.lower()]()
             except KeyError:
+                # XXX don't raise?
+                # we don't know if the enduser cares or not
+                # or the record might actually be uncompressed
+                # XXX what does pywb do
                 raise Exception('Decompression type not supported: ' +
                                 decomp_type)
         else:
@@ -135,13 +141,15 @@ class BufferedReader(object):
         if self.decompressor and data:
             try:
                 data = self.decompressor.decompress(data)
-            except Exception as e:
+            except zlib.error as e:
                 # if first read attempt, assume non-gzipped stream
                 if self.num_block_read == 0:
                     if self.decomp_type == 'deflate':
                         self._init_decomp('deflate_alt')
                         data = self._decompress(data)
                     else:
+                        if self.commentary:
+                            self.commentary.comment('Payload claimed to be compressed but apparently is not')
                         self.decompressor = None
                 # otherwise (partly decompressed), something is wrong
                 else:
@@ -280,40 +288,43 @@ class ChunkedDataReader(BufferedReader):
     If at any point the chunked header is not available, the stream is
     assumed to not be chunked and no more dechunking occurs.
     """
-    def __init__(self, stream, raise_exceptions=False, **kwargs):
+    def __init__(self, stream, raise_exceptions=False, commentary=None, **kwargs):
         super(ChunkedDataReader, self).__init__(stream, **kwargs)
         self.all_chunks_read = False
-        self.not_chunked = False
-
-        # if False, we'll use best-guess fallback for parse errors
+        self.not_actually_chunked = False
+        self.at_start = True
         self.raise_chunked_data_exceptions = raise_exceptions
+        self.commentary = commentary
 
     def _fillbuff(self, block_size=None):
-        if self.not_chunked:
+        if self.not_actually_chunked:
             return super(ChunkedDataReader, self)._fillbuff(block_size)
 
         # Loop over chunks until there is some data (not empty())
         # In particular, gzipped data may require multiple chunks to
         # return any decompressed result
-        while (self.empty() and
-               not self.all_chunks_read and
-               not self.not_chunked):
-
+        while (self.empty() and not self.all_chunks_read):
             try:
                 length_header = self.stream.readline(64)
                 self._try_decode(length_header)
+                self.at_start = False
             except ChunkedDataException as e:
                 if self.raise_chunked_data_exceptions:
                     raise
-
                 # Can't parse the data as chunked.
                 # It's possible that non-chunked data is served
                 # with a Transfer-Encoding: chunked.
                 # Treat this as non-chunk encoded from here on.
+                if self.commentary:
+                    if self.at_start:
+                        self.commentary.comment('Buffer claimed to be chunked, but was not from the start')
+                    else:
+                        self.commentary.comment('Buffer is chunked but there was an unchunking error midway')
                 self._process_read(length_header + e.data)
-                self.not_chunked = True
+                self.not_actually_chunked = True
+                self.at_start = False
 
-                # parse as block as non-chunked
+                # parse as non-chunked
                 return super(ChunkedDataReader, self)._fillbuff(block_size)
 
     def _try_decode(self, length_header):
@@ -355,6 +366,8 @@ class ChunkedDataReader(BufferedReader):
                     msg = 'Ran out of data before end of chunk'
                     raise ChunkedDataException(msg, data)
                 else:
+                    if self.commentary:
+                        self.commentary.comment('Chunked reader ran out of data before end of chunk')
                     chunk_size = data_len
                     self.all_chunks_read = True
 
