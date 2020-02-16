@@ -93,7 +93,10 @@ def validate_warc_fields(record, commentary):
         commentary.comment('warc-fields block present but empty')
         return
 
-    # check known fields
+    # XXX check known fields
+    # warcinfo "but not limited to"
+    # metadata lacks that langauge
+    # https://github.com/iipc/warc-specifications/issues/7
 
 
 def validate_warcinfo(record, commentary, pending):
@@ -110,7 +113,7 @@ def validate_warcinfo(record, commentary, pending):
         #     comment if http-header-from here and in the request?
         validate_warc_fields(record, commentary)
 
-    # whole-file tests:
+    # XXX whole-file tests:
     # recommended that all files start with warcinfo
     # elsewise allowable for warcinfo to appear anywhere
 
@@ -152,6 +155,7 @@ def validate_response(record, commentary, pending):
                     if int(http_content_length) != record.raw_stream.stream.limit:
                         commentary.comment('Actual http payload length is different from http header Content-Length:',
                                            str(record.raw_stream.stream.limit), http_content_length)
+        # XXX can we say something useful if we are unable to check this length? why would it fail?
 
 
 def validate_resource(record, commentary, pending):
