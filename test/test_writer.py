@@ -782,3 +782,64 @@ class TestWarcWriter(object):
 
         validate_warcinfo(records[0])
 
+    def test_utf8_rewrite_content_adjust(self):
+        UTF8_PAYLOAD = '\
+HTTP/1.0 200 OK\r\n\
+Content-Type: text/plain; charset="UTF-8"\r\n\
+Content-Disposition: attachment; filename="испытание.txt"\r\n\
+Custom-Header: somevalue\r\n\
+Unicode-Header: %F0%9F%93%81%20text%20%F0%9F%97%84%EF%B8%8F\r\n\
+\r\n\
+some\n\
+text'
+
+        content_length = len(UTF8_PAYLOAD.encode('utf-8'))
+
+        UTF8_RECORD = '\
+WARC/1.0\r\n\
+WARC-Type: response\r\n\
+WARC-Record-ID: <urn:uuid:12345678-feb0-11e6-8f83-68a86d1772ce>\r\n\
+WARC-Target-URI: http://example.com/\r\n\
+WARC-Date: 2000-01-01T00:00:00Z\r\n\
+WARC-Payload-Digest: sha1:B6QJ6BNJ3R4B23XXMRKZKHLPGJY2VE4O\r\n\
+WARC-Block-Digest: sha1:KMUABC6URWIQ7QXCZDQ5FS6WIBBFRORR\r\n\
+Content-Type: application/http; msgtype=response\r\n\
+Content-Length: {0}\r\n\
+\r\n\
+{1}\r\n\
+\r\n\
+'.format(content_length, UTF8_PAYLOAD)
+
+        assert(content_length == 226)
+
+        record = ArcWarcRecordLoader().parse_record_stream(BytesIO(UTF8_RECORD.encode('utf-8')))
+
+        writer = BufferWARCWriter(gzip=False)
+        writer.write_record(record)
+
+        raw_buff = writer.get_contents()
+        assert raw_buff.decode('utf-8') == RESPONSE_RECORD_UNICODE_HEADERS
+
+        for record in ArchiveIterator(writer.get_stream()):
+            assert record.length == 268
+
+    def test_identity(self):
+        """ read(write(record)) should yield record """
+        payload = b'foobar'
+        writer = BufferWARCWriter(gzip=True)
+        httpHeaders = StatusAndHeaders('GET / HTTP/1.1', {}, is_http_request=True)
+        warcHeaders = {'Foo': 'Bar'}
+        record = writer.create_warc_record('http://example.com/', 'request',
+                payload=BytesIO(payload),
+                warc_headers_dict=warcHeaders, http_headers=httpHeaders)
+
+        writer.write_record(record)
+
+        for new_rec in ArchiveIterator(writer.get_stream()):
+            assert new_rec.rec_type == record.rec_type
+            assert new_rec.rec_headers == record.rec_headers
+            assert new_rec.content_type == record.content_type
+            assert new_rec.length == record.length
+            assert new_rec.http_headers == record.http_headers
+            assert new_rec.raw_stream.read() == payload
+

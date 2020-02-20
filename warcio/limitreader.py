@@ -7,9 +7,7 @@ class LimitReader(object):
     def __init__(self, stream, limit):
         self.stream = stream
         self.limit = limit
-
-        if hasattr(stream, 'tell'):
-            self.tell = self._tell
+        self._orig_limit = limit
 
     def _update(self, buff):
         length = len(buff)
@@ -43,8 +41,9 @@ class LimitReader(object):
     def close(self):
         self.stream.close()
 
-    def _tell(self):
-        return self.stream.tell()
+    def tell(self):
+        # implement our own tell
+        return self._orig_limit - self.limit
 
     @staticmethod
     def wrap_stream(stream, content_length):
