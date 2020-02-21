@@ -783,7 +783,7 @@ class TestWarcWriter(object):
         validate_warcinfo(records[0])
 
     def test_utf8_rewrite_content_adjust(self):
-        UTF8_PAYLOAD = '\
+        UTF8_PAYLOAD = u'\
 HTTP/1.0 200 OK\r\n\
 Content-Type: text/plain; charset="UTF-8"\r\n\
 Content-Disposition: attachment; filename="испытание.txt"\r\n\
@@ -795,7 +795,7 @@ text'
 
         content_length = len(UTF8_PAYLOAD.encode('utf-8'))
 
-        UTF8_RECORD = '\
+        UTF8_RECORD = u'\
 WARC/1.0\r\n\
 WARC-Type: response\r\n\
 WARC-Record-ID: <urn:uuid:12345678-feb0-11e6-8f83-68a86d1772ce>\r\n\
