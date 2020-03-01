@@ -37,7 +37,7 @@ class RecordBuilder(object):
         self.header_filter = header_filter
 
     def create_warcinfo_record(self, filename, info):
-        warc_headers = StatusAndHeaders(self.warc_version, [])
+        warc_headers = StatusAndHeaders('', [], protocol=self.warc_version)
         warc_headers.add_header('WARC-Type', 'warcinfo')
         warc_headers.add_header('WARC-Record-ID', self._make_warc_id())
         if filename:
@@ -121,7 +121,7 @@ class RecordBuilder(object):
         return record
 
     def _init_warc_headers(self, uri, record_type, warc_headers_dict):
-        warc_headers = StatusAndHeaders(self.warc_version, list(warc_headers_dict.items()))
+        warc_headers = StatusAndHeaders('', list(warc_headers_dict.items()), protocol=self.warc_version)
         warc_headers.replace_header('WARC-Type', record_type)
         if not warc_headers.get_header('WARC-Record-ID'):
             warc_headers.add_header('WARC-Record-ID', self._make_warc_id())

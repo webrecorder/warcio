@@ -21,7 +21,7 @@ class ArcWarcRecord(object):
     def __init__(self, *args, **kwargs):
         (self.format, self.rec_type, self.rec_headers, self.raw_stream,
          self.http_headers, self.content_type, self.length) = args
-        self.payload_length = -1
+        self.payload_length = kwargs.get('payload_length', -1)
         self.digest_checker = kwargs.get('digest_checker')
 
     def content_stream(self):
@@ -135,10 +135,14 @@ class ArcWarcRecordLoader(object):
                                                                          length=length)
 
         http_headers = None
+        payload_length = -1
 
         # load http headers if parsing
         if not no_record_parse:
+            start = stream.tell()
             http_headers = self.load_http_headers(rec_type, uri, stream, length)
+            if length and http_headers:
+                payload_length = length - (stream.tell() - start)
 
         # generate validate http headers (eg. for replay)
         if not http_headers and ensure_http_headers:
@@ -149,7 +153,7 @@ class ArcWarcRecordLoader(object):
 
         return ArcWarcRecord(the_format, rec_type,
                              rec_headers, stream, http_headers,
-                             content_type, length, digest_checker=digest_checker)
+                             content_type, length, payload_length=payload_length, digest_checker=digest_checker)
 
     def wrap_digest_verifying_stream(self, stream, rec_type, rec_headers, digest_checker, length=None):
         payload_digest = rec_headers.get_header('WARC-Payload-Digest')

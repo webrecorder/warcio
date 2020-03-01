@@ -205,6 +205,9 @@ class BufferedReader(object):
 
         return linebuff
 
+    def tell(self):
+        return self.num_read
+
     def empty(self):
         if not self.buff or self.buff.tell() >= self.buff_size:
             # if reading all members, attempt to get next member automatically
