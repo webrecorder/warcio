@@ -195,9 +195,15 @@ headers = {2})".format(self.protocol, self.statusline, self.headers)
                 # test if header is ascii encodable, no action needed
                 curr_value.encode('ascii')
             except:
-                new_value = self.ENCODE_HEADER_RX.sub(do_encode, curr_value)
-                if new_value == curr_value:
+                # if single value header, (eg. no ';'), %-encode entire header
+                if ';' not in curr_value:
                     new_value = quote(curr_value)
+
+                else:
+                # %-encode value in ; name="value"
+                    new_value = self.ENCODE_HEADER_RX.sub(do_encode, curr_value)
+                    if new_value == curr_value:
+                        new_value = quote(curr_value)
 
                 self.headers[index] = (curr_name, new_value)
 

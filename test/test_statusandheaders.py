@@ -212,7 +212,7 @@ def test_validate_status():
 
 
 def test_non_ascii():
-    st = StatusAndHeaders('200 OK', [('Custom-Header', u'attachment; filename="Éxamplè"')])
+    st = StatusAndHeaders('200 OK', [('Custom-Header', 'attachment; filename="Éxamplè"')])
     res = st.to_ascii_bytes().decode('ascii')
     assert res == "\
 200 OK\r\n\
@@ -221,10 +221,19 @@ Custom-Header: attachment; filename*=UTF-8''%C3%89xampl%C3%A8\r\n\
 "
 
 def test_non_ascii_2():
-    st = StatusAndHeaders('200 OK', [('Custom-Header', u'value; filename="Éxamplè"; param; other=испытание; another')])
+    st = StatusAndHeaders('200 OK', [('Custom-Header', 'value; filename="Éxamplè"; param; other=испытание; another')])
     res = st.to_ascii_bytes().decode('ascii')
     assert res == "\
 200 OK\r\n\
 Custom-Header: value; filename*=UTF-8''%C3%89xampl%C3%A8; param; other*=UTF-8''%D0%B8%D1%81%D0%BF%D1%8B%D1%82%D0%B0%D0%BD%D0%B8%D0%B5; another\r\n\
+\r\n\
+"
+
+def test_non_ascii_3():
+    st = StatusAndHeaders('200 OK', [('Custom-Header', '“max-age=31536000″')])
+    res = st.to_ascii_bytes().decode('ascii')
+    assert res == "\
+200 OK\r\n\
+Custom-Header: %E2%80%9Cmax-age%3D31536000%E2%80%B3\r\n\
 \r\n\
 "
