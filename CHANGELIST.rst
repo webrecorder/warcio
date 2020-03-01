@@ -1,3 +1,17 @@
+1.7.2
+~~~~~
+
+- Ensure 1.1 revisit profile used with WARC/1.1 revists `#96 <https://github.com/webrecorder/warcio/pull/96>`_
+
+- Include record offsets in ``warcio check`` output `#98 <https://github.com/webrecorder/warcio/pull/98>`_
+
+- CI fix for python 2.7, use jinja<3.0.0 (`#105 <https://github.com/webrecorder/warcio/pull/105>`_)
+
+- Fix in ``StatusAndHeaders`` when writing, then reading record `#106 <https://github.com/webrecorder/warcio/pull/106>`_
+
+- Fix issues related to http header re-encoding, ensure correct content-length and %-encoding `#106 <https://github.com/webrecorder/warcio/pull/106>`_, `#107 <https://github.com/webrecorder/warcio/pull/107>`_
+
+
 1.7.1
 ~~~~~
 
