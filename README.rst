@@ -258,7 +258,7 @@ instead of a response), or to skip writing altogether by returning nothing, as s
 
 .. code:: python
 
-    def filter_records(warc_writer, request, response):
+    def filter_records(request, response, request_recorder):
         # return None, None to indicate records should be skipped
         if response.http_headers.get_statuscode() != '200':
             return None, None
