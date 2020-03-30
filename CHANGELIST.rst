@@ -1,3 +1,9 @@
+N.N.N
+~~~~~
+
+- Fix documentation for capture_http filter_records `#110 <https://github.com/webrecorder/warcio/issues/110>`
+
+
 1.7.2
 ~~~~~
 
