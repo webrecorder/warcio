@@ -210,6 +210,7 @@ class RequestRecorder(object):
             parts = path.split(":", 1)
             self.connect_host = parts[0]
             self.connect_port = int(parts[1]) if len(parts) > 1 else default_port
+            self.warc_headers['WARC-Proxy-Host'] = "https://{0}:{1}".format(host, port)
             return
 
         if self.connect_host:
@@ -219,6 +220,7 @@ class RequestRecorder(object):
             port = self.connect_port
 
         if path.startswith(('http:', 'https:')):
+            self.warc_headers['WARC-Proxy-Host'] = "http://{0}:{1}".format(host, port)
             self.url = path
             return
 

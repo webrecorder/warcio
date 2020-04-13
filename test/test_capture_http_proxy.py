@@ -1,7 +1,7 @@
 from warcio.capture_http import capture_http
 
 import threading
-from wsgiref.simple_server import make_server
+from wsgiref.simple_server import make_server, WSGIServer
 import time
 
 import requests
@@ -12,8 +12,7 @@ from pytest import raises
 
 # ==================================================================
 class TestCaptureHttpProxy():
-    @classmethod
-    def setup_class(cls):
+    def setup(cls):
         def app(env, start_response):
             result = ('Proxied: ' + env['PATH_INFO']).encode('utf-8')
             headers = [('Content-Length', str(len(result)))]
@@ -23,7 +22,11 @@ class TestCaptureHttpProxy():
         from wsgiprox.wsgiprox import WSGIProxMiddleware
         wsgiprox = WSGIProxMiddleware(app, '/')
 
-        server = make_server('localhost', 0, wsgiprox)
+        class NoLogServer(WSGIServer):
+            def handle_error(self, request, client_address):
+                pass
+
+        server = make_server('localhost', 0, wsgiprox, server_class=NoLogServer)
         addr, cls.port = server.socket.getsockname()
 
         cls.proxies = {'https': 'localhost:' + str(cls.port),
@@ -50,10 +53,12 @@ class TestCaptureHttpProxy():
         assert response.rec_type == 'response'
         assert response.rec_headers['WARC-Target-URI'] == "http://example.com/test"
         assert response.content_stream().read().decode('utf-8') == 'Proxied: /http://example.com/test'
+        assert response.rec_headers['WARC-Proxy-Host'] == 'http://localhost:{0}'.format(self.port)
 
         request = next(ai)
         assert request.rec_type == 'request'
         assert request.rec_headers['WARC-Target-URI'] == "http://example.com/test"
+        assert request.rec_headers['WARC-Proxy-Host'] == 'http://localhost:{0}'.format(self.port)
 
         with raises(StopIteration):
             assert next(ai)
@@ -67,20 +72,24 @@ class TestCaptureHttpProxy():
         response = next(ai)
         assert response.rec_type == 'response'
         assert response.rec_headers['WARC-Target-URI'] == "https://example.com/test"
+        assert response.rec_headers['WARC-Proxy-Host'] == 'https://localhost:{0}'.format(self.port)
         assert response.content_stream().read().decode('utf-8') == 'Proxied: /https://example.com/test'
 
         request = next(ai)
         assert request.rec_type == 'request'
         assert request.rec_headers['WARC-Target-URI'] == "https://example.com/test"
+        assert request.rec_headers['WARC-Proxy-Host'] == 'https://localhost:{0}'.format(self.port)
 
         response = next(ai)
         assert response.rec_type == 'response'
         assert response.rec_headers['WARC-Target-URI'] == "https://example.com/foo"
+        assert response.rec_headers['WARC-Proxy-Host'] == 'https://localhost:{0}'.format(self.port)
         assert response.content_stream().read().decode('utf-8') == 'Proxied: /https://example.com/foo'
 
         request = next(ai)
         assert request.rec_type == 'request'
         assert request.rec_headers['WARC-Target-URI'] == "https://example.com/foo"
+        assert request.rec_headers['WARC-Proxy-Host'] == 'https://localhost:{0}'.format(self.port)
 
         with raises(StopIteration):
             assert next(ai)
@@ -95,20 +104,24 @@ class TestCaptureHttpProxy():
         response = next(ai)
         assert response.rec_type == 'response'
         assert response.rec_headers['WARC-Target-URI'] == "https://example.com/test"
+        assert response.rec_headers['WARC-Proxy-Host'] == 'https://localhost:{0}'.format(self.port)
         assert response.content_stream().read().decode('utf-8') == 'Proxied: /https://example.com/test'
 
         request = next(ai)
         assert request.rec_type == 'request'
         assert request.rec_headers['WARC-Target-URI'] == "https://example.com/test"
+        assert request.rec_headers['WARC-Proxy-Host'] == 'https://localhost:{0}'.format(self.port)
 
         response = next(ai)
         assert response.rec_type == 'response'
         assert response.rec_headers['WARC-Target-URI'] == "https://example.com/foo"
+        assert response.rec_headers['WARC-Proxy-Host'] == 'https://localhost:{0}'.format(self.port)
         assert response.content_stream().read().decode('utf-8') == 'Proxied: /https://example.com/foo'
 
         request = next(ai)
         assert request.rec_type == 'request'
         assert request.rec_headers['WARC-Target-URI'] == "https://example.com/foo"
+        assert request.rec_headers['WARC-Proxy-Host'] == 'https://localhost:{0}'.format(self.port)
 
         with raises(StopIteration):
             assert next(ai)
