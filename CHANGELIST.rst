@@ -1,7 +1,9 @@
-N.N.N
+1.7.3
 ~~~~~
 
 - Fix documentation for capture_http filter_records `#110 <https://github.com/webrecorder/warcio/issues/110>`
+
+- Fix capture_http with http and https proxies `#113 <https://github.com/webrecorder/warcio/issues/113>`
 
 
 1.7.2

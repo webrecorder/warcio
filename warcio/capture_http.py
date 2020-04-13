@@ -99,9 +99,7 @@ class RecordingHTTPConnection(httplib.HTTPConnection):
             return
 
         def send_request(buff):
-            if not self.recorder.url:
-                url = self._extract_url(buff)
-                self.recorder.url = url
+            self.recorder.extract_url(buff, self.host, self.port, self.default_port)
 
             orig_connection.send(self, buff)
             self.recorder.write_request(buff)
@@ -117,24 +115,16 @@ class RecordingHTTPConnection(httplib.HTTPConnection):
         else:
             send_request(data)
 
+    def _tunnel(self, *args, **kwargs):
+        if self.recorder:
+            self.recorder.start_tunnel()
+
+        return orig_connection._tunnel(self, *args, **kwargs)
+
     def request(self, *args, **kwargs):
         if self.recorder:
             self.recorder.start()
         return orig_connection.request(self, *args, **kwargs)
-
-    def _extract_url(self, data):
-        buff = BytesIO(data)
-        line = to_native_str(buff.readline(), 'latin-1')
-
-        path = line.split(' ', 2)[1]
-
-        scheme = 'https' if self.default_port == 443 else 'http'
-        url = scheme + '://' + self.host
-        if self.port != self.default_port:
-            url += ':' + str(self.port)
-
-        url += path
-        return url
 
 
 # ============================================================================
@@ -145,13 +135,23 @@ class RequestRecorder(object):
         self.request_out = None
         self.response_out = None
         self.url = None
+        self.connect_host = self.connect_port = None
+        self.started_req = False
+        self.first_line_read = False
         self.lock = threading.Lock()
         self.warc_headers = {}
+
+    def start_tunnel(self):
+        self.connect_host = self.connect_port = None
+        self.started_req = False
+        self.first_line_read = False
 
     def start(self):
         self.request_out = self._create_buffer()
         self.response_out = self._create_buffer()
         self.url = None
+        self.started_req = True
+        self.first_line_read = False
 
     def _create_buffer(self):
         return SpooledTemporaryFile(BUFF_SIZE)
@@ -161,10 +161,12 @@ class RequestRecorder(object):
             self.warc_headers['WARC-IP-Address'] = remote_ip
 
     def write_request(self, buff):
-        self.request_out.write(buff)
+        if self.started_req:
+            self.request_out.write(buff)
 
     def write_response(self, buff):
-        self.response_out.write(buff)
+        if self.started_req:
+            self.response_out.write(buff)
 
     def _create_record(self, out, record_type):
         length = out.tell()
@@ -191,6 +193,41 @@ class RequestRecorder(object):
         finally:
             self.request_out.close()
             self.response_out.close()
+
+    def extract_url(self, data, host, port, default_port):
+        if self.first_line_read:
+            return
+
+        self.first_line_read = True
+        buff = BytesIO(data)
+        line = to_native_str(buff.readline(), 'latin-1')
+
+        parts = line.split(' ', 2)
+        verb = parts[0]
+        path = parts[1]
+
+        if verb == "CONNECT":
+            parts = path.split(":", 1)
+            self.connect_host = parts[0]
+            self.connect_port = int(parts[1]) if len(parts) > 1 else default_port
+            return
+
+        if self.connect_host:
+            host = self.connect_host
+
+        if self.connect_port:
+            port = self.connect_port
+
+        if path.startswith(('http:', 'https:')):
+            self.url = path
+            return
+
+        scheme = 'https' if default_port == 443 else 'http'
+        self.url = scheme + '://' + host
+        if port != default_port:
+            self.url += ':' + str(port)
+
+        self.url += path
 
 
 # ============================================================================
