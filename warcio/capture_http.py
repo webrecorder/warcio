@@ -105,7 +105,8 @@ class RecordingHTTPConnection(httplib.HTTPConnection):
             self.recorder.write_request(buff)
 
         # if sending request body as stream
-        if hasattr(data, 'read') and not isinstance(data, array):
+        # (supported via httplib but seems unused via higher-level apis)
+        if hasattr(data, 'read') and not isinstance(data, array):  #pragma: no cover
             while True:
                 buff = data.read(BUFF_SIZE)
                 if not buff:
@@ -157,7 +158,7 @@ class RequestRecorder(object):
         return SpooledTemporaryFile(BUFF_SIZE)
 
     def set_remote_ip(self, remote_ip):
-        if remote_ip:
+        if remote_ip:  #pragma: no cover
             self.warc_headers['WARC-IP-Address'] = remote_ip
 
     def write_request(self, buff):

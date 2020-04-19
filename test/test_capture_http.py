@@ -117,7 +117,7 @@ class TestCaptureHttpBin(object):
     def test_post_stream(self):
         warc_writer = BufferWARCWriter(gzip=False)
 
-        def nop_filter(request, response, warc_writer):
+        def nop_filter(request, response, recorder):
             assert request
             assert response
             return request, response
@@ -147,11 +147,10 @@ class TestCaptureHttpBin(object):
         data = request.content_stream().read().decode('utf-8')
         assert data == 'somedatatopost'
 
-
     def test_skip_filter(self):
         warc_writer = BufferWARCWriter(gzip=False)
 
-        def skip_filter(request, response, warc_writer):
+        def skip_filter(request, response, recorder):
             assert request
             assert response
             return None, None

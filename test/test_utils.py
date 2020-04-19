@@ -50,6 +50,14 @@ class TestUtils(object):
             assert fh.readline().decode('utf-8') == 'NOTWARC/1.0\r\n'
 
         default_fh.seek(0)
+        with utils.open_or_default(b'-', 'rb', default_fh) as fh:
+            assert fh.readline().decode('utf-8') == 'NOTWARC/1.0\r\n'
+
+        default_fh.seek(0)
+        with utils.open_or_default(u'-', 'rb', default_fh) as fh:
+            assert fh.readline().decode('utf-8') == 'NOTWARC/1.0\r\n'
+
+        default_fh.seek(0)
         with utils.open_or_default(default_fh, 'rb', None) as fh:
             assert fh.readline().decode('utf-8') == 'NOTWARC/1.0\r\n'
 

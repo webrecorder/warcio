@@ -68,6 +68,12 @@ class TestCaptureHttpProxy():
             res = requests.get("https://example.com/test", proxies=self.proxies, verify=False)
             res = requests.get("https://example.com/foo", proxies=self.proxies, verify=False)
 
+        # not recording this request
+        res = requests.get("https://example.com/skip", proxies=self.proxies, verify=False)
+
+        with capture_http(warc_writer):
+            res = requests.get("https://example.com/bar", proxies=self.proxies, verify=False)
+
         ai = ArchiveIterator(warc_writer.get_stream())
         response = next(ai)
         assert response.rec_type == 'response'
@@ -90,6 +96,15 @@ class TestCaptureHttpProxy():
         assert request.rec_type == 'request'
         assert request.rec_headers['WARC-Target-URI'] == "https://example.com/foo"
         assert request.rec_headers['WARC-Proxy-Host'] == 'https://localhost:{0}'.format(self.port)
+
+        response = next(ai)
+        assert response.rec_type == 'response'
+        assert response.rec_headers['WARC-Target-URI'] == "https://example.com/bar"
+        assert response.rec_headers['WARC-Proxy-Host'] == 'https://localhost:{0}'.format(self.port)
+        assert response.content_stream().read().decode('utf-8') == 'Proxied: /https://example.com/bar'
+
+        request = next(ai)
+        assert request.rec_type == 'request'
 
         with raises(StopIteration):
             assert next(ai)
@@ -100,6 +115,12 @@ class TestCaptureHttpProxy():
             res = sesh.get("https://example.com/test", proxies=self.proxies, verify=False)
             res = sesh.get("https://example.com/foo", proxies=self.proxies, verify=False)
 
+        # *will* be captured, as part of same session... (fix this?)
+        res = sesh.get("https://example.com/skip", proxies=self.proxies, verify=False)
+
+        with capture_http(warc_writer):
+            res = sesh.get("https://example.com/bar", proxies=self.proxies, verify=False)
+
         ai = ArchiveIterator(warc_writer.get_stream())
         response = next(ai)
         assert response.rec_type == 'response'
@@ -122,6 +143,24 @@ class TestCaptureHttpProxy():
         assert request.rec_type == 'request'
         assert request.rec_headers['WARC-Target-URI'] == "https://example.com/foo"
         assert request.rec_headers['WARC-Proxy-Host'] == 'https://localhost:{0}'.format(self.port)
+
+        response = next(ai)
+        assert response.rec_type == 'response'
+        assert response.rec_headers['WARC-Target-URI'] == "https://example.com/skip"
+        assert response.rec_headers['WARC-Proxy-Host'] == 'https://localhost:{0}'.format(self.port)
+        assert response.content_stream().read().decode('utf-8') == 'Proxied: /https://example.com/skip'
+
+        request = next(ai)
+        assert request.rec_type == 'request'
+
+        response = next(ai)
+        assert response.rec_type == 'response'
+        assert response.rec_headers['WARC-Target-URI'] == "https://example.com/bar"
+        assert response.rec_headers['WARC-Proxy-Host'] == 'https://localhost:{0}'.format(self.port)
+        assert response.content_stream().read().decode('utf-8') == 'Proxied: /https://example.com/bar'
+
+        request = next(ai)
+        assert request.rec_type == 'request'
 
         with raises(StopIteration):
             assert next(ai)
