@@ -28,7 +28,6 @@ class RecordBuilder(object):
         }
 
     NO_PAYLOAD_DIGEST_TYPES = ('warcinfo', 'revisit')
-    NO_BLOCK_DIGEST_TYPES = ('warcinfo')
 
 
     def __init__(self, warc_version=None, header_filter=None):
@@ -158,8 +157,7 @@ class RecordBuilder(object):
 
     def ensure_digest(self, record, block=True, payload=True):
         if block:
-            if (record.rec_headers.get_header('WARC-Block-Digest') or
-                (record.rec_type in self.NO_BLOCK_DIGEST_TYPES)):
+            if record.rec_headers.get_header('WARC-Block-Digest'):
                 block = False
 
         if payload:
