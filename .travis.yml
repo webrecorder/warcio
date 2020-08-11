@@ -1,8 +1,6 @@
 language: python
 
 python:
-  - "2.7"
-  - "3.4"
   - "3.5"
   - "3.6"
   - "3.7"
@@ -19,6 +17,7 @@ install:
   - python setup.py install
   - pip install coverage pytest-cov codecov
   - pip install 'jinja2<3.0.0'
+  - pip install 'itsdangerous<2.0.0'
 
 script:
   - python setup.py test
