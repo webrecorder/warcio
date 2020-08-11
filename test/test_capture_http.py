@@ -147,6 +147,41 @@ class TestCaptureHttpBin(object):
         data = request.content_stream().read().decode('utf-8')
         assert data == 'somedatatopost'
 
+    def test_post_chunked(self):
+        warc_writer = BufferWARCWriter(gzip=False)
+
+        def nop_filter(request, response, recorder):
+            assert request
+            assert response
+            return request, response
+
+        def gen():
+            return iter([b'some', b'data', b'to', b'post'])
+
+        #url = 'http://localhost:{0}/post'.format(self.port)
+        url = 'https://httpbin.org/post'
+
+        with capture_http(warc_writer, nop_filter, record_ip=False):
+            res = requests.post(url, data=gen(), headers={'Content-Type': 'application/json'})
+
+        # response
+        ai = ArchiveIterator(warc_writer.get_stream())
+        response = next(ai)
+        assert response.rec_type == 'response'
+        assert response.rec_headers['WARC-Target-URI'] == url
+        assert 'WARC-IP-Address' not in response.rec_headers
+
+        assert res.json() == json.loads(response.content_stream().read().decode('utf-8'))
+
+        # request
+        request = next(ai)
+        assert request.rec_type == 'request'
+        assert request.rec_headers['WARC-Target-URI'] == url
+        assert 'WARC-IP-Address' not in response.rec_headers
+
+        data = request.content_stream().read().decode('utf-8')
+        assert data == 'somedatatopost'
+
     def test_skip_filter(self):
         warc_writer = BufferWARCWriter(gzip=False)
 

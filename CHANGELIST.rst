@@ -1,3 +1,13 @@
+1.7.4
+~~~~~
+
+- ``capture_http`` support for chunk-encoded requests `#116 <https://github.com/webrecorder/warcio/pull/116>`_
+
+- indexer: option to enable ``verify_http`` `#116 <https://github.com/webrecorder/warcio/pull/116>`_
+
+- Enable writing block digests for warcinfo records `#115 <https://github.com/webrecorder/warcio/pull/115>`_
+
+
 1.7.3
 ~~~~~
 

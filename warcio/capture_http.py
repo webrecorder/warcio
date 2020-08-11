@@ -63,7 +63,8 @@ class RecordingStream(object):
 
     def close(self):
         self.recorder.done()
-        return self.fp.close()
+        if self.fp:
+            return self.fp.close()
 
     def flush(self):
         return self.fp.flush()
@@ -122,15 +123,15 @@ class RecordingHTTPConnection(httplib.HTTPConnection):
 
         return orig_connection._tunnel(self, *args, **kwargs)
 
-    def request(self, *args, **kwargs):
+    def putrequest(self, *args, **kwargs):
         if self.recorder:
             self.recorder.start()
-        return orig_connection.request(self, *args, **kwargs)
+        return orig_connection.putrequest(self, *args, **kwargs)
 
 
 # ============================================================================
 class RequestRecorder(object):
-    def __init__(self, writer, filter_func=None):
+    def __init__(self, writer, filter_func=None, record_ip=True):
         self.writer = writer
         self.filter_func = filter_func
         self.request_out = None
@@ -141,6 +142,7 @@ class RequestRecorder(object):
         self.first_line_read = False
         self.lock = threading.Lock()
         self.warc_headers = {}
+        self.record_ip = record_ip
 
     def start_tunnel(self):
         self.connect_host = self.connect_port = None
@@ -158,7 +160,7 @@ class RequestRecorder(object):
         return SpooledTemporaryFile(BUFF_SIZE)
 
     def set_remote_ip(self, remote_ip):
-        if remote_ip:  #pragma: no cover
+        if self.record_ip and remote_ip:  #pragma: no cover
             self.warc_headers['WARC-IP-Address'] = remote_ip
 
     def write_request(self, buff):
@@ -180,6 +182,9 @@ class RequestRecorder(object):
                 length=length)
 
     def done(self):
+        if not self.started_req:
+            return
+
         try:
             request = self._create_record(self.request_out, 'request')
             response = self._create_record(self.response_out, 'response')
@@ -239,7 +244,7 @@ httplib.HTTPConnection = RecordingHTTPConnection
 
 @contextmanager
 def capture_http(warc_writer=None, filter_func=None, append=True,
-                **kwargs):
+                record_ip=True, **kwargs):
     out = None
     if warc_writer == None:
         if 'gzip' not in kwargs:
@@ -252,7 +257,7 @@ def capture_http(warc_writer=None, filter_func=None, append=True,
         warc_writer = WARCWriter(out, **kwargs)
 
     try:
-        recorder = RequestRecorder(warc_writer, filter_func)
+        recorder = RequestRecorder(warc_writer, filter_func, record_ip=record_ip)
         RecordingHTTPConnection.local.recorder = recorder
         yield warc_writer
 

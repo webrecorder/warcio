@@ -12,7 +12,7 @@ from warcio.utils import open_or_default
 class Indexer(object):
     field_names = {}
 
-    def __init__(self, fields, inputs, output):
+    def __init__(self, fields, inputs, output, verify_http=False):
         if isinstance(fields, str):
             fields = fields.split(',')
         self.fields = fields
@@ -20,6 +20,7 @@ class Indexer(object):
 
         self.inputs = inputs
         self.output = output
+        self.verify_http = verify_http
 
     def process_all(self):
         with open_or_default(self.output, 'wt', sys.stdout) as out:
@@ -54,7 +55,8 @@ class Indexer(object):
     def _create_record_iter(self, input_):
         return ArchiveIterator(input_,
                                no_record_parse=not self.record_parse,
-                               arc2warc=True)
+                               arc2warc=True,
+                               verify_http=self.verify_http)
 
     def _new_dict(self, record):
         return OrderedDict()
