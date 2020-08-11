@@ -44,6 +44,7 @@ WARC-Type: warcinfo\r\n\
 WARC-Record-ID: <urn:uuid:12345678-feb0-11e6-8f83-68a86d1772ce>\r\n\
 WARC-Filename: testfile.warc.gz\r\n\
 WARC-Date: 2000-01-01T00:00:00Z\r\n\
+WARC-Block-Digest: sha1:GAD6P5BTZPRU57ICXEYUJZGCURZYABID\r\n\
 Content-Type: application/warc-fields\r\n\
 Content-Length: 86\r\n\
 \r\n\
@@ -635,6 +636,7 @@ class TestWarcWriter(object):
         assert parsed_record.rec_headers.get_header('WARC-Type') == 'warcinfo'
         assert parsed_record.rec_headers.get_header('Content-Type') == 'application/warc-fields'
         assert parsed_record.rec_headers.get_header('WARC-Filename') == 'testfile.warc.gz'
+        assert parsed_record.rec_headers.get_header('WARC-Block-Digest') == 'sha1:GAD6P5BTZPRU57ICXEYUJZGCURZYABID'
 
         buff = parsed_record.content_stream().read().decode('utf-8')
 
@@ -695,9 +697,8 @@ class TestWarcWriter(object):
             record_buff = re.sub('WARC-Payload-Digest:[^\r\n]+\r\n', '', record_buff, 1)
             assert 'WARC-Payload-Digest: ' not in record_buff
 
-        if rec_type != 'warcinfo':
-            record_buff = re.sub('WARC-Block-Digest:[^\r\n]+\r\n', 'WARC-Block-Digest: sha1:x-invalid\r\n', record_buff, 1)
-            assert 'WARC-Block-Digest: sha1:x-invalid' in record_buff
+        record_buff = re.sub('WARC-Block-Digest:[^\r\n]+\r\n', 'WARC-Block-Digest: sha1:x-invalid\r\n', record_buff, 1)
+        assert 'WARC-Block-Digest: sha1:x-invalid' in record_buff
 
         return record_buff
 

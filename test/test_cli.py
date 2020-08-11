@@ -170,7 +170,7 @@ def test_recompress_arc2warc(capsys):
 
 
         expected = """\
-{"warc-type": "warcinfo"}
+{"warc-type": "warcinfo", "warc-block-digest": "sha1:3I42H3S6NNFQ2MSVX7XZKYAYSCX5QBYJ"}
 {"warc-type": "response", "warc-block-digest": "sha1:PEWDX5GTH66WU74WBPGFECIYBMPMP3FP", "warc-payload-digest": "sha1:B2LTWWPUOYAH7UIPQ7ZUPQ4VMBSVC36A"}
 """
 
