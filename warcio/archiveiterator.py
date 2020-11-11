@@ -1,6 +1,7 @@
 from warcio.bufferedreaders import DecompressingBufferedReader
 
 from warcio.exceptions import ArchiveLoadFailed
+from warcio.statusandheaders import StatusAndHeadersParserException
 from warcio.recordloader import ArcWarcRecordLoader
 
 from warcio.utils import BUFF_SIZE
@@ -56,6 +57,7 @@ class ArchiveIterator(six.Iterator):
     def __init__(self, fileobj, no_record_parse=False,
                  verify_http=False, arc2warc=False,
                  ensure_http_headers=False, block_size=BUFF_SIZE,
+                 skip_bad_records=False,
                  check_digests=False):
 
         self.fh = fileobj
@@ -65,6 +67,8 @@ class ArchiveIterator(six.Iterator):
         self.known_format = None
 
         self.mixed_arc_warc = arc2warc
+
+        self.skip_bad_records = skip_bad_records
 
         self.member_info = None
         self.no_record_parse = no_record_parse
@@ -115,6 +119,16 @@ class ArchiveIterator(six.Iterator):
 
             except EOFError:
                 empty_record = True
+
+            except (ArchiveLoadFailed, StatusAndHeadersParserException) as e:
+                if self.skip_bad_records:
+                    trash = self.reader.readline()
+                    if trash:
+                        continue
+                    else:
+                        empty_record = True
+                else:
+                    raise e
 
             self.read_to_end()
 
