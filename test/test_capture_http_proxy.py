@@ -7,7 +7,7 @@ import time
 import requests
 from warcio.archiveiterator import ArchiveIterator
 
-from pytest import raises
+from pytest import raises, mark
 
 
 # ==================================================================
@@ -44,6 +44,7 @@ class TestCaptureHttpProxy():
         thread.start()
         time.sleep(0.1)
 
+    @mark.online()
     def test_capture_http_proxy(self):
         with capture_http() as warc_writer:
             res = requests.get("http://example.com/test", proxies=self.proxies, verify=False)
@@ -63,6 +64,7 @@ class TestCaptureHttpProxy():
         with raises(StopIteration):
             assert next(ai)
 
+    @mark.online()
     def test_capture_https_proxy(self):
         with capture_http() as warc_writer:
             res = requests.get("https://example.com/test", proxies=self.proxies, verify=False)
@@ -109,6 +111,7 @@ class TestCaptureHttpProxy():
         with raises(StopIteration):
             assert next(ai)
 
+    @mark.online()
     def test_capture_https_proxy_same_session(self):
         sesh = requests.session()
         with capture_http() as warc_writer:
