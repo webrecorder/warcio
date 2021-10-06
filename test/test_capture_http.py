@@ -5,7 +5,7 @@ import time
 
 # must be imported before 'requests'
 from warcio.capture_http import capture_http
-from pytest import raises
+from pytest import raises, mark
 import requests
 
 import json
@@ -147,6 +147,7 @@ class TestCaptureHttpBin(object):
         data = request.content_stream().read().decode('utf-8')
         assert data == 'somedatatopost'
 
+    @mark.online()
     def test_post_chunked(self):
         warc_writer = BufferWARCWriter(gzip=False)
 
@@ -268,6 +269,7 @@ class TestCaptureHttpBin(object):
 
         os.remove(full_path)
 
+    @mark.online()
     def test_remote(self):
         with capture_http(warc_version='1.1', gzip=True) as writer:
             requests.get('http://example.com/')
