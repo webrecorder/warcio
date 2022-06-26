@@ -239,7 +239,7 @@ class RequestRecorder(object):
 
 
 # ============================================================================
-httplib.HTTPConnection = RecordingHTTPConnection
+httplib.HTTPConnection = RecordingHTTPConnection  # type: ignore
 # ============================================================================
 
 @contextmanager
