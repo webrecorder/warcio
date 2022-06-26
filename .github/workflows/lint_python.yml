@@ -20,10 +20,9 @@ jobs:
       - run: isort --check-only --profile black . || true
       - run: pip install brotlipy
       - run: pip install -r requirements.txt || pip install --editable .  || pip install . || true
-      - run: pip install codecov coverage 'itsdangerous<2.0.0' 'jinja2<3.0.0' pytest-cov
+      - run: pip install codecov coverage httpbin 'itsdangerous<2.0.0' 'jinja2<3.0.0' pytest-cov wsgiprox
       - run: mkdir --parents --verbose .mypy_cache
       - run: mypy --ignore-missing-imports --install-types --non-interactive . || true
-      - run: pytest . || true
       - run: pytest --doctest-modules . || true
       - run: shopt -s globstar && pyupgrade --py36-plus **/*.py || true
       - run: safety check
