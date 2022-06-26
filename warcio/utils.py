@@ -3,11 +3,7 @@ import os
 from contextlib import contextmanager
 import base64
 import hashlib
-
-try:
-    import collections.abc as collections_abc  # only works on python 3.3+
-except ImportError:  #pragma: no cover
-    import collections as collections_abc
+from collections.abc import Mapping
 
 BUFF_SIZE = 16384
 
@@ -48,7 +44,7 @@ def headers_to_str_headers(headers):
     '''
     ret = []
 
-    if isinstance(headers, collections_abc.Mapping):
+    if isinstance(headers, Mapping):
         h = headers.items()
     else:
         h = headers
