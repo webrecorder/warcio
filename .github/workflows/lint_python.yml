@@ -4,26 +4,21 @@ jobs:
   lint_python:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: actions/setup-python@v4
         with:
           python-version: 3.x
       - run: pip install --upgrade pip wheel
-      - run: pip install bandit black codespell flake8 flake8-bugbear
-                         flake8-comprehensions isort mypy pytest pyupgrade safety
-      - run: bandit --recursive --skip B101,B404,B501,B603,B607 .
+      - run: pip install black codespell mypy pytest safety ruff
       - run: black --check . || true
       - run: codespell || true  # --ignore-words-list="" --skip="*.css,*.js,*.lock"
-      - run: flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
-      - run: flake8 . --count --exit-zero --max-complexity=10 --max-line-length=88
-                      --show-source --statistics
-      - run: isort --check-only --profile black . || true
+      - run: ruff . --output-format=github --select=E9,F63,F7,F82 --show-source 
+      - run: ruff . --exit-zero --output-format=github --select=ALL
       - run: pip install brotlipy
       - run: pip install -r requirements.txt || pip install --editable .  || pip install . || true
       - run: pip install codecov coverage httpbin 'itsdangerous<2.0.0' 'jinja2<3.0.0' pytest-cov wsgiprox
       - run: mkdir --parents --verbose .mypy_cache
       - run: mypy --ignore-missing-imports --install-types --non-interactive .
       - run: pytest --doctest-modules . || true
-      - run: shopt -s globstar && pyupgrade --py36-plus **/*.py || true
       - run: pip install --upgrade click  # TODO: Upgrade to a safe version of click
       - run: safety check
