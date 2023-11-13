@@ -161,7 +161,7 @@ class ArchiveIterator(six.Iterator):
         - For uncompressed, they are between records and so are NOT part of
           the record length
 
-          count empty_size so that it can be substracted from
+          count empty_size so that it can be subtracted from
           the record length for uncompressed
 
           if first line read is not blank, likely error in WARC/ARC,
