@@ -61,7 +61,7 @@ Non-chunked, compressed data, specify decomp_type
 >>> print_str(ChunkedDataReader(BytesIO(compress('ABCDEF')), decomp_type='gzip').read())
 'ABCDEF'
 
-Non-chunked, compressed data, specifiy compression seperately
+Non-chunked, compressed data, specify compression separately
 >>> c = ChunkedDataReader(BytesIO(compress('ABCDEF'))); c.set_decomp('gzip'); print_str(c.read())
 'ABCDEF'
 
