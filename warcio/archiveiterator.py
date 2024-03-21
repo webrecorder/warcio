@@ -113,7 +113,13 @@ class ArchiveIterator(six.Iterator):
 
                 yield self.record
 
-            except EOFError:
+            except EOFError as e:
+                if self.reader.decompressor:
+                    if not self.reader.decompressor.eof:
+                        msg = "warning: final record appears to be truncated"
+                        sys.stderr.write(msg + "\n")
+                        raise ArchiveLoadFailed(msg)
+
                 empty_record = True
 
             self.read_to_end()
