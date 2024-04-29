@@ -19,7 +19,7 @@
 1.7.2
 ~~~~~
 
-- Ensure 1.1 revisit profile used with WARC/1.1 revists `#96 <https://github.com/webrecorder/warcio/pull/96>`_
+- Ensure 1.1 revisit profile used with WARC/1.1 revisits `#96 <https://github.com/webrecorder/warcio/pull/96>`_
 
 - Include record offsets in ``warcio check`` output `#98 <https://github.com/webrecorder/warcio/pull/98>`_
 

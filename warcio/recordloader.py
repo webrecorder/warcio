@@ -80,7 +80,7 @@ class ArcWarcRecordLoader(object):
         and a stream limited to the remainder of the record.
 
         Pass statusline and known_format to detect_type_loader_headers()
-        to faciliate parsing.
+        to facilitate parsing.
         """
         (the_format, rec_headers) = (self.
                                      _detect_type_load_headers(stream,
