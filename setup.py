@@ -47,7 +47,7 @@ setup(
     tests_require=[
         'pytest',
         'pytest-cov',
-        'httpbin==0.5.0',
+        'httpbin>=0.10.2',
         'requests',
         'wsgiprox',
     ],
