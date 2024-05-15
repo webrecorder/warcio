@@ -16,6 +16,9 @@ from warcio.archiveiterator import ArchiveIterator
 from warcio.utils import BUFF_SIZE
 from warcio.warcwriter import BufferWARCWriter, WARCWriter
 
+# ==================================================================
+
+
 
 # ==================================================================
 class TestCaptureHttpBin(object):
@@ -68,21 +71,28 @@ class TestCaptureHttpBin(object):
         assert request.rec_headers['WARC-Target-URI'] == url
         assert request.rec_headers['WARC-IP-Address'] == '127.0.0.1'
 
-    def test_get_cache_to_file(self):
+    def test_post_cache_to_file(self):
         warc_writer = BufferWARCWriter(gzip=False)
 
-        url = 'http://localhost:{0}/bytes/{1}'.format(self.port, BUFF_SIZE * 2)
-        with capture_http(warc_writer):
-            res = requests.get(url, headers={'Host': 'httpbin.org'})
+        random_bytes = os.urandom(BUFF_SIZE * 2)
+        request_data = {"data": str(random_bytes)}
 
-        assert len(res.content) == BUFF_SIZE * 2
+        url = 'http://localhost:{0}/anything'.format(self.port)
+        with capture_http(warc_writer):
+            res = requests.post(
+                url,
+                headers={'Host': 'httpbin.org'},
+                json=request_data
+            )
+
+        assert res.json()["json"] == request_data
 
         ai = ArchiveIterator(warc_writer.get_stream())
         response = next(ai)
         assert response.rec_type == 'response'
         assert response.rec_headers['WARC-Target-URI'] == url
         assert response.rec_headers['WARC-IP-Address'] == '127.0.0.1'
-        assert res.content == response.content_stream().read()
+        assert request_data == json.loads(response.content_stream().read().decode('utf-8'))["json"]
 
         request = next(ai)
         assert request.rec_type == 'request'
