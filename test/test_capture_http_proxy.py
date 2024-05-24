@@ -14,7 +14,7 @@ from pytest import raises
 
 # ==================================================================
 class TestCaptureHttpProxy():
-    def setup(cls):
+    def setup_class(cls):
         def app(env, start_response):
             result = ('Proxied: ' + env['PATH_INFO']).encode('utf-8')
             headers = [('Content-Length', str(len(result)))]
@@ -31,14 +31,10 @@ class TestCaptureHttpProxy():
         server = make_server('localhost', 0, wsgiprox, server_class=NoLogServer)
         addr, cls.port = server.socket.getsockname()
 
-        print(f"cls.port: {cls.port}", flush=True)
-
         cls.proxies = {
             'https': 'http://proxy.com:' + str(cls.port),
             'http': 'http://proxy.com:' + str(cls.port)
         }
-
-        print(f"cls.proxies: {cls.proxies}", flush=True)
 
         def run():
             try:
