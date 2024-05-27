@@ -45,11 +45,13 @@ setup(
     cmdclass={'test': PyTest},
     test_suite='',
     tests_require=[
+        'urllib3==1.25.11',
         'pytest',
         'pytest-cov',
-        'httpbin==0.5.0',
+        'httpbin>=0.10.2',
         'requests',
         'wsgiprox',
+        'hookdns',
     ],
     classifiers=[
         'Development Status :: 5 - Production/Stable',
