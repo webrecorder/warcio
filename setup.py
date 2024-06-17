@@ -45,7 +45,7 @@ setup(
     cmdclass={'test': PyTest},
     test_suite='',
     tests_require=[
-        'urllib3==1.25.11',
+        'urllib3==1.26.19',
         'pytest',
         'pytest-cov',
         'httpbin>=0.10.2',
