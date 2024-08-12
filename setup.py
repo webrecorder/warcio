@@ -29,6 +29,7 @@ setup(
         ],
     install_requires=[
         'six',
+        'setuptools',
         ],
     zip_safe=True,
     entry_points="""
