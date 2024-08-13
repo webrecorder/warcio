@@ -28,10 +28,9 @@ jobs:
       - name: Install warcio
         run: poetry install
 
-      - name: Get some information from warcio
+      - name: Output warcio version
         run: |
           poetry run warcio --version
-          poetry run python -c "import pkg_resources; print(pkg_resources.get_distribution('warcio').location)"
 
       - name: Run tests
         run: poetry run pytest
