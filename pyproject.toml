@@ -22,7 +22,6 @@ classifiers = [
 [tool.poetry.dependencies]
 python = "^3.8"
 six = "^1.16.0"
-setuptools = "^72.1.0"
 
 
 [tool.poetry.group.test.dependencies]
