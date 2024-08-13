@@ -57,8 +57,8 @@ def main(args=None):
 
 # ============================================================================
 def get_version():
-    import pkg_resources
-    return '%(prog)s ' + pkg_resources.get_distribution('warcio').version
+    from importlib.metadata import version
+    return '%(prog)s ' + version('warcio')
 
 
 # ============================================================================
