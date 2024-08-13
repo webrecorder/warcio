@@ -39,8 +39,9 @@ requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
 
 [tool.pytest.ini_options]
-addopts = "--doctest-modules ./warcio --cov warcio -v"
+addopts = "-v --cov warcio --doctest-modules"
 testpaths = [
+    "warcio",
     "test",
 ]
 
