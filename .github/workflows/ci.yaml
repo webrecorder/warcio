@@ -27,10 +27,11 @@ jobs:
       - name: Install warcio
         run: python setup.py install
 
+      - name: Install test dependencies
+        run: pip install -e ".[testing]"
+
       - name: Run tests
-        run: |
-          pip install -e ".[testing]"
-          python -m pytest
+        run: python -m pytest
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v1
