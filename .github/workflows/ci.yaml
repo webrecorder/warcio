@@ -28,7 +28,9 @@ jobs:
         run: python setup.py install
 
       - name: Run tests
-        run: python setup.py test
+        run: |
+          pip install -e ".[testing]"
+          python -m pytest
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v1
