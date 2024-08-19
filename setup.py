@@ -39,7 +39,7 @@ setup(
     test_suite='',
     extras_require={
         'testing': [
-            'urllib3==1.25.11',
+            'urllib3>=1.26.5,<1.26.16',
             'pytest',
             'pytest-cov',
             'httpbin>=0.10.2',
