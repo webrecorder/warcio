@@ -5,6 +5,13 @@ from warcio.checker import Checker
 from warcio.extractor import Extractor
 from warcio.recompressor import Recompressor
 
+
+try:
+    from importlib.metadata import version
+except ImportError:
+    import pkg_resources
+    def version(package):
+        return pkg_resources.get_distribution(package).version
 import sys
 
 
@@ -57,8 +64,7 @@ def main(args=None):
 
 # ============================================================================
 def get_version():
-    import pkg_resources
-    return '%(prog)s ' + pkg_resources.get_distribution('warcio').version
+    return '%(prog)s ' + version('warcio')
 
 
 # ============================================================================

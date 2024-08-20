@@ -12,6 +12,12 @@ import sys
 import tempfile
 import os
 
+def test_version(capsys):
+    with pytest.raises(SystemExit):
+        main(args=['--version'])
+    out, err = capsys.readouterr()
+    print(out, err)
+    assert len(out) > 0
 
 def test_index(capsys):
     files = ['example.warc.gz', 'example.warc', 'example.arc.gz', 'example.arc']
