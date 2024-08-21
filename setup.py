@@ -14,13 +14,6 @@ class PyTest(TestCommand):
         # should work with setuptools <18, 18 18.5
         self.test_suite = ' '
 
-    def run_tests(self):
-        import pytest
-        import sys
-        import os
-        errcode = pytest.main(['--doctest-modules', './warcio', '--cov', 'warcio', '-v', 'test/'])
-        sys.exit(errcode)
-
 setup(
     name='warcio',
     version=__version__,
@@ -44,15 +37,17 @@ setup(
     """,
     cmdclass={'test': PyTest},
     test_suite='',
-    tests_require=[
-        'urllib3==1.25.11',
-        'pytest',
-        'pytest-cov',
-        'httpbin>=0.10.2',
-        'requests',
-        'wsgiprox',
-        'hookdns',
-    ],
+    extras_require={
+        'testing': [
+            'urllib3==1.25.11',
+            'pytest',
+            'pytest-cov',
+            'httpbin>=0.10.2',
+            'requests',
+            'wsgiprox',
+            'hookdns',
+        ]
+    },
     classifiers=[
         'Development Status :: 5 - Production/Stable',
         'Environment :: Web Environment',
