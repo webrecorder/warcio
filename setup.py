@@ -2,17 +2,9 @@
 # vim: set sw=4 et:
 
 from setuptools import setup, find_packages
-from setuptools.command.test import test as TestCommand
-import glob
 
 __version__ = '1.7.4'
 
-
-class PyTest(TestCommand):
-    def finalize_options(self):
-        TestCommand.finalize_options(self)
-        # should work with setuptools <18, 18 18.5
-        self.test_suite = ' '
 
 setup(
     name='warcio',
@@ -35,7 +27,6 @@ setup(
         [console_scripts]
         warcio = warcio.cli:main
     """,
-    cmdclass={'test': PyTest},
     test_suite='',
     extras_require={
         'testing': [
@@ -52,13 +43,13 @@ setup(
         'Development Status :: 5 - Production/Stable',
         'Environment :: Web Environment',
         'License :: OSI Approved :: Apache Software License',
-        'Programming Language :: Python :: 2',
-        'Programming Language :: Python :: 2.7',
         'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.4',
-        'Programming Language :: Python :: 3.5',
-        'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: 3.7',
+        'Programming Language :: Python :: 3.8',
+        'Programming Language :: Python :: 3.9',
+        'Programming Language :: Python :: 3.10',
+        'Programming Language :: Python :: 3.11',
+        'Programming Language :: Python :: 3.12',
         'Topic :: Software Development :: Libraries :: Python Modules',
         'Topic :: Utilities',
     ]
