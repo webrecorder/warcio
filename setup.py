@@ -27,7 +27,6 @@ setup(
         [console_scripts]
         warcio = warcio.cli:main
     """,
-    cmdclass={'test': PyTest},
     test_suite='',
     extras_require={
         'testing': [
