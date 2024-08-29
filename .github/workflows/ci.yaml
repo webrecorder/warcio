@@ -44,10 +44,10 @@ jobs:
           pip install setuptools
 
       - name: Install warcio ALL
-        if: ${{ ! NOTALL }}
+        if: ${{ ! matrix.NOTALL }}
         run: pip install .[testing]
       - name: Install warcio NOTALL
-        if: ${{ NOTALL }}
+        if: ${{ matrix.NOTALL }}
         run: pip install .[brotli,testing]
 
       - name: Run tests
