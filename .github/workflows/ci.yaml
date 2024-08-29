@@ -13,6 +13,9 @@ jobs:
         os: [ubuntu-latest]
         EXTRA: [false]  # used to force includes to get included
         include:
+          - python-version: '3.12'
+            EXTRA: true
+            NOTALL: true
           - python-version: '3.11'
             os: macos-latest
             EXTRA: true
@@ -40,8 +43,12 @@ jobs:
         run: |
           pip install setuptools
 
-      - name: Install warcio
+      - name: Install warcio ALL
+        if: ${{ ! NOTALL }}
         run: pip install .[testing]
+      - name: Install warcio NOTALL
+        if: ${{ NOTALL }}
+        run: pip install .[brotli,testing]
 
       - name: Run tests
         run: python -m pytest

@@ -17,7 +17,7 @@ web archives. Supports Python 2.7+ and Python 3.4+ (using
 warcio supports reading and writing of WARC files compliant with both the `WARC 1.0 <http://bibnum.bnf.fr/WARC/WARC_ISO_28500_version1_latestdraft.pdf>`__
 and `WARC 1.1 <http://bibnum.bnf.fr/WARC/WARC_ISO_28500_version1-1_latestdraft.pdf>`__ ISO standards.
 
-Install with: ``pip install warcio``
+Install with: ``pip install warcio`` (or ``pip install warcio[all]`` to get optional features)
 
 This library is a spin-off of the WARC reading and writing component of
 the `pywb <https://github.com/webrecorder/pywb>`__ high-fidelity replay
