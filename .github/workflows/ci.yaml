@@ -4,11 +4,27 @@ on: [push, pull_request]
 
 jobs:
   unit-tests:
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
     strategy:
-      max-parallel: 3
+      fail-fast: false
+      #max-parallel: 3
       matrix:
         python-version: ['3.7', '3.8', '3.9', '3.10', '3.11', '3.12']
+        os: [ubuntu-latest]
+        EXTRA: [false]  # used to force includes to get included
+        include:
+          - python-version: '3.11'
+            os: macos-latest
+            EXTRA: true
+          - python-version: '3.12'
+            os: macos-latest
+            EXTRA: true
+          - python-version: '3.7'
+            os: windows-latest
+            EXTRA: true
+          - python-version: '3.12'
+            os: windows-latest
+            EXTRA: true
 
     steps:
       - name: checkout
@@ -25,10 +41,7 @@ jobs:
           pip install setuptools
 
       - name: Install warcio
-        run: python setup.py install
-
-      - name: Install test dependencies
-        run: pip install -e ".[testing]"
+        run: pip install .[testing]
 
       - name: Run tests
         run: python -m pytest
