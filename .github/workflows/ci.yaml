@@ -1,6 +1,10 @@
 name: CI
 
-on: [push, pull_request]
+on:
+  push:
+    branches:
+    - main
+  pull_request:
 
 jobs:
   unit-tests:
@@ -13,6 +17,10 @@ jobs:
         os: [ubuntu-latest]
         EXTRA: [false]  # used to force includes to get included
         include:
+          - python-version: '3.12'
+            os: ubuntu-latest
+            EXTRA: true
+            NOTALL: true
           - python-version: '3.11'
             os: macos-latest
             EXTRA: true
@@ -40,7 +48,11 @@ jobs:
         run: |
           pip install setuptools
 
-      - name: Install warcio
+      - name: Install warcio ALL
+        if: ${{ ! matrix.NOTALL }}
+        run: pip install .[brotli,testing]
+      - name: Install warcio NOTALL
+        if: ${{ matrix.NOTALL }}
         run: pip install .[testing]
 
       - name: Run tests

@@ -3,6 +3,8 @@ Unreleased
 
 - Add support for Python 3.12 by adjusting `urllib3` dependency to `>=1.26.4,<1.26.16`
 
+- Make brotli support easier to install
+
 
 1.7.4
 ~~~~~

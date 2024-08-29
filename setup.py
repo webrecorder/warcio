@@ -37,6 +37,9 @@ setup(
             'requests',
             'wsgiprox',
             'hookdns',
+        ],
+        'all': [
+            'brotlipy',
         ]
     },
     classifiers=[
