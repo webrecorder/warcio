@@ -11,7 +11,7 @@ jobs:
       matrix:
         #python-version: ['3.7', '3.8', '3.9', '3.10', '3.11', '3.12']
         python-version: ['3.12']
-	os: ['darwin-latest', 'win32-latest']
+	os: ['macos-latest', 'windows-latest']
 
     steps:
       - name: checkout
