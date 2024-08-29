@@ -46,10 +46,10 @@ jobs:
 
       - name: Install warcio ALL
         if: ${{ ! matrix.NOTALL }}
-        run: pip install .[testing]
+        run: pip install .[brotli,testing]
       - name: Install warcio NOTALL
         if: ${{ matrix.NOTALL }}
-        run: pip install .[brotli,testing]
+        run: pip install .[testing]
 
       - name: Run tests
         run: python -m pytest
