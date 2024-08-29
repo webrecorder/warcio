@@ -16,7 +16,10 @@ jobs:
         os: [ubuntu-latest]
         EXTRA: [false]  # used to force includes to get included
         include:
-          - python-version: ['3.11', '3.12']
+          - python-version: '3.11'
+            os: macos-latest
+            EXTRA: true
+          - python-version: '3.12'
             os: macos-latest
             EXTRA: true
           - python-version: ['3.7', '3.12']
