@@ -34,7 +34,7 @@ jobs:
             os: windows-latest
             EXTRA: true
           - python-version: '3.7'
-            os: ubuntu-20.04
+            os: ubuntu-20.04  # oldest version on github actions
             EXTRA: true
 
     steps:
