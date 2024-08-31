@@ -20,7 +20,7 @@ jobs:
           - python-version: '3.12'
             os: ubuntu-latest
             EXTRA: true
-            NOTALL: true
+            NOTALL: true  # without warcio[all], currently not brotli
           - python-version: '3.11'
             os: macos-latest
             EXTRA: true
@@ -32,6 +32,9 @@ jobs:
             EXTRA: true
           - python-version: '3.12'
             os: windows-latest
+            EXTRA: true
+          - python-version: '3.7'
+            os: ubuntu-18.04
             EXTRA: true
 
     steps:
