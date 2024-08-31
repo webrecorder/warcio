@@ -3,7 +3,7 @@ name: CI
 on:
   push:
     branches:
-    - main
+    - aster
   pull_request:
 
 jobs:
@@ -34,7 +34,7 @@ jobs:
             os: windows-latest
             EXTRA: true
           - python-version: '3.7'
-            os: ubuntu-18.04
+            os: ubuntu-20.04
             EXTRA: true
 
     steps:
