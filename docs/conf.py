@@ -187,7 +187,7 @@ texinfo_documents = [
         "warcio documentation",
         author,
         "warcio",
-        "Python library for manipulating SQLite databases",
+        "warcio description...",
         "Miscellaneous",
     )
 ]
