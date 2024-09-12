@@ -9,8 +9,8 @@
 
 .. _reference_statusandheaders:
 
-warcio.StatusAndHeaders
-=======================
+warcio.statusandheaders.StatusAndHeaders
+========================================
 
 .. autoclass:: warcio.statusandheaders.StatusAndHeaders
     :members:
@@ -19,18 +19,18 @@ warcio.StatusAndHeaders
 
 .. _reference_archiveiterator:
 
-warcio.ArchiveIterator
-======================
+warcio.archiveiterator.ArchiveIterator
+=======================================
 
-.. autoclass:: warcio.ArchiveIterator
+.. autoclass:: warcio.archiveiterator.ArchiveIterator
     :members:
     :undoc-members:
 
 .. _reference_warcwriter:
 
-warcio.WARCWriter
-=================
+warcio.warcwriter.WARCWriter
+============================
 
-.. autoclass:: warcio.WARCWriter
+.. autoclass:: warcio.warcwriter.WARCWriter
     :members:
     :undoc-members:
