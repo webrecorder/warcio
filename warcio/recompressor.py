@@ -55,10 +55,12 @@ class Recompressor(object):
             sys.exit(1)
 
     def load_and_write(self, stream, output):
+        """Iterate of the the WARC stream to load it and write it to the output file."""
         with open(output, 'wb') as out:
             return self._load_and_write_stream(stream, out)
 
     def decompress_and_recompress(self, stream, output):
+        """Decompress the WARC stream to a temporary location, load it, and write the recompressed result to the output file."""
         with open(output, 'wb') as out, tempfile.TemporaryFile() as tout:
             return self._decompress_and_recompress_stream(stream, out, tout)
 
