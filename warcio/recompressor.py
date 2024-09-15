@@ -54,6 +54,9 @@ class Recompressor(object):
             print('Recompress Failed: {0} could not be read as a WARC or ARC'.format(self.filename))
             sys.exit(1)
 
+    # def recompress_stream(self, in_stream, out_stream):
+
+
     def load_and_write(self, stream, output):
         """Iterate of the the WARC stream to load it and write it to the output file."""
         with open(output, 'wb') as out:
