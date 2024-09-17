@@ -4,7 +4,6 @@ from warcio.recompressor import Recompressor
 import gzip
 import pytest
 
-#capsys,
 def test_recompress_chunked(capsys,tmp_path):
     test_file = get_test_file('example-resource.warc.gz')
     tmp_file = tmp_path / "output.warc.gz"
