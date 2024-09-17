@@ -13,6 +13,7 @@ import gzip
 
 # ============================================================================
 class Recompressor(object):
+    """The Recompressor attempts to read a .warc or .warc.gz file and writes it to a propperly compressed .warc.gz file."""
     def __init__(self, filename, output, verbose=False):
         self.filename = filename
         self.output = output
@@ -55,11 +56,8 @@ class Recompressor(object):
             print('Recompress Failed: {0} could not be read as a WARC or ARC'.format(self.filename))
             sys.exit(1)
 
-    # def recompress_stream(self, in_stream, out_stream):
-
-
     def load_and_write(self, stream, output):
-        """Iterate of the the WARC stream to load it and write it to the output file."""
+        """Iterate the WARC stream to load it and write it to the output file."""
         with open(output, 'wb') as out:
             return self._load_and_write_stream(stream, out)
 
@@ -69,6 +67,7 @@ class Recompressor(object):
             return self._decompress_and_recompress_stream(stream, out, tout)
 
     def _load_and_write_stream(self, in_stream, out_stream):
+        """Iterate the WARC stream to load it and write it as compressed chunked .warc.gz steam to the output stream."""
         count = 0
         writer = WARCWriter(filebuf=out_stream, gzip=True)
 
@@ -83,6 +82,7 @@ class Recompressor(object):
         return count
 
     def _decompress_and_recompress_stream(self, in_stream, out_stream, tmp_stream):
+        """Decompress a WARC stream (in_stream, must be seekable) to a temporary location (tmp_stream, must be seekable), load it, and write the recompressed result to the output file."""
         decomp = DecompressingBufferedReader(in_stream, read_all_members=True)
 
         # decompress entire file to temp file
@@ -92,3 +92,19 @@ class Recompressor(object):
         # attempt to compress and write temp
         tmp_stream.seek(0)
         return self._load_and_write_stream(tmp_stream, out_stream)
+
+class StreamRecompressor(Recompressor):
+    """The StreamRecompressor opperates on steam and attempts to read a .warc or .warc.gz stream and writes it as a propperly compressed .warc.gz stream."""
+    def __init__(self, input, output, verbose=False):
+        self.input = input
+        self.output = output
+        self.verbose = verbose
+
+    def recompress(self):
+        """Read a .warc or propperly chunked .warc.gz stream and recompresses it to proppery chunked .warc.gz stream."""
+        return self._load_and_write_stream(self.input, self.output)
+
+    def decompress_recompress(self):
+        """Reads a gzip compressed .warc stream (not necessarily propperly chunked) and recompresses it to proppery chunked .warc.gz stream."""
+        with gzip.open(self.input, "rb") as input_stream:
+            return self._load_and_write_stream(input_stream, self.output)

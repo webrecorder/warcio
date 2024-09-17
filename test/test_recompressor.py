@@ -1,5 +1,5 @@
 from . import get_test_file
-from warcio.recompressor import Recompressor
+from warcio.recompressor import Recompressor, StreamRecompressor
 
 import gzip
 import pytest
@@ -53,3 +53,39 @@ def test_recompress_non_chunked_decompressed_stream(tmp_path):
     with gzip.open(test_file, "rb") as input, open(tmp_file, "wb") as output:
         count = recompressor._load_and_write_stream(input, output)
     assert count == 6
+
+def test_stream_recompress_non_chunked_decompressed_stream(tmp_path):
+    """Uncompress a badly chunked stream with gzip befor feeding it to the StreamRecompressor's recompress method as stream."""
+    test_file = get_test_file('example-bad-non-chunked.warc.gz')
+    tmp_file = tmp_path / "output.warc.gz"
+    with gzip.open(test_file, "rb") as input, open(tmp_file, "wb") as output:
+        recompressor = StreamRecompressor(input, output, verbose=True)
+        count = recompressor.recompress()
+    assert count == 6
+
+def test_stream_recompress_chunked_compressed_stream(tmp_path):
+    """Open a chunked compressed stream, feeding it to the StreamRecompressor's recompress method as stream."""
+    test_file = get_test_file('example-resource.warc.gz')
+    tmp_file = tmp_path / "output.warc.gz"
+    with open(test_file, "rb") as input, open(tmp_file, "wb") as output:
+        recompressor = StreamRecompressor(input, output, verbose=True)
+        count = recompressor.recompress()
+    assert count == 3
+
+def test_stream_decompress_recompress_non_chunked_compressed_stream(tmp_path):
+    """Open a badly chunked stream and feed it to the StreamRecompressor's decompress_recompress method as stream."""
+    test_file = get_test_file('example-bad-non-chunked.warc.gz')
+    tmp_file = tmp_path / "output.warc.gz"
+    with open(test_file, "rb") as input, open(tmp_file, "wb") as output:
+        recompressor = StreamRecompressor(input, output, verbose=True)
+        count = recompressor.decompress_recompress()
+    assert count == 6
+
+def test_stream_decompress_recompress_chunked_stream(tmp_path):
+    """Open a chunked compressed stream and feed it to the StreamRecompressor's decompress_recompress method as stream."""
+    test_file = get_test_file('example-resource.warc.gz')
+    tmp_file = tmp_path / "output.warc.gz"
+    with open(test_file, "rb") as input, open(tmp_file, "wb") as output:
+        recompressor = StreamRecompressor(input, output, verbose=True)
+        count = recompressor.decompress_recompress()
+    assert count == 3
