@@ -153,7 +153,7 @@ class RecordBuilder(object):
 
     @classmethod
     def _make_warc_date(cls, use_micros=False):
-        return datetime_to_iso_date(datetime.now(timezone.utc), use_micros=use_micros)
+        return datetime_to_iso_date(datetime.now(timezone.utc).replace(tzinfo=None), use_micros=use_micros)
 
     def ensure_digest(self, record, block=True, payload=True):
         if block:
