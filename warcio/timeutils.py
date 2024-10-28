@@ -354,7 +354,8 @@ def timestamp_to_sec(string):
     1420070399
     """
 
-    return calendar.timegm(timestamp_to_datetime(string).utctimetuple())
+    dt = timestamp_to_datetime(string, tzinfo=timezone.utc)
+    return calendar.timegm(dt.utctimetuple())
 
 
 def sec_to_timestamp(secs):
@@ -366,7 +367,7 @@ def sec_to_timestamp(secs):
     '20141231235959'
     """
 
-    return datetime_to_timestamp(datetime.utcfromtimestamp(secs))
+    return datetime_to_timestamp(datetime.fromtimestamp(secs, timezone.utc))
 
 
 def timestamp_to_http_date(string):
