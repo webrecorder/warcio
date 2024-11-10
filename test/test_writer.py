@@ -83,15 +83,15 @@ WARC-Record-ID: <urn:uuid:12345678-feb0-11e6-8f83-68a86d1772ce>\r\n\
 WARC-Target-URI: http://example.com/\r\n\
 WARC-Date: 2000-01-01T00:00:00Z\r\n\
 WARC-Payload-Digest: sha1:B6QJ6BNJ3R4B23XXMRKZKHLPGJY2VE4O\r\n\
-WARC-Block-Digest: sha1:KMUABC6URWIQ7QXCZDQ5FS6WIBBFRORR\r\n\
+WARC-Block-Digest: sha1:E4XGUYS6E6OZSQIA6YE7YC2C5PU3GAI4\r\n\
 Content-Type: application/http; msgtype=response\r\n\
-Content-Length: 268\r\n\
+Content-Length: 200\r\n\
 \r\n\
 HTTP/1.0 200 OK\r\n\
 Content-Type: text/plain; charset="UTF-8"\r\n\
-Content-Disposition: attachment; filename*=UTF-8\'\'%D0%B8%D1%81%D0%BF%D1%8B%D1%82%D0%B0%D0%BD%D0%B8%D0%B5.txt\r\n\
+Content-Disposition: attachment; filename="испытание.txt"\r\n\
 Custom-Header: somevalue\r\n\
-Unicode-Header: %F0%9F%93%81%20text%20%F0%9F%97%84%EF%B8%8F\r\n\
+Unicode-Header: 📁 text 🗄️\r\n\
 \r\n\
 some\n\
 text\r\n\
@@ -789,7 +789,7 @@ HTTP/1.0 200 OK\r\n\
 Content-Type: text/plain; charset="UTF-8"\r\n\
 Content-Disposition: attachment; filename="испытание.txt"\r\n\
 Custom-Header: somevalue\r\n\
-Unicode-Header: %F0%9F%93%81%20text%20%F0%9F%97%84%EF%B8%8F\r\n\
+Unicode-Header: 📁 text 🗄️\r\n\
 \r\n\
 some\n\
 text'
@@ -803,7 +803,7 @@ WARC-Record-ID: <urn:uuid:12345678-feb0-11e6-8f83-68a86d1772ce>\r\n\
 WARC-Target-URI: http://example.com/\r\n\
 WARC-Date: 2000-01-01T00:00:00Z\r\n\
 WARC-Payload-Digest: sha1:B6QJ6BNJ3R4B23XXMRKZKHLPGJY2VE4O\r\n\
-WARC-Block-Digest: sha1:KMUABC6URWIQ7QXCZDQ5FS6WIBBFRORR\r\n\
+WARC-Block-Digest: sha1:E4XGUYS6E6OZSQIA6YE7YC2C5PU3GAI4\r\n\
 Content-Type: application/http; msgtype=response\r\n\
 Content-Length: {0}\r\n\
 \r\n\
@@ -811,7 +811,7 @@ Content-Length: {0}\r\n\
 \r\n\
 '.format(content_length, UTF8_PAYLOAD)
 
-        assert(content_length == 226)
+        assert(content_length == 200)
 
         record = ArcWarcRecordLoader().parse_record_stream(BytesIO(UTF8_RECORD.encode('utf-8')))
 
@@ -822,7 +822,7 @@ Content-Length: {0}\r\n\
         assert raw_buff.decode('utf-8') == RESPONSE_RECORD_UNICODE_HEADERS
 
         for record in ArchiveIterator(writer.get_stream()):
-            assert record.length == 268
+            assert record.length == 200
 
     def test_identity(self):
         """ read(write(record)) should yield record """

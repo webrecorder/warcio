@@ -114,8 +114,7 @@ class StatusAndHeaders(object):
         """
         Set buffer representing headers
         """
-        # HTTP headers %-encoded as ascii (see to_ascii_bytes for more info)
-        self.headers_buff = self.to_ascii_bytes(header_filter)
+        self.headers_buff = self.to_bytes(header_filter)
 
     def __repr__(self):
         return "StatusAndHeaders(protocol = '{0}', statusline = '{1}', \
