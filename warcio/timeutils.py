@@ -366,7 +366,7 @@ def timestamp_to_sec(string):
     1420070399
     """
 
-    dt = timestamp_to_datetime(string, tzinfo=timezone.utc)
+    dt = timestamp_to_datetime(string, aware=True)
     return calendar.timegm(dt.utctimetuple())
 
 
