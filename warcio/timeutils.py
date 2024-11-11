@@ -63,9 +63,9 @@ def iso_date_to_datetime(string, aware=False):
         nums[6] = nums[6][:6]
         nums[6] += PAD_MICRO[len(nums[6]):]
 
-    tz_info = None
+    tzinfo = None
     if aware:
-        tz_info = timezone.utc
+        tzinfo = timezone.utc
 
     the_datetime = datetime(*(int(num) for num in nums), tzinfo=tzinfo)
     return the_datetime
@@ -79,9 +79,9 @@ def http_date_to_datetime(string, aware=False):
     >>> http_date_to_datetime('Thu, 26 Dec 2013 09:50:10 GMT', aware=True)
     datetime.datetime(2013, 12, 26, 9, 50, 10, tzinfo=datetime.timezone.utc)
     """
-    tz_info = None
+    tzinfo = None
     if aware:
-        tz_info = timezone.utc
+        tzinfo = timezone.utc
 
     return datetime(*parsedate(string)[:6], tzinfo=tzinfo)
 
