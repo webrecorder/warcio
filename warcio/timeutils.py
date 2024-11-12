@@ -25,7 +25,7 @@ PAD_6_UP =    '299912'
 PAD_MICRO =   '000000'
 
 
-def iso_date_to_datetime(string, aware=False):
+def iso_date_to_datetime(string, tz_aware=False):
     """
     >>> iso_date_to_datetime('2013-12-26T10:11:12Z')
     datetime.datetime(2013, 12, 26, 10, 11, 12)
@@ -48,10 +48,10 @@ def iso_date_to_datetime(string, aware=False):
     >>> iso_date_to_datetime('2013-12-26T10:11:12.000000Z')
     datetime.datetime(2013, 12, 26, 10, 11, 12)
 
-    >>> iso_date_to_datetime('2013-12-26T10:11:12Z', aware=True)
+    >>> iso_date_to_datetime('2013-12-26T10:11:12Z', tz_aware=True)
     datetime.datetime(2013, 12, 26, 10, 11, 12, tzinfo=datetime.timezone.utc)
 
-    >>> iso_date_to_datetime('2013-12-26T10:11:12.000000Z', aware=True)
+    >>> iso_date_to_datetime('2013-12-26T10:11:12.000000Z', tz_aware=True)
     datetime.datetime(2013, 12, 26, 10, 11, 12, tzinfo=datetime.timezone.utc)
     """
 
@@ -64,23 +64,23 @@ def iso_date_to_datetime(string, aware=False):
         nums[6] += PAD_MICRO[len(nums[6]):]
 
     tzinfo = None
-    if aware:
+    if tz_aware:
         tzinfo = timezone.utc
 
     the_datetime = datetime(*(int(num) for num in nums), tzinfo=tzinfo)
     return the_datetime
 
 
-def http_date_to_datetime(string, aware=False):
+def http_date_to_datetime(string, tz_aware=False):
     """
     >>> http_date_to_datetime('Thu, 26 Dec 2013 09:50:10 GMT')
     datetime.datetime(2013, 12, 26, 9, 50, 10)
 
-    >>> http_date_to_datetime('Thu, 26 Dec 2013 09:50:10 GMT', aware=True)
+    >>> http_date_to_datetime('Thu, 26 Dec 2013 09:50:10 GMT', tz_aware=True)
     datetime.datetime(2013, 12, 26, 9, 50, 10, tzinfo=datetime.timezone.utc)
     """
     tzinfo = None
-    if aware:
+    if tz_aware:
         tzinfo = timezone.utc
 
     return datetime(*parsedate(string)[:6], tzinfo=tzinfo)
@@ -220,7 +220,7 @@ def pad_timestamp(string, pad_str=PAD_6_UP):
     return string
 
 
-def timestamp_to_datetime(string, aware=False):
+def timestamp_to_datetime(string, tz_aware=False):
     """
     # >14-digit -- rest ignored
     >>> timestamp_to_datetime('2014122609501011')
@@ -303,15 +303,15 @@ def timestamp_to_datetime(string, aware=False):
     datetime.datetime(2010, 12, 31, 23, 59, 59)
 
     # 14-digit with tzinfo
-    >>> timestamp_to_datetime('20141226095010', aware=True)
+    >>> timestamp_to_datetime('20141226095010', tz_aware=True)
     datetime.datetime(2014, 12, 26, 9, 50, 10, tzinfo=datetime.timezone.utc)
 
     # 6-digit padding with tzinfo
-    >>> timestamp_to_datetime('201410', aware=True)
+    >>> timestamp_to_datetime('201410', tz_aware=True)
     datetime.datetime(2014, 10, 31, 23, 59, 59, tzinfo=datetime.timezone.utc)
 
     # not a number! with tzinfo
-    >>> timestamp_to_datetime('2010abc', aware=True)
+    >>> timestamp_to_datetime('2010abc', tz_aware=True)
     datetime.datetime(2010, 12, 31, 23, 59, 59, tzinfo=datetime.timezone.utc)
 
     """
@@ -342,7 +342,7 @@ def timestamp_to_datetime(string, aware=False):
     second = extract(string, 12, 14, 0, 59)
 
     tzinfo = None
-    if aware:
+    if tz_aware:
         tzinfo = timezone.utc
 
     return datetime(year=year,
@@ -366,7 +366,7 @@ def timestamp_to_sec(string):
     1420070399
     """
 
-    dt = timestamp_to_datetime(string, aware=True)
+    dt = timestamp_to_datetime(string, tz_aware=True)
     return calendar.timegm(dt.utctimetuple())
 
 
