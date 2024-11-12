@@ -5,9 +5,9 @@ datetime, iso date and 14-digit timestamp
 
 import re
 import time
-import datetime
 import calendar
 
+from datetime import datetime, timezone
 from email.utils import parsedate, formatdate
 
 #=================================================================
@@ -25,7 +25,7 @@ PAD_6_UP =    '299912'
 PAD_MICRO =   '000000'
 
 
-def iso_date_to_datetime(string):
+def iso_date_to_datetime(string, tz_aware=False):
     """
     >>> iso_date_to_datetime('2013-12-26T10:11:12Z')
     datetime.datetime(2013, 12, 26, 10, 11, 12)
@@ -47,6 +47,12 @@ def iso_date_to_datetime(string):
 
     >>> iso_date_to_datetime('2013-12-26T10:11:12.000000Z')
     datetime.datetime(2013, 12, 26, 10, 11, 12)
+
+    >>> iso_date_to_datetime('2013-12-26T10:11:12Z', tz_aware=True)
+    datetime.datetime(2013, 12, 26, 10, 11, 12, tzinfo=datetime.timezone.utc)
+
+    >>> iso_date_to_datetime('2013-12-26T10:11:12.000000Z', tz_aware=True)
+    datetime.datetime(2013, 12, 26, 10, 11, 12, tzinfo=datetime.timezone.utc)
     """
 
     nums = DATE_TIMESPLIT.split(string)
@@ -57,21 +63,32 @@ def iso_date_to_datetime(string):
         nums[6] = nums[6][:6]
         nums[6] += PAD_MICRO[len(nums[6]):]
 
-    the_datetime = datetime.datetime(*(int(num) for num in nums))
+    tzinfo = None
+    if tz_aware:
+        tzinfo = timezone.utc
+
+    the_datetime = datetime(*(int(num) for num in nums), tzinfo=tzinfo)
     return the_datetime
 
 
-def http_date_to_datetime(string):
+def http_date_to_datetime(string, tz_aware=False):
     """
     >>> http_date_to_datetime('Thu, 26 Dec 2013 09:50:10 GMT')
     datetime.datetime(2013, 12, 26, 9, 50, 10)
+
+    >>> http_date_to_datetime('Thu, 26 Dec 2013 09:50:10 GMT', tz_aware=True)
+    datetime.datetime(2013, 12, 26, 9, 50, 10, tzinfo=datetime.timezone.utc)
     """
-    return datetime.datetime(*parsedate(string)[:6])
+    tzinfo = None
+    if tz_aware:
+        tzinfo = timezone.utc
+
+    return datetime(*parsedate(string)[:6], tzinfo=tzinfo)
 
 
 def datetime_to_http_date(the_datetime):
     """
-    >>> datetime_to_http_date(datetime.datetime(2013, 12, 26, 9, 50, 10))
+    >>> datetime_to_http_date(datetime(2013, 12, 26, 9, 50, 10))
     'Thu, 26 Dec 2013 09:50:10 GMT'
 
     # Verify inverses
@@ -87,19 +104,19 @@ def datetime_to_http_date(the_datetime):
 
 def datetime_to_iso_date(the_datetime, use_micros=False):
     """
-    >>> datetime_to_iso_date(datetime.datetime(2013, 12, 26, 10, 11, 12))
+    >>> datetime_to_iso_date(datetime(2013, 12, 26, 10, 11, 12))
     '2013-12-26T10:11:12Z'
 
-    >>> datetime_to_iso_date(datetime.datetime(2013, 12, 26, 10, 11, 12, 456789))
+    >>> datetime_to_iso_date(datetime(2013, 12, 26, 10, 11, 12, 456789))
     '2013-12-26T10:11:12Z'
 
-    >>> datetime_to_iso_date(datetime.datetime(2013, 12, 26, 10, 11, 12), use_micros=True)
+    >>> datetime_to_iso_date(datetime(2013, 12, 26, 10, 11, 12), use_micros=True)
     '2013-12-26T10:11:12Z'
 
-    >>> datetime_to_iso_date(datetime.datetime(2013, 12, 26, 10, 11, 12, 456789), use_micros=True)
+    >>> datetime_to_iso_date(datetime(2013, 12, 26, 10, 11, 12, 456789), use_micros=True)
     '2013-12-26T10:11:12.456789Z'
 
-    >>> datetime_to_iso_date(datetime.datetime(2013, 12, 26, 10, 11, 12, 1), use_micros=True)
+    >>> datetime_to_iso_date(datetime(2013, 12, 26, 10, 11, 12, 1), use_micros=True)
     '2013-12-26T10:11:12.000001Z'
 
     """
@@ -112,7 +129,7 @@ def datetime_to_iso_date(the_datetime, use_micros=False):
 
 def datetime_to_timestamp(the_datetime):
     """
-    >>> datetime_to_timestamp(datetime.datetime(2013, 12, 26, 10, 11, 12))
+    >>> datetime_to_timestamp(datetime(2013, 12, 26, 10, 11, 12))
     '20131226101112'
     """
 
@@ -124,7 +141,7 @@ def timestamp_now():
     >>> len(timestamp_now())
     14
     """
-    return datetime_to_timestamp(datetime.datetime.utcnow())
+    return datetime_to_timestamp(datetime.now(timezone.utc))
 
 
 def timestamp20_now():
@@ -139,7 +156,7 @@ def timestamp20_now():
     20
 
     """
-    now = datetime.datetime.utcnow()
+    now = datetime.now(timezone.utc)
     return now.strftime('%Y%m%d%H%M%S%f')
 
 
@@ -203,7 +220,7 @@ def pad_timestamp(string, pad_str=PAD_6_UP):
     return string
 
 
-def timestamp_to_datetime(string):
+def timestamp_to_datetime(string, tz_aware=False):
     """
     # >14-digit -- rest ignored
     >>> timestamp_to_datetime('2014122609501011')
@@ -285,6 +302,18 @@ def timestamp_to_datetime(string):
     >>> timestamp_to_datetime('2010abc')
     datetime.datetime(2010, 12, 31, 23, 59, 59)
 
+    # 14-digit with tzinfo
+    >>> timestamp_to_datetime('20141226095010', tz_aware=True)
+    datetime.datetime(2014, 12, 26, 9, 50, 10, tzinfo=datetime.timezone.utc)
+
+    # 6-digit padding with tzinfo
+    >>> timestamp_to_datetime('201410', tz_aware=True)
+    datetime.datetime(2014, 10, 31, 23, 59, 59, tzinfo=datetime.timezone.utc)
+
+    # not a number! with tzinfo
+    >>> timestamp_to_datetime('2010abc', tz_aware=True)
+    datetime.datetime(2010, 12, 31, 23, 59, 59, tzinfo=datetime.timezone.utc)
+
     """
 
     # pad to 6 digits
@@ -312,12 +341,17 @@ def timestamp_to_datetime(string):
     minute = extract(string, 10, 12, 0, 59)
     second = extract(string, 12, 14, 0, 59)
 
-    return datetime.datetime(year=year,
+    tzinfo = None
+    if tz_aware:
+        tzinfo = timezone.utc
+
+    return datetime(year=year,
                              month=month,
                              day=day,
                              hour=hour,
                              minute=minute,
-                             second=second)
+                             second=second,
+                             tzinfo=tzinfo)
 
     #return time.strptime(pad_timestamp(string), TIMESTAMP_14)
 
@@ -332,7 +366,8 @@ def timestamp_to_sec(string):
     1420070399
     """
 
-    return calendar.timegm(timestamp_to_datetime(string).utctimetuple())
+    dt = timestamp_to_datetime(string, tz_aware=True)
+    return calendar.timegm(dt.utctimetuple())
 
 
 def sec_to_timestamp(secs):
@@ -344,7 +379,7 @@ def sec_to_timestamp(secs):
     '20141231235959'
     """
 
-    return datetime_to_timestamp(datetime.datetime.utcfromtimestamp(secs))
+    return datetime_to_timestamp(datetime.fromtimestamp(secs, timezone.utc))
 
 
 def timestamp_to_http_date(string):
