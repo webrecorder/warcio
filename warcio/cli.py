@@ -71,7 +71,10 @@ def get_version():
 def indexer(cmd):
     inputs = cmd.inputs or ('-',)  # default to stdin
     _indexer = Indexer(cmd.fields, inputs, cmd.output)
-    _indexer.process_all()
+    try:
+        _indexer.process_all()
+    except BrokenPipeError:
+        pass
 
 
 # ============================================================================
