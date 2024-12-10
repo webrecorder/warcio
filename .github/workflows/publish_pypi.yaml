@@ -20,7 +20,7 @@ jobs:
           python-version: ${{ matrix.python-version }}
 
       - name: Install dependencies
-        run: python -m pip install --upgrade pip wheel twine
+        run: python -m pip install --upgrade pip wheel twine setuptools
 
       - name: Build Dist
         run: python setup.py sdist bdist_wheel --universal
