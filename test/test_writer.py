@@ -687,6 +687,22 @@ class TestWarcWriter(object):
         assert '.' in recs[0].rec_headers['WARC-Date']
         assert len(recs[0].rec_headers['WARC-Date']) == 27
 
+    def test_response_digest_sha256(self, is_gzip, builder_factory):
+        writer = BufferWARCWriter(gzip=is_gzip, warc_version='WARC/1.1', digest_algorithm='sha256')
+
+        builder = builder_factory(writer, warc_version='WARC/1.1', digest_algorithm='sha256')
+        resp = sample_response(builder)
+        writer.write_record(resp)
+
+        stream = writer.get_stream()
+
+        reader = ArchiveIterator(stream)
+        recs = list(reader)
+
+        assert len(recs) == 1
+        assert recs[0].rec_headers.get('WARC-Block-Digest') == 'sha256:HB3IP2QLBZJ45JMKAYFDDVME5MTC2WX2JJLQZSJYR575CFMRDDHA===='
+        assert recs[0].rec_headers.get('WARC-Payload-Digest') == 'sha256:5DS36RD4GUWABAHBIREZJMGMD67HUJPT5JRXYXEJ6WK3NKK4SJJQ===='
+
     def _conv_to_streaming_record(self, record_buff, rec_type):
         # strip-off the two empty \r\n\r\n added at the end of uncompressed record
         record_buff = record_buff[:-4]

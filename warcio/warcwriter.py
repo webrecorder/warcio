@@ -13,7 +13,8 @@ class BaseWARCWriter(RecordBuilder):
 
     def __init__(self, gzip=True, *args, **kwargs):
         super(BaseWARCWriter, self).__init__(warc_version=kwargs.get('warc_version'),
-                                             header_filter=kwargs.get('header_filter'))
+                                             header_filter=kwargs.get('header_filter'),
+                                             digest_algorithm=kwargs.get('digest_algorithm'))
         self.gzip = gzip
         self.hostname = gethostname()
 
