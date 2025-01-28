@@ -40,6 +40,15 @@ setup(
         ],
         'all': [
             'brotlipy',
+        ],
+
+        'docs': [
+            "furo",
+            "sphinx-autobuild",
+            "codespell",
+            "sphinx-copybutton",
+            "beanbag-docutils>=2.0",
+            "pygments-csv-lexer"
         ]
     },
     classifiers=[
