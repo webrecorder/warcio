@@ -2,13 +2,13 @@ import threading
 
 from io import BytesIO
 
-from six.moves import http_client as httplib
+import http.client as httplib
 
 from contextlib import contextmanager
 
 from array import array
 
-from warcio.utils import to_native_str, BUFF_SIZE, open
+from warcio.utils import to_native_str, BUFF_SIZE
 from warcio.warcwriter import WARCWriter, BufferWARCWriter
 
 from tempfile import SpooledTemporaryFile

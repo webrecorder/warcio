@@ -19,9 +19,7 @@ setup(
     provides=[
         'warcio',
         ],
-    install_requires=[
-        'six',
-        ],
+    install_requires=[],
     zip_safe=True,
     entry_points="""
         [console_scripts]

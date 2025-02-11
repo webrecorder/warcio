@@ -77,14 +77,14 @@ class TestUtils(object):
     def test_open_exclusive(self):
         temp_dir = tempfile.mkdtemp('warctest')
         full_name = os.path.join(temp_dir, 'foo.txt')
-        with utils.open(full_name, 'xb') as fh:
+        with open(full_name, 'xb') as fh:
             fh.write(b'test\r\nfoo')
 
         with pytest.raises(OSError):
-            with utils.open(full_name, 'xb') as fh:
+            with open(full_name, 'xb') as fh:
                 fh.write(b'test\r\nfoo')
 
-        with utils.open(full_name, 'rb') as fh:
+        with open(full_name, 'rb') as fh:
             assert fh.read() == b'test\r\nfoo'
 
         os.remove(full_name)
