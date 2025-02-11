@@ -11,7 +11,7 @@ import sys
 
 
 # ============================================================================
-class Recompressor(object):
+class Recompressor:
     def __init__(self, filename, output, verbose=False):
         self.filename = filename
         self.output = output

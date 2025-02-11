@@ -9,7 +9,7 @@ from warcio.timeutils import datetime_to_iso_date
 from warcio.utils import to_native_str, BUFF_SIZE, Digester
 
 #=================================================================
-class RecordBuilder(object):
+class RecordBuilder:
     REVISIT_PROFILE = 'http://netpreserve.org/warc/1.0/revisit/identical-payload-digest'
     REVISIT_PROFILE_1_1 = 'http://netpreserve.org/warc/1.1/revisit/identical-payload-digest'
 

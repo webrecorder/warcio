@@ -19,7 +19,7 @@ orig_connection = httplib.HTTPConnection
 
 
 # ============================================================================
-class RecordingStream(object):
+class RecordingStream:
     def __init__(self, fp, recorder):
         self.fp = fp
         self.recorder = recorder
@@ -130,7 +130,7 @@ class RecordingHTTPConnection(httplib.HTTPConnection):
 
 
 # ============================================================================
-class RequestRecorder(object):
+class RequestRecorder:
     def __init__(self, writer, filter_func=None, record_ip=True):
         self.writer = writer
         self.filter_func = filter_func

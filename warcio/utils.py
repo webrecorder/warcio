@@ -58,7 +58,7 @@ def headers_to_str_headers(headers):
 
 
 # ============================================================================
-class Digester(object):
+class Digester:
     def __init__(self, type_='sha1'):
         self.type_ = type_
         self.digester = hashlib.new(type_)

@@ -58,7 +58,7 @@ the format (ARC or WARC), record type, the record headers, http headers
 
 .. code:: python
 
-    class ArcWarcRecord(object):
+    class ArcWarcRecord:
         def __init__(self, *args):
             (self.format, self.rec_type, self.rec_headers, self.raw_stream,
              self.http_headers, self.content_type, self.length) = args

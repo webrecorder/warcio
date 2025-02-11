@@ -9,7 +9,7 @@ from warcio.utils import open_or_default
 
 
 # ============================================================================
-class Indexer(object):
+class Indexer:
     field_names = {}
 
     def __init__(self, fields, inputs, output, verify_http=False):

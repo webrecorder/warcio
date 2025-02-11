@@ -14,7 +14,7 @@ except ImportError:
     pass
 
 
-class TestUtils(object):
+class TestUtils:
     def test_headers_to_str_headers(self):
         result = [('foo', 'bar'), ('baz', 'barf')]
 

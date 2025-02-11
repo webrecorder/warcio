@@ -16,7 +16,7 @@ import subprocess
 
 
 #==============================================================================
-class TestArchiveIterator(object):
+class TestArchiveIterator:
     def _load_archive(self, filename, offset=0, cls=ArchiveIterator,
                      errs_expected=0, **kwargs):
 
