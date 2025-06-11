@@ -113,7 +113,7 @@ class BaseWARCWriter(RecordBuilder):
         data = b""
 
         if self.gzip:
-            out = GzippingWrapper(out)
+            compressor = zlib.compressobj(9, zlib.DEFLATED, zlib.MAX_WBITS + 16)
 
         for record in records:
 
@@ -163,23 +163,27 @@ class BaseWARCWriter(RecordBuilder):
 
             # write record headers -- encoded as utf-8
             # WARC headers can be utf-8 per spec
-            data += record.rec_headers.to_bytes(encoding='utf-8')
+            record_data += record.rec_headers.to_bytes(encoding='utf-8')
 
             # write headers buffer, if any
             if record.http_headers:
-                data += record.http_headers.headers_buff
+                record_data += record.http_headers.headers_buff
 
             if not http_headers_only:
                 try:
                     for buf in self._iter_stream(record.raw_stream):
-                        data += buf
+                        record_data += buf
                 finally:
                     if hasattr(record, '_orig_stream'):
                         record.raw_stream.close()
                         record.raw_stream = record._orig_stream
 
             # add two lines
-            data += b'\r\n\r\n'
+            record_data += b'\r\n\r\n'
+
+            # compress record
+            if self.gzip:
+                data += compressor.compress(record_data)
         
         out.write(data)
         out.flush()
