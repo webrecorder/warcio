@@ -183,6 +183,8 @@ class BaseWARCWriter(RecordBuilder):
 
             # compress record
             if self.gzip:
+                # each record requires separate compressor
+                compressor = zlib.compressobj(9, zlib.DEFLATED, zlib.MAX_WBITS + 16)
                 data += compressor.compress(record_data)
                 data += compressor.flush()
 
