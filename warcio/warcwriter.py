@@ -184,7 +184,8 @@ class BaseWARCWriter(RecordBuilder):
             # compress record
             if self.gzip:
                 data += compressor.compress(record_data)
-        
+                data += compressor.flush()
+
         out.write(data)
         out.flush()
 
