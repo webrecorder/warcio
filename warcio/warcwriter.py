@@ -163,7 +163,7 @@ class BaseWARCWriter(RecordBuilder):
 
             # write record headers -- encoded as utf-8
             # WARC headers can be utf-8 per spec
-            record_data += record.rec_headers.to_bytes(encoding='utf-8')
+            record_data = record.rec_headers.to_bytes(encoding='utf-8')
 
             # write headers buffer, if any
             if record.http_headers:
