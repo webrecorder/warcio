@@ -95,6 +95,9 @@ class BufferedReader(object):
             self.decompressor = None
 
     def _fillbuff(self, block_size=None):
+        if getattr(self, '_stream_exhausted', False):
+            return
+
         if not self.empty():
             return
 
@@ -109,6 +112,10 @@ class BufferedReader(object):
             self.starting_data = None
         else:
             data = self.stream.read(block_size)
+            # If we got less than requested, we've hit the end of the file.
+            # This prevents the second EOF request.
+            if len(data) < block_size:
+                self._stream_exhausted = True
 
         self._process_read(data)
 
@@ -117,6 +124,8 @@ class BufferedReader(object):
         # decompressor likely needs more data to decompress
         while data and self.decompressor and not self.decompressor.unused_data and self.empty():
             data = self.stream.read(block_size)
+            if len(data) < block_size:
+                self._stream_exhausted = True
             self._process_read(data)
 
     def _process_read(self, data):
@@ -160,6 +169,7 @@ class BufferedReader(object):
         all_buffs = []
         while length is None or length > 0:
             self._fillbuff()
+
             if self.empty():
                 break
 
@@ -378,4 +388,3 @@ class ChunkedDataReader(BufferedReader):
 
 #=================================================================
 try_brotli_init()
-

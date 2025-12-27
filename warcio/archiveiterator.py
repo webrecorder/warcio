@@ -76,6 +76,7 @@ class ArchiveIterator(six.Iterator):
             self.fh = UnseekableYetTellable(self.fh)
             self.offset = self.fh.tell()
 
+        self.block_size = block_size
         self.reader = DecompressingBufferedReader(self.fh,
                                                   block_size=block_size)
 
@@ -209,7 +210,7 @@ class ArchiveIterator(six.Iterator):
         curr_offset = self.offset
 
         while True:
-            b = self.record.raw_stream.read(BUFF_SIZE)
+            b = self.record.raw_stream.read(self.block_size)
             if not b:
                 break
 
@@ -282,6 +283,3 @@ class ARCIterator(ArchiveIterator):
     def __init__(self, *args, **kwargs):
         super(ARCIterator, self).__init__(*args, **kwargs)
         self.known_format = 'arc'
-
-
-
