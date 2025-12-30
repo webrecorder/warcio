@@ -2,7 +2,7 @@ import threading
 
 from io import BytesIO
 
-from six.moves import http_client as httplib
+from http import client as httplib
 
 from contextlib import contextmanager
 
