@@ -15,6 +15,7 @@ setup(
     packages=find_packages(exclude=['test']),
     url='https://github.com/webrecorder/warcio',
     description='Streaming WARC (and ARC) IO library',
+    python_requires='>=3.7',
     long_description=open('README.rst').read(),
     provides=[
         'warcio',
