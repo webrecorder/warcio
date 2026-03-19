@@ -60,7 +60,7 @@ jobs:
 
       - name: Install warcio ALL
         if: ${{ ! matrix.NOTALL }}
-        run: pip install .[all,testing]
+        run: pip install ".[all,testing]"
       - name: Install warcio NOTALL
         if: ${{ matrix.NOTALL }}
         run: pip install ".[testing]"
