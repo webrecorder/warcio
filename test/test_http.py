@@ -31,8 +31,7 @@ def mock_http_server(file_path, serve_path=None):
         serve_path: URL path to serve the file at (defaults to filename)
 
     Yields:
-        tuple: (base_url, full_url) where base_url is http://localhost:port
-               and full_url is the complete URL to the file
+       str: complete URL to the file
     """
     # Read the file content
     with open(file_path, "rb") as f:
