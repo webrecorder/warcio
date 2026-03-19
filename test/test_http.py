@@ -6,8 +6,7 @@ from wsgiref.simple_server import make_server
 
 from warcio.utils import fsspec_open
 
-from . import get_test_file
-from .test_cli import check_helper
+from . import get_test_file, check_helper
 
 
 try:

@@ -415,12 +415,14 @@ This command will read a WARC file from outside AWS, using https,  and print the
 
 ::
 
+    # Note: This command will trigger a broken pipe error after 10 records due to `head -n 10`
     warcio index https://data.commoncrawl.org/crawl-data/CC-MAIN-2025-51/segments/1764871645602.73/warc/CC-MAIN-20251215005813-20251215035813-00995.warc.gz | head -n 10
 
 This command will read a WARC file from from inside AWS, using S3, and print the first 10 records to stdin:
 
 ::
 
+    # Note: The bucket is public but reading from S3 requires AWS credentials
     warcio index s3://commoncrawl/crawl-data/CC-MAIN-2025-51/segments/1764871645602.73/warc/CC-MAIN-20251215005813-20251215035813-00995.warc.gz | head -n 10
 
 This is implemented with `fsspec <https://filesystem-spec.readthedocs.io/en/latest/index.html>`_.

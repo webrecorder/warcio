@@ -2,8 +2,7 @@ import pytest
 from warcio.utils import fsspec_open
 from warcio.cli import main
 
-from . import get_test_file
-from .test_cli import check_helper
+from . import get_test_file, check_helper
 from .conftest import requires_aws_s3
 
 try:
