@@ -73,10 +73,7 @@ jobs:
           aws-region: us-east-1
 
       - name: Enble S3 unit tests 
-        uses: actions/github-script@v7
-        with:
-          script: |
-            core.exportVariable('WARCIO_ENABLE_S3_TESTS', '1')
+        run: echo "WARCIO_ENABLE_S3_TESTS=1" >> "$GITHUB_ENV"
 
       - name: Run tests
         run: python -m pytest
