@@ -63,7 +63,7 @@ jobs:
         run: pip install .[all,testing]
       - name: Install warcio NOTALL
         if: ${{ matrix.NOTALL }}
-        run: pip install .[testing]
+        run: pip install ".[testing]"
 
       - name: Configure AWS credentials from OIDC (disabled for forks)
         if: github.event.pull_request.head.repo.full_name == github.repository || github.event_name == 'push'
