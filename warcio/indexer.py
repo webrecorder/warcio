@@ -5,7 +5,7 @@ import os
 from collections import OrderedDict
 
 from warcio.archiveiterator import ArchiveIterator
-from warcio.utils import open_or_default
+from warcio.utils import fsspec_open
 
 
 # ============================================================================
@@ -23,13 +23,13 @@ class Indexer(object):
         self.verify_http = verify_http
 
     def process_all(self):
-        with open_or_default(self.output, 'wt', sys.stdout) as out:
+        with fsspec_open(self.output, 'wt', sys.stdout) as out:
             for filename in self.inputs:
                 try:
                     stdin = sys.stdin.buffer
                 except AttributeError:  # py2
                     stdin = sys.stdin
-                with open_or_default(filename, 'rb', stdin) as fh:
+                with fsspec_open(filename, 'rb', stdin) as fh:
                     self.process_one(fh, out, filename)
 
     def process_one(self, input_, output, filename):

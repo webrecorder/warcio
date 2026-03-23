@@ -1,6 +1,6 @@
 from warcio.cli import main
 
-from . import get_test_file
+from . import get_test_file, check_helper
 
 from contextlib import contextmanager
 from io import BytesIO
@@ -66,17 +66,6 @@ def test_index_2(capsys):
     res = main(args=args)
     assert capsys.readouterr().out == expected
 
-
-def check_helper(args, capsys, expected_exit_value):
-    exit_value = None
-    try:
-        main(args=args)
-    except SystemExit as e:
-        exit_value = e.code
-    finally:
-        assert exit_value == expected_exit_value
-
-    return capsys.readouterr().out
 
 
 def test_check_valid(capsys):

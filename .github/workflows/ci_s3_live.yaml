@@ -1,12 +1,13 @@
-name: CI
+name: CI with live S3 tests
 
 on:
-  push:
-    branches:
-    - master
-  pull_request:
-    branches:
-    - master
+  workflow_dispatch:
+
+# These permissions are needed to interact with AWS S3 via GitHub's OIDC Token endpoint
+permissions:
+  id-token: write
+  contents: read
+  pull-requests: read
 
 jobs:
   unit-tests:
@@ -15,23 +16,27 @@ jobs:
       fail-fast: false
       #max-parallel: 3
       matrix:
-        python-version: ['3.8', '3.9', '3.10', '3.11', '3.12', '3.13']
+        python-version: [
+          # '3.7', # not supported by GitHub actions anymore
+          # '3.8', # disabled for S3
+          '3.9', '3.10', '3.11', '3.12', '3.13']
         os: [ubuntu-latest]
         EXTRA: [false]  # used to force includes to get included
         include:
           - python-version: '3.12'
             os: ubuntu-latest
             EXTRA: true
-            NOTALL: true  # without warcio[all]
+            NOTALL: true  # without warcio[all], currently not brotli
           - python-version: '3.11'
             os: macos-latest
             EXTRA: true
           - python-version: '3.13'
             os: macos-latest
             EXTRA: true
-          - python-version: '3.8'
-            os: windows-latest
-            EXTRA: true
+          # disabled for S3
+          # - python-version: '3.8'
+          #   os: windows-latest
+          #   EXTRA: true
           - python-version: '3.13'
             os: windows-latest
             EXTRA: true
@@ -55,10 +60,20 @@ jobs:
 
       - name: Install warcio ALL
         if: ${{ ! matrix.NOTALL }}
-        run: pip install .[all,testing]
+        run: pip install ".[all,testing]"
       - name: Install warcio NOTALL
         if: ${{ matrix.NOTALL }}
-        run: pip install .[testing]
+        run: pip install ".[testing]"
+
+      - name: Configure AWS credentials from OIDC (disabled for forks)
+        if: github.event.pull_request.head.repo.full_name == github.repository || github.event_name == 'push'
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::837454214164:role/GitHubActions-Role
+          aws-region: us-east-1
+
+      - name: Enble S3 unit tests 
+        run: echo "WARCIO_ENABLE_S3_TESTS=1" >> "$GITHUB_ENV"
 
       - name: Run tests
         run: python -m pytest

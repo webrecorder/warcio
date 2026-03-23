@@ -2,6 +2,7 @@ from __future__ import print_function
 
 from warcio.archiveiterator import ArchiveIterator
 from warcio.exceptions import ArchiveLoadFailed
+from warcio.utils import fsspec_open
 
 
 def _read_entire_stream(stream):
@@ -30,7 +31,7 @@ class Checker(object):
 
     def process_one(self, filename):
         printed_filename = False
-        with open(filename, 'rb') as stream:
+        with fsspec_open(filename, 'rb') as stream:
             it = ArchiveIterator(stream, check_digests=True)
             for record in it:
                 digest_present = (record.rec_headers.get_header('WARC-Payload-Digest') or

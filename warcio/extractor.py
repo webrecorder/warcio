@@ -1,6 +1,6 @@
 from warcio.archiveiterator import ArchiveIterator
 
-from warcio.utils import BUFF_SIZE
+from warcio.utils import BUFF_SIZE, fsspec_open
 import sys
 
 
@@ -13,7 +13,7 @@ class Extractor(object):
         self.offset = offset
 
     def extract(self, payload_only, headers_only):
-        with open(self.filename, 'rb') as fh:
+        with fsspec_open(self.filename, 'rb') as fh:
             fh.seek(int(self.offset))
             it = iter(ArchiveIterator(fh))
             record = next(it)
