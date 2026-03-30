@@ -1,3 +1,9 @@
+1.8.0
+~~~~~
+
+- Add remote file system (e.g. HTTP and S3) support by @wumpus @malteos in https://github.com/webrecorder/warcio/pull/194
+
+
 1.7.5
 ~~~~~
 
@@ -15,7 +21,6 @@
 - feat: try py 3.13, plus typos by @wumpus in https://github.com/webrecorder/warcio/pull/184
 - Handle deprecation of naive datetime functions like utcnow() by @tw4l in https://github.com/webrecorder/warcio/pull/185
 - bump version to 1.7.5 by @ikreymer in https://github.com/webrecorder/warcio/pull/186
-
 
 
 1.7.4
