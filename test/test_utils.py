@@ -61,6 +61,27 @@ class TestUtils(object):
         with utils.fsspec_open(default_fh, 'rb', None) as fh:
             assert fh.readline().decode('utf-8') == 'NOTWARC/1.0\r\n'
 
+    def test_open_or_default(self):
+        default_fh = BytesIO(b'NOTWARC/1.0\r\n')
+
+        with utils.open_or_default(get_test_file('example.warc'), 'rb', default_fh) as fh:
+            assert fh.readline().decode('utf-8') == 'WARC/1.0\r\n'
+
+        with utils.open_or_default(None, 'rb', default_fh) as fh:
+            assert fh.readline().decode('utf-8') == 'NOTWARC/1.0\r\n'
+
+        default_fh.seek(0)
+        with utils.open_or_default(b'-', 'rb', default_fh) as fh:
+            assert fh.readline().decode('utf-8') == 'NOTWARC/1.0\r\n'
+
+        default_fh.seek(0)
+        with utils.open_or_default(u'-', 'rb', default_fh) as fh:
+            assert fh.readline().decode('utf-8') == 'NOTWARC/1.0\r\n'
+
+        default_fh.seek(0)
+        with utils.open_or_default(default_fh, 'rb', None) as fh:
+            assert fh.readline().decode('utf-8') == 'NOTWARC/1.0\r\n'
+
     def test_to_native_str(self):
         # binary string
         assert utils.to_native_str(b'10') == '10'
