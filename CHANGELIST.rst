@@ -1,3 +1,9 @@
+1.8.1
+~~~~~
+
+- Add open_or_default back as alias for fsspec_open by @tw4l in https://github.com/webrecorder/warcio/pull/197
+
+
 1.8.0
 ~~~~~
 

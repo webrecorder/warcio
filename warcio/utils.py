@@ -57,6 +57,17 @@ def fsspec_open(filename, mod, default_fh=None, **kwargs):
 
 
 # #===========================================================================
+@contextmanager
+def open_or_default(filename, mod, default_fh):
+    """
+    Alias for fsspec_open, which replaced this method, for backwards
+    compatibility
+    """
+    with fsspec_open(filename, mod, default_fh) as f:
+        yield f
+
+
+# #===========================================================================
 def headers_to_str_headers(headers):
     '''
     Converts dict or tuple-based headers of bytes or str to
