@@ -25,7 +25,7 @@ jobs:
       - name: Build Dist
         run: python setup.py sdist bdist_wheel --universal
 
-      - name: Publish package to TestPyPI
+      - name: Publish package to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
           user: __token__
