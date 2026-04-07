@@ -107,7 +107,89 @@ class BaseWARCWriter(RecordBuilder):
         out.write(b'\r\n\r\n')
 
         out.flush()
+    
+    def _write_warc_records(self, out, records):
 
+        data = b""
+
+        if self.gzip:
+            compressor = zlib.compressobj(9, zlib.DEFLATED, zlib.MAX_WBITS + 16)
+
+        for record in records:
+
+            if record.http_headers:
+                record.http_headers.compute_headers_buffer(self.header_filter)
+
+            # Content-Length is None/unknown
+            # Fix record by: buffering and recomputing all digests and length
+            # (since no length, can't trust existing digests)
+            # Also remove content-type for consistent header ordering
+            if record.length is None:
+                record.rec_headers.remove_header('WARC-Block-Digest')
+                if record.rec_type != 'revisit':
+                    record.rec_headers.remove_header('WARC-Payload-Digest')
+                record.rec_headers.remove_header('Content-Type')
+
+                self.ensure_digest(record, block=True, payload=True)
+
+                record.length = record.payload_length
+
+            # ensure digests are set
+            else:
+                self.ensure_digest(record, block=True, payload=True)
+
+            if record.content_type != None:
+                # ensure proper content type
+                record.rec_headers.replace_header('Content-Type', record.content_type)
+
+            if record.rec_type == 'revisit':
+                http_headers_only = True
+            else:
+                http_headers_only = False
+
+            # compute Content-Length
+            if record.http_headers and record.payload_length >= 0:
+                actual_len = 0
+
+                if record.http_headers:
+                    actual_len = len(record.http_headers.headers_buff)
+
+                if not http_headers_only:
+                    actual_len += record.payload_length
+
+                record.length = actual_len
+
+            record.rec_headers.replace_header('Content-Length', str(record.length))
+
+            # write record headers -- encoded as utf-8
+            # WARC headers can be utf-8 per spec
+            record_data = record.rec_headers.to_bytes(encoding='utf-8')
+
+            # write headers buffer, if any
+            if record.http_headers:
+                record_data += record.http_headers.headers_buff
+
+            if not http_headers_only:
+                try:
+                    for buf in self._iter_stream(record.raw_stream):
+                        record_data += buf
+                finally:
+                    if hasattr(record, '_orig_stream'):
+                        record.raw_stream.close()
+                        record.raw_stream = record._orig_stream
+
+            # add two lines
+            record_data += b'\r\n\r\n'
+
+            # compress record
+            if self.gzip:
+                # each record requires separate compressor
+                compressor = zlib.compressobj(9, zlib.DEFLATED, zlib.MAX_WBITS + 16)
+                data += compressor.compress(record_data)
+                data += compressor.flush()
+
+        out.write(data)
+        out.flush()
 
 # ============================================================================
 class GzippingWrapper(object):
@@ -139,6 +221,9 @@ class WARCWriter(BaseWARCWriter):
     def _do_write_req_resp(self, req, resp, params):
         self._write_warc_record(self.out, resp)
         self._write_warc_record(self.out, req)
+    
+    def write_records(self, records, params=None):
+        self._write_warc_records(self.out, records)
 
 
 # ============================================================================
