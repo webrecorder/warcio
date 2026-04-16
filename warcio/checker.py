@@ -12,7 +12,7 @@ def _read_entire_stream(stream):
             break
 
 
-class Checker(object):
+class Checker:
     def __init__(self, cmd):
         self.inputs = cmd.inputs
         self.verbose = cmd.verbose

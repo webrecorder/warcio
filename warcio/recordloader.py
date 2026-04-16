@@ -10,14 +10,12 @@ from warcio.bufferedreaders import BufferedReader, ChunkedDataReader
 
 from warcio.timeutils import timestamp_to_iso_date
 
-from six.moves import zip
-
 import logging
 logger = logging.getLogger(__name__)
 
 
 #=================================================================
-class ArcWarcRecord(object):
+class ArcWarcRecord:
     def __init__(self, *args, **kwargs):
         (self.format, self.rec_type, self.rec_headers, self.raw_stream,
          self.http_headers, self.content_type, self.length) = args
@@ -45,7 +43,7 @@ class ArcWarcRecord(object):
 
 
 #=================================================================
-class ArcWarcRecordLoader(object):
+class ArcWarcRecordLoader:
     WARC_TYPES = ['WARC/1.1', 'WARC/1.0', 'WARC/0.17', 'WARC/0.18']
 
     HTTP_TYPES = ['HTTP/1.0', 'HTTP/1.1']
@@ -269,7 +267,7 @@ class ArcWarcRecordLoader(object):
 
 
 #=================================================================
-class ARCHeadersParser(object):
+class ARCHeadersParser:
     # ARC 1.0 headers
     ARC_HEADERS = ["uri", "ip-address", "archive-date",
                        "content-type", "length"]

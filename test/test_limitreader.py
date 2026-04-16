@@ -3,7 +3,7 @@ from contextlib import closing
 
 from io import BytesIO
 
-class TestLimitReader(object):
+class TestLimitReader:
     def test_limit_reader_1(self):
         assert b'abcdefghji' == LimitReader(BytesIO(b'abcdefghjiklmnopqrstuvwxyz'), 10).read(26)
 
