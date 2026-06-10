@@ -36,6 +36,7 @@ setup(
             'httpbin>=0.10.2',
             'requests',
             'wsgiprox',
+            'certauth>=1.3.0',
             'hookdns',
             # fsspec testing
             'warcio[s3]',  # note: drags in fsspec
