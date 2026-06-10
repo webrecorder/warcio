@@ -48,13 +48,17 @@ setup(
         'all': [
             'brotlipy',
             'warcio[s3]',
+            'warcio[hf]',
         ],
         's3': [
             'fsspec',
             's3fs',
             'aiohttp',
             'requests',
-        ]
+        ],
+        'hf': [
+            'huggingface_hub',
+        ],
     },
     classifiers=[
         'Development Status :: 5 - Production/Stable',
