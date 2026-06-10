@@ -408,8 +408,8 @@ Remote File System Support
 --------------------------
 
 The library supports reading and writing WARC files to a remote file system such as HTTP or S3.
-To enable this feature, you need to install the optional dependencies with ``pip install warcio[s3]``.
-For example, you can then read WARC files directly from `Common Crawl's S3 bucket <https://commoncrawl.org/get-started>`_.
+To enable this feature, you need to install the optional dependencies with ``pip install warcio[s3]`` or ``pip install warcio[hf]``.
+For example, you can then read WARC files directly from `Common Crawl's S3 or HF buckets <https://commoncrawl.org/get-started>`_.
 
 This command will read a WARC file from outside AWS, using https,  and print the first 10 records to stdin:
 
@@ -428,6 +428,95 @@ This command will read a WARC file from from inside AWS, using S3, and print the
 This is implemented with `fsspec <https://filesystem-spec.readthedocs.io/en/latest/index.html>`_.
 By default, only HTTP, S3, and other built-in fsspec file systems are integrated.
 To support other file systems, you need to install the corresponding fsspec dependencies such as ``fsspec[gcs]`` for Google Cloud storage or ``fsspec[all]`` for all available file systems.
+
+Common Crawl on Hugging Face Buckets
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+As of 2025, Common Crawl dumps are also hosted on `Hugging Face Buckets <https://huggingface.co/buckets/commoncrawl>`_,
+proving a cheaper and more accessible alternative to AWS S3. Unlike S3, which may restrict access to
+AWS machines in the same region due to fees for inter-region data transfer (you have to send requests which are charged as outgoing traffic).
+CC dumps on HF Buckets are accessible from multiple cloud providers and regions
+using the ``hf://`` protocol (see the CDN section `here <https://huggingface.co/buckets/commoncrawl/commoncrawl>`_).
+
+To use HF Buckets, install the optional ``hf`` extra:
+
+::
+
+    pip install warcio[hf]
+
+Then use the ``hf://`` protocol prefix in your file paths:
+
+::
+
+    # Index a WARC file from HF Buckets
+    warcio index hf://buckets/commoncrawl/commoncrawl/crawl-data/CC-MAIN-2025-51/segments/1764871645602.73/warc/CC-MAIN-20251215005813-20251215035813-00995.warc.gz | head -n 10
+
+    # Check integrity of a WARC file from HF Buckets
+    warcio check -v hf://buckets/commoncrawl/commoncrawl/crawl-data/CC-MAIN-2025-51/segments/1764871645602.73/warc/CC-MAIN-20251215005813-20251215035813-00995.warc.gz
+
+In Python code:
+
+.. code:: python
+
+    from warcio.archiveiterator import ArchiveIterator
+    from warcio.utils import fsspec_open
+
+    # Read WARC records directly from HF Buckets
+    with fsspec_open(
+        'hf://buckets/commoncrawl/commoncrawl/crawl-data/CC-MAIN-2025-51/'
+        'segments/1764871645602.73/warc/CC-MAIN-20251215005813-20251215035813-00995.warc.gz',
+        'rb'
+    ) as stream:
+        for record in ArchiveIterator(stream):
+            if record.rec_type == 'response':
+                print(record.rec_headers.get_header('WARC-Target-URI'))
+
+The ``hf://`` protocol is powered by `HfFileSystem <https://huggingface.co/docs/huggingface_hub/en/guides/hf_file_system>`_
+from the ``huggingface_hub`` library, which integrates seamlessly with fsspec.
+For authenticated access (e.g., private repos), login using ``hf auth login`` or pass the ``token`` argument:
+
+.. code:: python
+
+    with fsspec_open(
+        'hf://username/repo/file.warc.gz',
+        'rb',
+        token='hf_xxxxxxxxxxxxxxxxxxxx'
+    ) as stream:
+        ...
+
+Common Crawl path structure on HF Buckets:
+
+``hf://buckets/commoncrawl/commoncrawl/crawl-data/<crawl-name>/<path>``
+
+You can explore the available data using the `huggingface_hub <https://huggingface.co/docs/huggingface_hub>`_
+library:
+
+.. code:: python
+
+    from huggingface_hub import hffs
+
+    # List crawl archives
+    for path in hffs.ls('hf://buckets/commoncrawl/commoncrawl/crawl-data/'):
+        print(path)
+
+    # List segments in a specific crawl
+    for path in hffs.ls('hf://buckets/commoncrawl/commoncrawl/crawl-data/CC-MAIN-2026-17/'):
+        print(path)
+
+    # List WARC files in a segment
+    for path in hffs.ls('hf://buckets/commoncrawl/commoncrawl/crawl-data/CC-MAIN-2026-17/segments/1775805908305.14/warc/'):
+        print(path)
+
+Note: When using ``hffs.ls()``, paths are returned without the ``hf://`` prefix.
+To open files returned by ``ls()``, prepend the protocol:
+
+.. code:: python
+
+    files = hffs.ls('hf://buckets/commoncrawl/commoncrawl/crawl-data/CC-MAIN-2026-17/segments/1775805908305.14/warc/')
+    for file_path in files[:1]:  # files is like 'buckets/commoncrawl/.../file.warc.gz'
+        with fsspec_open('hf://' + file_path, 'rb') as fh:
+            for record in ArchiveIterator(fh):
+                ...
 
 
 Contributing
