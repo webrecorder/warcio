@@ -463,8 +463,8 @@ In Python code:
 
     # Read WARC records directly from HF Buckets
     with fsspec_open(
-        'hf://buckets/commoncrawl/commoncrawl/crawl-data/CC-MAIN-2025-51/'
-        'segments/1764871645602.73/warc/CC-MAIN-20251215005813-20251215035813-00995.warc.gz',
+        'hf://buckets/commoncrawl/commoncrawl/crawl-data/CC-MAIN-2026-17/'
+        'segments/1775805908305.14/warc/CC-MAIN-20260410081153-20260410111153-00000.warc.gz',
         'rb'
     ) as stream:
         for record in ArchiveIterator(stream):
@@ -514,7 +514,7 @@ To open files returned by ``ls()``, prepend the protocol:
 
     files = hffs.ls('hf://buckets/commoncrawl/commoncrawl/crawl-data/CC-MAIN-2026-17/segments/1775805908305.14/warc/')
     for file_path in files[:1]:  # files is like 'buckets/commoncrawl/.../file.warc.gz'
-        with fsspec_open('hf://' + file_path, 'rb') as fh:
+        with fsspec_open('hf://' + file_path['name'], 'rb') as fh:
             for record in ArchiveIterator(fh):
                 ...
 
