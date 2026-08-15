@@ -180,8 +180,9 @@ class ArcWarcRecordLoader(object):
         if rec_type not in self.HTTP_RECORDS:
             return None
 
-        # only http:/https: uris can have http headers
-        if not uri.startswith(self.HTTP_SCHEMES):
+        # only http:/https: uris can have http headers (a record with no
+        # WARC-Target-URI has uri=None, which can't have http headers either)
+        if not uri or not uri.startswith(self.HTTP_SCHEMES):
             return None
 
         # request record: parse request

@@ -102,6 +102,18 @@ class TestArchiveIterator(object):
         assert a.reader == None
         assert a.read_to_end() == None
 
+    def test_load_http_headers_no_target_uri(self):
+        """ A record with no WARC-Target-URI (uri is None) used to raise
+        AttributeError from uri.startswith(); it should just skip parsing
+        http headers.
+        """
+        from warcio.recordloader import ArcWarcRecordLoader
+
+        loader = ArcWarcRecordLoader()
+        result = loader.load_http_headers(
+            'response', None, BytesIO(b'HTTP/1.1 200 OK\r\n\r\n'), 100)
+        assert result is None
+
     def test_unseekable(self):
         """ Test iterator on unseekable 3 record uncompressed WARC input
         """
