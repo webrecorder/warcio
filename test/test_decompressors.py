@@ -1,12 +1,13 @@
 import sys
 import types
+import zlib
 from io import BytesIO
 from contextlib import closing
 
 import pytest
 
 from warcio.archiveiterator import ArchiveIterator
-from warcio.bufferedreaders import BufferedReader, DecompressingBufferedReader
+from warcio.bufferedreaders import BufferedReader, DecompressingBufferedReader, gzip_decompressor
 from warcio.bufferedreaders import _DecompressorAdapter, _register_decompressor
 from warcio.bufferedreaders import _find_brotli, try_brotli_init, _find_zstd, try_zstd_init
 from warcio.statusandheaders import StatusAndHeaders
@@ -112,6 +113,11 @@ def decompressors(monkeypatch):
     # restore the registered decompressors after each test
     monkeypatch.setattr(BufferedReader, 'DECOMPRESSORS', dict(BufferedReader.DECOMPRESSORS))
     return BufferedReader.DECOMPRESSORS
+
+
+def compress(data):
+    compressobj = zlib.compressobj(6, zlib.DEFLATED, zlib.MAX_WBITS + 16)
+    return compressobj.compress(data) + compressobj.flush()
 
 
 def unwrap(decompressor):
@@ -256,6 +262,30 @@ def test_register_keeps_complete_decompressor(decompressors):
     assert isinstance(decompressors['x-complete'](), CompleteDecompressor)
 
 
+def test_register_decompressor(decompressors):
+    class ReverseDecompressor(object):
+        def decompress(self, data):
+            return data[::-1]
+
+    BufferedReader.register_decompressor('X-Reverse', ReverseDecompressor)
+
+    assert 'x-reverse' in BufferedReader.get_supported_decompressors()
+
+    with closing(DecompressingBufferedReader(BytesIO(b'abc'), decomp_type='x-reverse')) as x:
+        assert x.read() == b'cba'
+
+
+def test_register_decompressor_replaces_existing(decompressors):
+    class UpperDecompressor(object):
+        def decompress(self, data):
+            return data.upper()
+
+    BufferedReader.register_decompressor('br', UpperDecompressor)
+
+    with closing(DecompressingBufferedReader(BytesIO(b'abc'), decomp_type='br')) as x:
+        assert x.read() == b'ABC'
+
+
 # Content-Encoding of WARC response records
 #=================================================================
 def response_record(payload, content_encoding):
@@ -291,5 +321,17 @@ def test_content_stream_unsupported_encoding(decompressors):
 @pytest.mark.skipif('zstd' not in BufferedReader.DECOMPRESSORS, reason='zstd not available')
 def test_content_stream_zstd():
     record = response_record(ZSTD_FRAME, 'zstd')
+
+    assert record.content_stream().read() == b'ABC\n1234\n'
+
+
+def test_content_stream_registered_decompressor(decompressors):
+    record = response_record(compress(b'ABC\n1234\n'), 'x-gzip')
+
+    # unsupported, returned as is
+    assert record.content_stream().read() == compress(b'ABC\n1234\n')
+
+    BufferedReader.register_decompressor('x-gzip', gzip_decompressor)
+    record = response_record(compress(b'ABC\n1234\n'), 'x-gzip')
 
     assert record.content_stream().read() == b'ABC\n1234\n'

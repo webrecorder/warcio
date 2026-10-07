@@ -94,6 +94,22 @@ as is, still compressed. The supported encodings can be listed with
 ``BufferedReader.get_supported_decompressors()``
 (from ``warcio.bufferedreaders``).
 
+Further encodings can be supported, or the detected library replaced, with
+``BufferedReader.register_decompressor()``. It takes the ``Content-Encoding``
+name and a factory called for each payload to decompress, which must return an
+object with a ``decompress(data)`` method:
+
+.. code:: python
+
+    from warcio.bufferedreaders import BufferedReader, gzip_decompressor
+
+    # decompress the legacy 'x-gzip' encoding as 'gzip'
+    BufferedReader.register_decompressor('x-gzip', gzip_decompressor)
+
+    # always use brotlicffi for 'br', even if Brotli is installed
+    import brotlicffi
+    BufferedReader.register_decompressor('br', brotlicffi.Decompressor)
+
 ARC Files
 ~~~~~~~~~
 

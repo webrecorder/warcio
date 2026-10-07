@@ -376,6 +376,18 @@ class BufferedReader(object):
     def get_supported_decompressors(cls):
         return cls.DECOMPRESSORS.keys()
 
+    @classmethod
+    def register_decompressor(cls, name, factory):
+        """
+        Register a decompressor factory for the given Content-Encoding,
+        replacing any existing one, eg. the brotli or zstd library detected
+
+        The factory is called for each stream to decompress and must return
+        an object with a decompress(data) method, flush() and unused_data
+        are optional
+        """
+        _register_decompressor(name, factory)
+
 
 #=================================================================
 class DecompressingBufferedReader(BufferedReader):
