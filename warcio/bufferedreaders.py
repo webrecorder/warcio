@@ -29,10 +29,22 @@ class _DecompressorAdapter(object):
 
     Only decompress (or an equivalent callable) is required,
     flush() and unused_data are added if missing
+
+    If the decompressor has an eof attribute, data received after
+    the end of stream is kept as unused_data, as zlib does,
+    rather than passed to the decompressor
     """
     def __init__(self, decompressor, decompress=None):
         self._decompressor = decompressor
-        self.decompress = decompress or decompressor.decompress
+        self._decompress = decompress or decompressor.decompress
+        self._data_after_eof = b''
+
+    def decompress(self, data):
+        if getattr(self._decompressor, 'eof', False):
+            self._data_after_eof += data
+            return b''
+
+        return self._decompress(data)
 
     def flush(self):
         flush = getattr(self._decompressor, 'flush', None)
@@ -40,7 +52,8 @@ class _DecompressorAdapter(object):
 
     @property
     def unused_data(self):
-        return getattr(self._decompressor, 'unused_data', None)
+        unused_data = getattr(self._decompressor, 'unused_data', None) or b''
+        return unused_data + self._data_after_eof
 
 
 def _register_decompressor(name, factory):
@@ -102,6 +115,50 @@ def try_brotli_init():
 
 
 #=================================================================
+def _find_zstd():
+    """
+    Return a decompressor factory for the preferred installed zstd
+    implementation, or None if none is installed. In order of preference:
+
+    - compression.zstd: standard library, Python 3.14+
+    - backports.zstd: backport of compression.zstd to earlier Python versions
+    - zstandard
+
+    Decompressors are always wrapped, so data received after the end
+    of a frame is kept as unused_data, rather than raising an error
+    """
+    try:
+        from compression import zstd
+    except ImportError:
+        try:
+            from backports import zstd
+        except ImportError:
+            zstd = None
+
+    if zstd:
+        def zstd_decompressor():
+            return _DecompressorAdapter(zstd.ZstdDecompressor())
+
+        return zstd_decompressor
+
+    try:
+        import zstandard
+    except ImportError:
+        return None
+
+    def zstandard_decompressor():
+        return _DecompressorAdapter(zstandard.ZstdDecompressor().decompressobj())
+
+    return zstandard_decompressor
+
+
+def try_zstd_init():
+    factory = _find_zstd()
+    if factory:
+        _register_decompressor('zstd', factory)
+
+
+#=================================================================
 class BufferedReader(object):
     """
     A wrapping line reader which wraps an existing reader.
@@ -110,8 +167,8 @@ class BufferedReader(object):
 
     If an optional decompress type is specified,
     data is fed through the decompressor when read from the buffer.
-    Currently supported decompression: gzip, deflate
-    and br (if a brotli library is installed)
+    Currently supported decompression: gzip, deflate,
+    br and zstd (if a brotli or zstd library is installed)
     If unspecified, default decompression is None
 
     If decompression is specified, and decompress fails on first try,
@@ -444,4 +501,4 @@ class ChunkedDataReader(BufferedReader):
 
 #=================================================================
 try_brotli_init()
-
+try_zstd_init()

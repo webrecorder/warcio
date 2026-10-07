@@ -155,6 +155,65 @@ def test_brotli_chunked():
         assert x.read() == b'The quick brown fox jumps over the lazy dog' * 4096
 
 
+# Zstandard
+# frames compressed in streaming mode, without the content size in the frame header
+ZSTD_BUFF = b'(\xb5/\xfd\x00X\xac\x01\x00\xb4\x02The quick brown fox jumps over the lazy dog\x01\x00\x93\xfew\xb9*\x03M\x00\x00\x08k\x01\x00\xfc/\x1d\x08\x01'
+ZSTD_FRAME_1 = b'(\xb5/\xfd\x00XI\x00\x00ABC\n1234\n'
+ZSTD_FRAME_2 = b'(\xb5/\xfd\x00X!\x00\x00XYZ\n'
+
+zstd_available = pytest.mark.skipif('zstd' not in DecompressingBufferedReader.DECOMPRESSORS, reason='zstd not available')
+
+
+@zstd_available
+def test_zstd():
+    with closing(DecompressingBufferedReader(BytesIO(ZSTD_BUFF), decomp_type='zstd')) as x:
+        assert x.read() == b'The quick brown fox jumps over the lazy dog' * 4096
+
+
+@zstd_available
+def test_zstd_very_small_chunk():
+    with closing(DecompressingBufferedReader(BytesIO(ZSTD_BUFF), decomp_type='zstd', block_size=3)) as x:
+        assert x.read() == b'The quick brown fox jumps over the lazy dog' * 4096
+
+
+@zstd_available
+def test_zstd_chunked():
+    chunked = b''.join(format(len(chunk), 'x').encode('utf-8') + b'\r\n' + chunk + b'\r\n'
+                       for chunk in (ZSTD_BUFF[:10], ZSTD_BUFF[10:]))
+    chunked += b'0\r\n\r\n'
+
+    with closing(ChunkedDataReader(BytesIO(chunked), decomp_type='zstd')) as x:
+        assert x.read() == b'The quick brown fox jumps over the lazy dog' * 4096
+
+
+@zstd_available
+@pytest.mark.parametrize('block_size', [3, len(ZSTD_FRAME_1), 1024])
+def test_zstd_multiple_frames(block_size):
+    # like gzip members, frames after the first one are read with read_next_member()
+    x = DecompressingBufferedReader(BytesIO(ZSTD_FRAME_1 + ZSTD_FRAME_2), decomp_type='zstd', block_size=block_size)
+    assert x.readline() == b'ABC\n'
+    assert x.read() == b'1234\n'
+    assert x.read_next_member()
+    assert x.read() == b'XYZ\n'
+    x.close()
+
+
+@zstd_available
+@pytest.mark.parametrize('block_size', [3, len(ZSTD_FRAME_1), 1024])
+def test_zstd_multiple_frames_read_all_members(block_size):
+    # as with gzip members, a read() may stop at the end of a frame
+    with closing(DecompressingBufferedReader(BytesIO(ZSTD_FRAME_1 + ZSTD_FRAME_2), decomp_type='zstd',
+                                             block_size=block_size, read_all_members=True)) as x:
+        assert b''.join(iter(x.read, b'')) == b'ABC\n1234\nXYZ\n'
+
+
+@zstd_available
+def test_zstd_not_compressed():
+    # if decompression fails on first block, data is assumed to not be compressed
+    with closing(DecompressingBufferedReader(BytesIO(b'ABC\n1234\n'), decomp_type='zstd')) as x:
+        assert x.read() == b'ABC\n1234\n'
+
+
 # Compression
 def test_compress_mix():
     x = DecompressingBufferedReader(BytesIO(compress('ABC') + b'123'), decomp_type = 'gzip')

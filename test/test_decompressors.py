@@ -7,13 +7,15 @@ import pytest
 
 from warcio.archiveiterator import ArchiveIterator
 from warcio.bufferedreaders import BufferedReader, DecompressingBufferedReader
-from warcio.bufferedreaders import _find_brotli, _register_decompressor, try_brotli_init
+from warcio.bufferedreaders import _DecompressorAdapter, _register_decompressor
+from warcio.bufferedreaders import _find_brotli, try_brotli_init, _find_zstd, try_zstd_init
 from warcio.statusandheaders import StatusAndHeaders
 from warcio.warcwriter import WARCWriter
 
 
 BROTLI_BUFF = b'[\xff\xaf\x02\xc0"y\\\xfbZ\x8cB;\xf4%U\x19Z\x92\x99\xb15\xc8\x19\x9e\x9e\n{K\x90\xb9<\x98\xc8\t@\xf3\xe6\xd9M\xe4me\x1b\'\x87\x13_\xa6\xe90\x96{<\x15\xd8S\x1c'
 BROTLI_TEXT = b'The quick brown fox jumps over the lazy dog' * 4096
+ZSTD_FRAME = b'(\xb5/\xfd\x00XI\x00\x00ABC\n1234\n'
 
 
 # Fake brotli implementations, mirroring the API of each library
@@ -43,6 +45,56 @@ class BrotlipyDecompressor(object):
 
     def flush(self):
         return b''
+
+
+# Fake zstd implementations, mirroring the API of each library
+#=================================================================
+class StdlibZstdDecompressor(object):
+    # compression.zstd: decompress(), eof and unused_data, no flush()
+    eof = False
+    unused_data = b''
+
+    def decompress(self, data):
+        return data.upper()
+
+
+class BackportsZstdDecompressor(StdlibZstdDecompressor):
+    # backports.zstd: same API as compression.zstd
+    pass
+
+
+class ZstandardDecompressionObj(StdlibZstdDecompressor):
+    # zstandard: ZstdDecompressor().decompressobj() also has flush()
+    def flush(self):
+        return b''
+
+
+class ZstandardDecompressor(object):
+    def decompressobj(self):
+        return ZstandardDecompressionObj()
+
+
+def fake_zstd_modules(monkeypatch, stdlib, backports, zstandard):
+    # mock 'from compression import zstd', 'from backports import zstd' and 'import zstandard'
+    for package, zstd_cls in (('compression', stdlib and StdlibZstdDecompressor),
+                              ('backports', backports and BackportsZstdDecompressor)):
+        if zstd_cls:
+            zstd = types.ModuleType(package + '.zstd')
+            zstd.ZstdDecompressor = zstd_cls
+            package_module = types.ModuleType(package)
+            package_module.zstd = zstd
+        else:
+            zstd = package_module = None
+
+        monkeypatch.setitem(sys.modules, package, package_module)
+        monkeypatch.setitem(sys.modules, package + '.zstd', zstd)
+
+    zstandard_module = None
+    if zstandard:
+        zstandard_module = types.ModuleType('zstandard')
+        zstandard_module.ZstdDecompressor = ZstandardDecompressor
+
+    monkeypatch.setitem(sys.modules, 'zstandard', zstandard_module)
 
 
 def fake_module(name, decompressor_cls):
@@ -108,8 +160,71 @@ def test_brotli_read_and_close(monkeypatch, decompressors, brotli_cls):
     x.close()
 
 
-# Decompressor registration
+# Zstd implementation detection
 #=================================================================
+@pytest.mark.parametrize('stdlib, backports, zstandard, expected_cls', [
+    (True, True, True, StdlibZstdDecompressor),
+    (False, True, True, BackportsZstdDecompressor),
+    (False, False, True, ZstandardDecompressionObj),
+])
+def test_find_zstd_preference(monkeypatch, stdlib, backports, zstandard, expected_cls):
+    fake_zstd_modules(monkeypatch, stdlib, backports, zstandard)
+
+    decompressor = _find_zstd()()
+    assert isinstance(decompressor, _DecompressorAdapter)
+    assert type(unwrap(decompressor)) is expected_cls
+
+
+def test_zstd_not_installed(monkeypatch, decompressors):
+    fake_zstd_modules(monkeypatch, False, False, False)
+    decompressors.pop('zstd', None)
+
+    assert _find_zstd() is None
+
+    try_zstd_init()
+    assert 'zstd' not in decompressors
+
+    with pytest.raises(Exception, match='Decompression type not supported: zstd'):
+        DecompressingBufferedReader(BytesIO(b'ABC'), decomp_type='zstd')
+
+
+@pytest.mark.parametrize('stdlib, backports, zstandard', [
+    (True, False, False),
+    (False, True, False),
+    (False, False, True),
+])
+def test_zstd_read_and_close(monkeypatch, decompressors, stdlib, backports, zstandard):
+    fake_zstd_modules(monkeypatch, stdlib, backports, zstandard)
+    try_zstd_init()
+
+    x = DecompressingBufferedReader(BytesIO(b'abc\ndef'), decomp_type='zstd', block_size=3)
+    assert x.readline() == b'ABC\n'
+    assert x.read() == b'DEF'
+    x.close()
+
+
+# Decompressor adapter and registration
+#=================================================================
+def test_adapter_keeps_data_after_eof():
+    class OneFrameDecompressor(object):
+        eof = False
+        unused_data = b''
+
+        def decompress(self, data):
+            if self.eof:
+                raise EOFError('Already at the end of a frame')
+
+            self.eof = True
+            return data
+
+    decompressor = _DecompressorAdapter(OneFrameDecompressor())
+
+    assert decompressor.decompress(b'abc') == b'abc'
+    assert decompressor.decompress(b'def') == b''
+    assert decompressor.decompress(b'ghi') == b''
+    assert decompressor.unused_data == b'defghi'
+
+
 def test_register_wraps_minimal_decompressor(decompressors):
     class MinimalDecompressor(object):
         def decompress(self, data):
@@ -120,7 +235,7 @@ def test_register_wraps_minimal_decompressor(decompressors):
 
     assert decompressor.decompress(b'abc') == b'cba'
     assert decompressor.flush() == b''
-    assert decompressor.unused_data is None
+    assert not decompressor.unused_data
 
     with closing(DecompressingBufferedReader(BytesIO(b'abc'), decomp_type='X-Reverse')) as x:
         assert x.read() == b'cba'
@@ -171,3 +286,10 @@ def test_content_stream_unsupported_encoding(decompressors):
 
     # returned as is, still compressed
     assert record.content_stream().read() == BROTLI_BUFF
+
+
+@pytest.mark.skipif('zstd' not in BufferedReader.DECOMPRESSORS, reason='zstd not available')
+def test_content_stream_zstd():
+    record = response_record(ZSTD_FRAME, 'zstd')
+
+    assert record.content_stream().read() == b'ABC\n1234\n'

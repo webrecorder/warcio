@@ -3,6 +3,8 @@ Unreleased
 
 - Fix ``br`` decompression with the official ``Brotli`` package and add ``brotlicffi`` support. ``warcio[all]`` now installs ``brotli`` instead of the unmaintained ``brotlipy``
 
+- Add optional ``zstd`` decompression, using ``compression.zstd`` (Python 3.14+), ``backports.zstd`` or ``zstandard``. ``warcio[all]`` installs ``backports.zstd`` on Python 3.10 to 3.13 and ``zstandard`` on earlier versions
+
 
 1.8.1
 ~~~~~
