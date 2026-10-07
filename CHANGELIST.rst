@@ -1,3 +1,9 @@
+Unreleased
+~~~~~~~~~~
+
+- Fix ``br`` decompression with the official ``Brotli`` package and add ``brotlicffi`` support. ``warcio[all]`` now installs ``brotli`` instead of the unmaintained ``brotlipy``
+
+
 1.8.1
 ~~~~~
 

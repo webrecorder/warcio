@@ -46,7 +46,7 @@ setup(
             'botocore',
         ],
         'all': [
-            'brotlipy',
+            'brotli',
             'warcio[s3]',
         ],
         's3': [
