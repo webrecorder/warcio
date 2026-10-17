@@ -56,6 +56,13 @@ jobs:
         run: |
           pip install setuptools
 
+      - name: Install OpenSSL for Windows ARM64
+        if: ${{ matrix.os == 'windows-11-arm' }}
+          shell: pwsh
+          run:   |
+            vcpkg install --triplet arm64-windows-static-md --clean-after-build openssl
+            echo "OPENSSL_DIR=$env:VCPKG_INSTALLATION_ROOT\installed\arm64-windows-static-md" >> $env:GITHUB_ENV
+
       - name: Install warcio ALL
         if: ${{ ! matrix.NOTALL }}
         run: pip install .[all,testing]
