@@ -60,7 +60,12 @@ jobs:
         if: ${{ matrix.os == 'windows-11-arm' }}
         shell: pwsh
         run: |
+          # Force set the root to where vcpkg actually runs on the runner
+          $vcpkgDir = (Get-Command vcpkg).Source | Split-Path
+          "VCPKG_ROOT=$vcpkgDir" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+
           vcpkg install --triplet arm64-windows-static-md --clean-after-build openssl
+
           "OPENSSL_DIR=${env:VCPKG_ROOT}\installed\arm64-windows-static-md" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
           "OPENSSL_STATIC=1" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
 
