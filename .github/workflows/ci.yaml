@@ -61,6 +61,7 @@ jobs:
         if: ${{ matrix.os == 'windows-11-arm' }}
           run: |
             vcpkg install --triplet arm64-windows-static-md --clean-after-build openssl
+          run: |
             "OPENSSL_DIR=${env:VCPKG_ROOT}\installed\arm64-windows-static-md" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
 
       - name: Install warcio ALL
