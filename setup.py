@@ -13,6 +13,7 @@ setup(
     author_email='ikreymer@gmail.com',
     license='Apache 2.0',
     packages=find_packages(exclude=['test']),
+    package_data={'warcio': ['*.pyi', 'py.typed']},
     url='https://github.com/webrecorder/warcio',
     description='Streaming WARC (and ARC) IO library',
     long_description=open('README.rst').read(),
