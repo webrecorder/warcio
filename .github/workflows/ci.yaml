@@ -15,25 +15,28 @@ jobs:
       fail-fast: false
       #max-parallel: 3
       matrix:
-        python-version: ['3.8', '3.9', '3.10', '3.11', '3.12', '3.13']
+        python-version: ['3.8', '3.9', '3.10', '3.11', '3.12', '3.13', '3.14', '3.15']
         os: [ubuntu-latest]
         EXTRA: [false]  # used to force includes to get included
         include:
-          - python-version: '3.12'
+          - python-version: '3.15'
             os: ubuntu-latest
             EXTRA: true
             NOTALL: true  # without warcio[all]
           - python-version: '3.11'
             os: macos-latest
             EXTRA: true
-          - python-version: '3.13'
+          - python-version: '3.15'
             os: macos-latest
             EXTRA: true
           - python-version: '3.8'
             os: windows-latest
             EXTRA: true
-          - python-version: '3.13'
+          - python-version: '3.15'
             os: windows-latest
+            EXTRA: true
+          - python-version: '3.15'
+            os: windows-11-arm
             EXTRA: true
           - python-version: '3.8'
             os: ubuntu-22.04  # oldest version on github actions
