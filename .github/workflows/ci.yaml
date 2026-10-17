@@ -57,6 +57,7 @@ jobs:
           pip install setuptools
 
       - name: Install OpenSSL for Windows ARM64
+        # this is needed to build the cryptography package wheel, if not available for this os
         if: ${{ matrix.os == 'windows-11-arm' }}
         shell: pwsh
         run: |
