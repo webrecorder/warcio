@@ -44,6 +44,8 @@ setup(
             'flask',
             'flask_cors',
             'botocore',
+            # certauth uses X509.add_extensions(), which was removed in pyOpenSSL 26.2.
+            'pyOpenSSL<26.2',
         ],
         'all': [
             'brotlipy',
