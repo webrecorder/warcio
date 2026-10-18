@@ -48,7 +48,9 @@ setup(
             'pyOpenSSL<26.2',
         ],
         'all': [
-            'brotlipy',
+            'brotli',
+            'backports.zstd; python_version >= "3.10" and python_version < "3.14"',
+            'zstandard; python_version < "3.10"',
             'warcio[s3]',
         ],
         's3': [
