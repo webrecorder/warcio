@@ -48,7 +48,7 @@ setup(
             'pyOpenSSL<26.2',
         ],
         'all': [
-            'brotlipy',
+            'brotli',
             'warcio[s3]',
         ],
         's3': [

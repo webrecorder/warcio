@@ -144,6 +144,17 @@ def test_brotli_very_small_chunk():
         assert x.read() == b'The quick brown fox jumps over the lazy dog' * 4096
 
 
+@pytest.mark.skipif('br' not in DecompressingBufferedReader.DECOMPRESSORS, reason='brotli not available')
+def test_brotli_chunked():
+    brotli_buff = b'[\xff\xaf\x02\xc0"y\\\xfbZ\x8cB;\xf4%U\x19Z\x92\x99\xb15\xc8\x19\x9e\x9e\n{K\x90\xb9<\x98\xc8\t@\xf3\xe6\xd9M\xe4me\x1b\'\x87\x13_\xa6\xe90\x96{<\x15\xd8S\x1c'
+    chunked = b''.join(format(len(chunk), 'x').encode('utf-8') + b'\r\n' + chunk + b'\r\n'
+                       for chunk in (brotli_buff[:10], brotli_buff[10:]))
+    chunked += b'0\r\n\r\n'
+
+    with closing(ChunkedDataReader(BytesIO(chunked), decomp_type='br')) as x:
+        assert x.read() == b'The quick brown fox jumps over the lazy dog' * 4096
+
+
 # Compression
 def test_compress_mix():
     x = DecompressingBufferedReader(BytesIO(compress('ABC') + b'123'), decomp_type = 'gzip')

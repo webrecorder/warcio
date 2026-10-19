@@ -72,6 +72,19 @@ A special ``ArcWarcRecord.content_stream()`` function provides a stream that
 automatically decompresses and de-chunks the HTTP payload, if it is
 compressed and/or transfer-encoding chunked.
 
+Decompression of the HTTP payload is based on its ``Content-Encoding``.
+``gzip`` and ``deflate`` are always supported. ``br`` (Brotli) is supported
+if one of the following libraries is installed, the first one found being used:
+
+- `Brotli <https://pypi.org/project/Brotli/>`__ (installed with ``pip install warcio[all]``)
+- `brotlicffi <https://pypi.org/project/brotlicffi/>`__
+- `brotlipy <https://pypi.org/project/brotlipy/>`__ (legacy)
+
+Payloads with an unsupported ``Content-Encoding`` are returned by ``content_stream()``
+as is, still compressed. The supported encodings can be listed with
+``BufferedReader.get_supported_decompressors()``
+(from ``warcio.bufferedreaders``).
+
 ARC Files
 ~~~~~~~~~
 
