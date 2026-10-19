@@ -3,8 +3,10 @@ from warcio.exceptions import ArchiveLoadFailed
 from warcio.bufferedreaders import DecompressingBufferedReader, BufferedReader
 
 from warcio.warcwriter import BufferWARCWriter
+from warcio.statusandheaders import StatusAndHeaders
 
 import pytest
+import gzip
 from io import BytesIO
 import sys
 
@@ -253,6 +255,30 @@ Content-Length: 1303\r\n'
         buff = self._read_first_response('example-iana.org-chunked.warc').decode('utf-8')
         assert buff.startswith('<!doctype html>')
         assert 'Internet Assigned Numbers Authority' in buff
+
+    def test_content_stream_decodes_x_gzip(self):
+        # 'x-gzip' is a legacy alias for 'gzip', so a payload sent with it must
+        # still be decompressed, like plain 'gzip' (webrecorder/warcio#209).
+        original = b'some gzipped payload\n' * 8
+        compressed = gzip.compress(original)
+
+        writer = BufferWARCWriter(gzip=False)
+        http_headers = StatusAndHeaders(
+            '200 OK',
+            [('Content-Type', 'text/plain'),
+             ('Content-Encoding', 'x-gzip'),
+             ('Content-Length', str(len(compressed)))],
+            protocol='HTTP/1.0')
+        record = writer.create_warc_record('http://example.com/', 'response',
+                                           payload=BytesIO(compressed),
+                                           length=len(compressed),
+                                           http_headers=http_headers)
+        writer.write_record(record)
+
+        stream = writer.get_stream()
+        stream.seek(0)
+        record = next(iter(ArchiveIterator(stream)))
+        assert record.content_stream().read() == original
 
     def test_bad_warc(self):
         with pytest.raises(ArchiveLoadFailed):
