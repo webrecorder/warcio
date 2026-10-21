@@ -15,25 +15,28 @@ jobs:
       fail-fast: false
       #max-parallel: 3
       matrix:
-        python-version: ['3.8', '3.9', '3.10', '3.11', '3.12', '3.13']
+        python-version: ['3.8', '3.9', '3.10', '3.11', '3.12', '3.13', '3.14', '3.15']
         os: [ubuntu-latest]
         EXTRA: [false]  # used to force includes to get included
         include:
-          - python-version: '3.12'
+          - python-version: '3.15'
             os: ubuntu-latest
             EXTRA: true
             NOTALL: true  # without warcio[all]
           - python-version: '3.11'
             os: macos-latest
             EXTRA: true
-          - python-version: '3.13'
+          - python-version: '3.15'
             os: macos-latest
             EXTRA: true
           - python-version: '3.8'
             os: windows-latest
             EXTRA: true
-          - python-version: '3.13'
+          - python-version: '3.15'
             os: windows-latest
+            EXTRA: true
+          - python-version: '3.15'
+            os: windows-11-arm
             EXTRA: true
           - python-version: '3.8'
             os: ubuntu-22.04  # oldest version on github actions
@@ -41,10 +44,10 @@ jobs:
 
     steps:
       - name: checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7.0.1
 
       - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v7.0.0
         with:
           python-version: ${{ matrix.python-version }}
 
@@ -52,6 +55,32 @@ jobs:
         if: ${{ matrix.python-version >= '3.12' }}
         run: |
           pip install setuptools
+
+      - name: Install OpenSSL for Windows ARM64
+        # this is needed to build the cryptography package wheel, if not available for this os
+        if: ${{ matrix.os == 'windows-11-arm' }}
+        shell: pwsh
+        run: |
+          # Force set the root to where vcpkg actually runs on the runner
+          $vcpkgDir = (Get-Command vcpkg).Source | Split-Path
+          "VCPKG_ROOT=$vcpkgDir" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+
+          vcpkg install --triplet arm64-windows-static-md --clean-after-build openssl
+
+          # Locate the exact absolute path where vcpkg output the artifacts
+          $vcpkgExePath = (Get-Command vcpkg).Source
+          $vcpkgFolder = Split-Path -Path $vcpkgExePath -Parent
+          $openSslPath = Join-Path -Path $vcpkgFolder -ChildPath "installed\arm64-windows-static-md"
+
+          # Formulate explicit absolute targets
+          $includePath = Join-Path -Path $openSslPath -ChildPath "include"
+          $libPath = Join-Path -Path $openSslPath -ChildPath "lib"
+
+          # Expose everything to the GitHub Runner Environment
+          "OPENSSL_DIR=$openSslPath" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          "OPENSSL_INCLUDE_DIR=$includePath" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          "OPENSSL_LIB_DIR=$libPath" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          "OPENSSL_STATIC=1" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
 
       - name: Install warcio ALL
         if: ${{ ! matrix.NOTALL }}
@@ -64,4 +93,4 @@ jobs:
         run: python -m pytest
 
       - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v4
+        uses: codecov/codecov-action@v7.1.1
