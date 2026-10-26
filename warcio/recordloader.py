@@ -33,6 +33,11 @@ class ArcWarcRecord(object):
         if encoding:
             encoding = encoding.lower()
 
+            # 'x-gzip' is a legacy alias for 'gzip' (RFC 7230 4.2.3, RFC 2616
+            # 3.5); treat it the same so an x-gzip payload is still decompressed.
+            if encoding == 'x-gzip':
+                encoding = 'gzip'
+
             if encoding not in BufferedReader.get_supported_decompressors():
                 encoding = None
 
