@@ -22,7 +22,7 @@ jobs:
           - python-version: '3.15'
             os: ubuntu-latest
             EXTRA: true
-            NOTALL: true  # without warcio[all]
+            NOTALL: true  # without warcio[all]: br via brotlicffi (an httpbin dependency), no zstd
           - python-version: '3.11'
             os: macos-latest
             EXTRA: true

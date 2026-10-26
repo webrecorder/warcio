@@ -72,6 +72,44 @@ A special ``ArcWarcRecord.content_stream()`` function provides a stream that
 automatically decompresses and de-chunks the HTTP payload, if it is
 compressed and/or transfer-encoding chunked.
 
+Decompression of the HTTP payload is based on its ``Content-Encoding``.
+``gzip`` and ``deflate`` are always supported. ``br`` (Brotli) and ``zstd``
+(Zstandard) are supported if one of the following libraries is installed,
+the first one found being used:
+
+- ``br``:
+
+  - `Brotli <https://pypi.org/project/Brotli/>`__ (installed with ``pip install warcio[all]``)
+  - `brotlicffi <https://pypi.org/project/brotlicffi/>`__
+  - `brotlipy <https://pypi.org/project/brotlipy/>`__ (legacy)
+
+- ``zstd``:
+
+  - `compression.zstd <https://docs.python.org/3/library/compression.zstd.html>`__ (standard library, Python 3.14+)
+  - `backports.zstd <https://pypi.org/project/backports.zstd/>`__ (installed with ``pip install warcio[all]`` on Python 3.10 to 3.13)
+  - `zstandard <https://pypi.org/project/zstandard/>`__ (installed with ``pip install warcio[all]`` on earlier versions)
+
+Payloads with an unsupported ``Content-Encoding`` are returned by ``content_stream()``
+as is, still compressed. The supported encodings can be listed with
+``BufferedReader.get_supported_decompressors()``
+(from ``warcio.bufferedreaders``).
+
+Further encodings can be supported, or the detected library replaced, with
+``BufferedReader.register_decompressor()``. It takes the ``Content-Encoding``
+name and a factory called for each payload to decompress, which must return an
+object with a ``decompress(data)`` method:
+
+.. code:: python
+
+    from warcio.bufferedreaders import BufferedReader, gzip_decompressor
+
+    # decompress the legacy 'x-gzip' encoding as 'gzip'
+    BufferedReader.register_decompressor('x-gzip', gzip_decompressor)
+
+    # always use brotlicffi for 'br', even if Brotli is installed
+    import brotlicffi
+    BufferedReader.register_decompressor('br', brotlicffi.Decompressor)
+
 ARC Files
 ~~~~~~~~~
 
