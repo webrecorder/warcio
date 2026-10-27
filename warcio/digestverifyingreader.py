@@ -7,7 +7,7 @@ from warcio.exceptions import ArchiveLoadFailed
 
 
 # ============================================================================
-class DigestChecker(object):
+class DigestChecker:
     def __init__(self, kind=None):
         self._problem = []
         self._passed = None

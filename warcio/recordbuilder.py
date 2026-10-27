@@ -1,4 +1,3 @@
-import six
 import tempfile
 
 from datetime import datetime, timezone
@@ -10,7 +9,7 @@ from warcio.timeutils import datetime_to_iso_date
 from warcio.utils import to_native_str, BUFF_SIZE, Digester
 
 #=================================================================
-class RecordBuilder(object):
+class RecordBuilder:
     REVISIT_PROFILE = 'http://netpreserve.org/warc/1.0/revisit/identical-payload-digest'
     REVISIT_PROFILE_1_1 = 'http://netpreserve.org/warc/1.1/revisit/identical-payload-digest'
 
@@ -44,7 +43,7 @@ class RecordBuilder(object):
         warc_headers.add_header('WARC-Date', self.curr_warc_date())
 
         warcinfo = BytesIO()
-        for name, value in six.iteritems(info):
+        for name, value in info.items():
             if not value:
                 continue
 

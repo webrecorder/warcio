@@ -5,7 +5,7 @@ import sys
 
 
 # ============================================================================
-class Extractor(object):
+class Extractor:
     READ_SIZE = BUFF_SIZE * 4
 
     def __init__(self, filename, offset):

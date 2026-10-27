@@ -21,7 +21,7 @@ from warcio.warcwriter import BufferWARCWriter, WARCWriter
 
 
 # ==================================================================
-class TestCaptureHttpBin(object):
+class TestCaptureHttpBin:
     @classmethod
     def setup_class(cls):
         from httpbin import app as httpbin_app

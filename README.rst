@@ -11,8 +11,7 @@ Background
 
 This library provides a fast, standalone way to read and write `WARC
 Format <https://en.wikipedia.org/wiki/Web_ARChive>`__ commonly used in
-web archives. Python 3.7+ (minimally only needing
-`six <https://pythonhosted.org/six/>`__ as an external dependency)
+web archives. Python 3.7+.
 
 warcio supports reading and writing of WARC files compliant with both the `WARC 1.0 <http://bibnum.bnf.fr/WARC/WARC_ISO_28500_version1_latestdraft.pdf>`__
 and `WARC 1.1 <http://bibnum.bnf.fr/WARC/WARC_ISO_28500_version1-1_latestdraft.pdf>`__ ISO standards.
@@ -59,7 +58,7 @@ the format (ARC or WARC), record type, the record headers, http headers
 
 .. code:: python
 
-    class ArcWarcRecord(object):
+    class ArcWarcRecord:
         def __init__(self, *args):
             (self.format, self.rec_type, self.rec_headers, self.raw_stream,
              self.http_headers, self.content_type, self.length) = args

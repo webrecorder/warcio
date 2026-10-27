@@ -560,7 +560,7 @@ def record_sampler(request):
 
 
 # ============================================================================
-class TestWarcWriter(object):
+class TestWarcWriter:
     @classmethod
     def _validate_record_content_len(cls, stream):
         for record in ArchiveIterator(stream, no_record_parse=True):

@@ -21,7 +21,7 @@ def pytest_generate_tests(metafunc):
         metafunc.parametrize('test_filename', files)
 
 
-class TestExamplesDigest(object):
+class TestExamplesDigest:
     def check_helper(self, args, expected_exit_value, capsys):
         exit_value = None
         try:

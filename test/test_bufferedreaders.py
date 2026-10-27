@@ -101,8 +101,6 @@ from warcio.limitreader import LimitReader
 
 from contextlib import closing
 
-import six
-
 import zlib
 import pytest
 
@@ -177,7 +175,7 @@ def test_err_chunk_cut_off():
 
 
 def print_str(string):
-    return string.decode('utf-8') if six.PY3 else string
+    return string.decode('utf-8')
 
 
 

@@ -110,7 +110,7 @@ class BaseWARCWriter(RecordBuilder):
 
 
 # ============================================================================
-class GzippingWrapper(object):
+class GzippingWrapper:
     def __init__(self, out):
         self.compressor = zlib.compressobj(9, zlib.DEFLATED, zlib.MAX_WBITS + 16)
         self.out = out
