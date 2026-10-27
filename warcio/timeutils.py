@@ -7,7 +7,7 @@ import re
 import time
 import calendar
 
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from email.utils import parsedate, formatdate
 
 #=================================================================
@@ -22,7 +22,6 @@ ISO_DT = '%Y-%m-%dT%H:%M:%SZ'
 PAD_14_DOWN = '10000101000000'
 PAD_14_UP =   '29991231235959'
 PAD_6_UP =    '299912'
-PAD_MICRO =   '000000'
 
 
 def iso_date_to_datetime(string, tz_aware=False):
@@ -53,22 +52,17 @@ def iso_date_to_datetime(string, tz_aware=False):
 
     >>> iso_date_to_datetime('2013-12-26T10:11:12.000000Z', tz_aware=True)
     datetime.datetime(2013, 12, 26, 10, 11, 12, tzinfo=datetime.timezone.utc)
+    
+    >>> iso_date_to_datetime('2013-12-26T10:11:12.000000+02:00', tz_aware=True)
+    datetime.datetime(2013, 12, 26, 10, 11, 12, tzinfo=datetime.timezone(datetime.timedelta(seconds=7200)))
+
+    
+    >>> iso_date_to_datetime('2013-12-26T10:11:12.000000-02:00', tz_aware=True) == datetime(2013, 12, 26, 10, 11, 12, tzinfo=timezone(timedelta(seconds=-7200)))
+    True
     """
-
-    nums = DATE_TIMESPLIT.split(string)
-    if nums[-1] == '':
-        nums = nums[:-1]
-
-    if len(nums) == 7:
-        nums[6] = nums[6][:6]
-        nums[6] += PAD_MICRO[len(nums[6]):]
-
-    tzinfo = None
-    if tz_aware:
-        tzinfo = timezone.utc
-
-    the_datetime = datetime(*(int(num) for num in nums), tzinfo=tzinfo)
-    return the_datetime
+    if not tz_aware:
+        return datetime.fromisoformat(string).replace(tzinfo=None)
+    return datetime.fromisoformat(string)
 
 
 def http_date_to_datetime(string, tz_aware=False):
