@@ -21,7 +21,7 @@ WARC-IP-Address: 192.0.32.8
 Content-Type: application/http;msgtype=response
 Content-Length: 7566
 WARC-Block-Digest: sha1:a54fe86cc15cbb3c66f29596f26395bb2f7b5cc6
-WARC-Payload-Digest: sha1:b1f949b4920c773fd9c863479ae9a788b948c7ad
+WARC-Payload-Digest: sha1:8846f23ce943a3b70089f86345626778cd93f11e
 
 HTTP/1.1 200 OK
 Vary: Accept-Encoding
