@@ -1,8 +1,12 @@
 from io import BytesIO
+import re
 import zlib
 import sys
 
 from warcio.utils import BUFF_SIZE
+
+import logging
+logger = logging.getLogger(__name__)
 
 
 #=================================================================
@@ -24,10 +28,17 @@ def deflate_decompressor_alt():
 #=================================================================
 def try_brotli_init():
     try:
-        import brotli
+        import brotlicffi
+
+        version = getattr(brotlicffi, '__version__', '')
+        version_tuple = tuple(int(x) for x in re.findall(r'\d+', version))
+        if (1, 0, 3, 0) <= version_tuple < (1, 2, 1, 0):
+            logger.warning("brotli support disabled: brotlicffi {} is vulnerable to "
+                           "CVE-2026-111497, upgrade to 1.2.1.0 or later".format(version))
+            return
 
         def brotli_decompressor():
-            decomp = brotli.Decompressor()
+            decomp = brotlicffi.Decompressor()
             decomp.unused_data = None
             return decomp
 
