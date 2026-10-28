@@ -1,3 +1,9 @@
+1.8.2
+~~~~~
+
+- Replace unmaintained brotlipy with brotlicffi>=1.2.1.0 by @ato https://github.com/webrecorder/warcio/pull/211
+- Add Content-Encoding: x-gzip as an alias for gzip by @sammist2 in https://github.com/webrecorder/warcio/pull/210
+
 1.8.1
 ~~~~~
 
