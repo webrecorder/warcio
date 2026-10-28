@@ -48,7 +48,7 @@ setup(
             'pyOpenSSL<26.2',
         ],
         'all': [
-            'brotlipy',
+            'brotlicffi>=1.2.1.0', # older versions are vulnerable to CVE-2026-111497
             'warcio[s3]',
         ],
         's3': [

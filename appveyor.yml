@@ -20,7 +20,7 @@ install:
   - "pip install colorama==0.3.9"
   - "pip install coverage pytest-cov codecov"
   - "pip install pycparser==2.18"
-  - "pip install brotlipy"
+  - "pip install brotlicffi"
   - "pip install 'jinja2<3.0.0'"
 
 build_script:
