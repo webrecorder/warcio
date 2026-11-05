@@ -50,13 +50,17 @@ setup(
         'all': [
             'brotlicffi>=1.2.1.0', # older versions are vulnerable to CVE-2026-111497
             'warcio[s3]',
+            'warcio[hf]',
         ],
         's3': [
             'fsspec',
             's3fs',
             'aiohttp',
             'requests',
-        ]
+        ],
+        'hf': [
+            'huggingface_hub',
+        ],
     },
     classifiers=[
         'Development Status :: 5 - Production/Stable',
