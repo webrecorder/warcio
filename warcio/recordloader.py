@@ -10,8 +10,6 @@ from warcio.bufferedreaders import BufferedReader, ChunkedDataReader
 
 from warcio.timeutils import timestamp_to_iso_date
 
-from six.moves import zip
-
 import logging
 logger = logging.getLogger(__name__)
 

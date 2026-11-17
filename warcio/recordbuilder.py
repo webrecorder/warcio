@@ -1,4 +1,3 @@
-import six
 import tempfile
 
 from datetime import datetime, timezone
@@ -44,7 +43,7 @@ class RecordBuilder(object):
         warc_headers.add_header('WARC-Date', self.curr_warc_date())
 
         warcinfo = BytesIO()
-        for name, value in six.iteritems(info):
+        for name, value in info.items():
             if not value:
                 continue
 

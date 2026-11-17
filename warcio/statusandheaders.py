@@ -2,12 +2,10 @@
 Representation and parsing of HTTP-style status + headers
 """
 
-from six.moves import range
-from six import iteritems
 from warcio.utils import to_native_str, headers_to_str_headers
 import uuid
 
-from six.moves.urllib.parse import quote
+from urllib.parse import quote
 import re
 
 
