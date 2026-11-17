@@ -176,7 +176,7 @@ headers = {2})".format(self.protocol, self.statusline, self.headers)
         except (UnicodeEncodeError, UnicodeDecodeError):
             self.percent_encode_non_ascii_headers()
             string = self.to_str(filter_func)
-            string = string.encode('ascii')
+            string = string.encode('ascii', errors='replace')
 
         return string + b'\r\n'
 
