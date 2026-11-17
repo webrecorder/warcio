@@ -48,7 +48,7 @@ def try_brotli_init():
 
 
 #=================================================================
-class BufferedReader(object):
+class BufferedReader:
     """
     A wrapping line reader which wraps an existing reader.
     Read operations operate on underlying buffer, which is filled to

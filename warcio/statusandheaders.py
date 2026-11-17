@@ -2,17 +2,15 @@
 Representation and parsing of HTTP-style status + headers
 """
 
-from six.moves import range
-from six import iteritems
 from warcio.utils import to_native_str, headers_to_str_headers
 import uuid
 
-from six.moves.urllib.parse import quote
+from urllib.parse import quote
 import re
 
 
 #=================================================================
-class StatusAndHeaders(object):
+class StatusAndHeaders:
     ENCODE_HEADER_RX = re.compile(r'[=]["\']?([^;"]+)["\']?(?=[;]?)')
     """
     Representation of parsed http-style status line and headers
@@ -224,7 +222,7 @@ def _strip_count(string, total_read):
 
 
 #=================================================================
-class StatusAndHeadersParser(object):
+class StatusAndHeadersParser:
     """
     Parser which consumes a stream support readline() to read
     status and headers and return a StatusAndHeaders object

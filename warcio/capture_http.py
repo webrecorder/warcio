@@ -2,13 +2,13 @@ import threading
 
 from io import BytesIO
 
-from six.moves import http_client as httplib
+import http.client as httplib
 
 from contextlib import contextmanager
 
 from array import array
 
-from warcio.utils import to_native_str, BUFF_SIZE, open
+from warcio.utils import to_native_str, BUFF_SIZE
 from warcio.warcwriter import WARCWriter, BufferWARCWriter
 
 from tempfile import SpooledTemporaryFile
@@ -19,7 +19,7 @@ orig_connection = httplib.HTTPConnection
 
 
 # ============================================================================
-class RecordingStream(object):
+class RecordingStream:
     def __init__(self, fp, recorder):
         self.fp = fp
         self.recorder = recorder
@@ -130,7 +130,7 @@ class RecordingHTTPConnection(httplib.HTTPConnection):
 
 
 # ============================================================================
-class RequestRecorder(object):
+class RequestRecorder:
     def __init__(self, writer, filter_func=None, record_ip=True):
         self.writer = writer
         self.filter_func = filter_func

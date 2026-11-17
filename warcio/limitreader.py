@@ -1,5 +1,5 @@
 # ============================================================================
-class LimitReader(object):
+class LimitReader:
     """
     A reader which will not read more than specified limit
     """

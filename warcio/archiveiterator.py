@@ -6,7 +6,6 @@ from warcio.recordloader import ArcWarcRecordLoader
 from warcio.utils import BUFF_SIZE
 
 import sys
-import six
 
 # ============================================================================
 class UnseekableYetTellable:
@@ -23,7 +22,7 @@ class UnseekableYetTellable:
         return result
 
 # ============================================================================
-class ArchiveIterator(six.Iterator):
+class ArchiveIterator:
     """ Iterate over records in WARC and ARC files, both gzip chunk
     compressed and uncompressed
 
@@ -91,7 +90,7 @@ class ArchiveIterator(six.Iterator):
         return self.the_iter
 
     def __next__(self):
-        return six.next(self.the_iter)
+        return next(self.the_iter)
 
     def close(self):
         self.record = None

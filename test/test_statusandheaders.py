@@ -91,7 +91,7 @@ StatusAndHeaders(protocol = 'HTTP/1.0', statusline = '204 empty', headers = [('C
 
 
 from warcio.statusandheaders import StatusAndHeadersParser, StatusAndHeaders
-from six import StringIO
+from io import StringIO
 import pytest
 
 
