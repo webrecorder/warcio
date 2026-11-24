@@ -2,6 +2,7 @@ from warcio.limitreader import LimitReader
 from contextlib import closing
 
 from io import BytesIO
+import pytest
 
 class TestLimitReader(object):
     def test_limit_reader_1(self):
@@ -37,3 +38,41 @@ class TestLimitReader(object):
         with closing(reader):
             assert b'abc' == reader.read(10)
             assert reader.tell() == 3
+
+    @pytest.mark.parametrize('method', ['read', 'readline'])
+    @pytest.mark.parametrize('args', [(), (None,), (-1,), (-2,)])
+    def test_unbounded_read_preserves_limit(self, method, args):
+        stream = BytesIO(b'bodyNEXT_RECORD\n')
+        reader = LimitReader(stream, 4)
+        assert reader.read(1) == b'b'
+
+        read = getattr(reader, method)
+        assert read(*args) == b'ody'
+        assert reader.tell() == 4
+        assert reader.limit == 0
+        assert read(*args) == b''
+        assert stream.read() == b'NEXT_RECORD\n'
+
+    @pytest.mark.parametrize('method', ['read', 'readline'])
+    def test_zero_and_positive_read_sizes(self, method):
+        stream = BytesIO(b'bodyNEXT_RECORD\n')
+        reader = LimitReader(stream, 4)
+        read = getattr(reader, method)
+
+        assert read(0) == b''
+        assert stream.tell() == 0
+        assert reader.tell() == 0
+        assert read(1) == b'b'
+        assert read(10) == b'ody'
+        assert read(1) == b''
+        assert stream.read() == b'NEXT_RECORD\n'
+
+    def test_negative_readline_stops_at_newline(self):
+        stream = BytesIO(b'one\ntwoNEXT_RECORD\n')
+        reader = LimitReader(stream, 7)
+
+        assert reader.readline(-1) == b'one\n'
+        assert reader.tell() == 4
+        assert reader.readline(-2) == b'two'
+        assert reader.readline(-1) == b''
+        assert stream.read() == b'NEXT_RECORD\n'
