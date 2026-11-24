@@ -15,7 +15,7 @@ class LimitReader(object):
         return buff
 
     def read(self, length=None):
-        if length is not None:
+        if length is not None and length >= 0:
             length = min(length, self.limit)
         else:
             length = self.limit
@@ -27,7 +27,7 @@ class LimitReader(object):
         return self._update(buff)
 
     def readline(self, length=None):
-        if length is not None:
+        if length is not None and length >= 0:
             length = min(length, self.limit)
         else:
             length = self.limit

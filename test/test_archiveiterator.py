@@ -229,6 +229,23 @@ class TestArchiveIterator(object):
             assert record.http_headers == None
             assert len(record.content_stream().read()) == int(record.rec_headers.get('Content-Length'))
 
+    @pytest.mark.parametrize('gzip', [False, True])
+    def test_negative_read_size_preserves_next_record(self, gzip):
+        writer = BufferWARCWriter(gzip=gzip)
+        payloads = [b'first payload', b'second payload']
+        for payload in payloads:
+            record = writer.create_warc_record(
+                'http://example.com/', 'resource', payload=BytesIO(payload))
+            writer.write_record(record)
+
+        with closing(ArchiveIterator(writer.get_stream())) as records:
+            for payload in payloads:
+                record = next(records)
+                assert record.content_stream().read(-1) == payload
+                assert record.content_stream().read(-1) == b''
+            with pytest.raises(StopIteration):
+                next(records)
+
     def test_resource_with_http_headers(self):
         with self._find_first_by_type('example-resource.warc.gz', 'resource',
                                       ensure_http_headers=True) as record:
